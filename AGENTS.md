@@ -88,6 +88,8 @@ provider-agnostic integration and never owns the user's data or workflow.
   all other kebab-case violations remain errors.
 - `template show <project> career|job` is the read-only interface for external tools
   to retrieve the current fictitious career and job contracts.
+- Tracked `examples/career.yml` and `examples/job.yml` must exactly match the
+  templates written by `init`; keep their synchronization test updated.
 - Explicitly close every SQLite connection, including reads: a connection context
   manager commits or rolls back transactions but does not guarantee closing on Windows.
 - Preserve public formats and stable contracts. Validate predictable errors at system

@@ -10,6 +10,7 @@ from seriemacv.jobs import load_yaml_payload
 from seriemacv.project import (
     PROJECT_ARTIFACTS,
     PROJECT_DIRECTORIES,
+    PROJECT_EXAMPLES,
     InvalidProjectError,
     ProjectAlreadyExistsError,
     create_project,
@@ -40,6 +41,18 @@ class CreateProjectTests(unittest.TestCase):
             for relative_path in PROJECT_ARTIFACTS:
                 self.assertTrue((project_path / relative_path).is_file())
             self.assertEqual(validate_project(project_path), [])
+
+    def test_repository_examples_match_init_templates(self) -> None:
+        repository_path = Path(__file__).resolve().parents[1]
+
+        self.assertEqual(
+            (repository_path / "examples" / "career.yml").read_text(encoding="utf-8"),
+            PROJECT_EXAMPLES["career.yml.example"],
+        )
+        self.assertEqual(
+            (repository_path / "examples" / "job.yml").read_text(encoding="utf-8"),
+            PROJECT_EXAMPLES["job.yml.example"],
+        )
 
     def test_refuses_to_overwrite_an_existing_project(self) -> None:
         with tempfile.TemporaryDirectory() as temporary_directory:

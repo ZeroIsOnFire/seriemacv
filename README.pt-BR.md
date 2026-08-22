@@ -61,6 +61,7 @@ seriemacv template show .\minha-carreira job
 O comando imprime os exemplos YAML fictícios criados pelo `init`. O template de vaga
 é o formato de entrada de `seriemacv jobs import`; o importador adiciona os metadados
 `source` ao documento canônico armazenado.
+Cópias rastreadas também estão disponíveis em [`examples/`](examples/).
 
 ## Gerar currículo
 

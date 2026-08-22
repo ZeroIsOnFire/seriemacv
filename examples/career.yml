@@ -1,0 +1,50 @@
+# Fictitious example. Replace it with facts you have verified.
+schema_version: 1
+profile:
+  name: Avery Example
+  title: Software Engineer
+  location: Example City, Brazil
+  email: avery@example.invalid
+  phone: '+55 11 5555-0100'
+  links:
+    github: https://github.com/avery-example
+  languages: [Portuguese, English]
+  work_preference: Remote
+  work_authorization: Authorized to work in Brazil
+  notice_period: 30 days
+summary: Build reliable software with collaborative teams.
+experience:
+  - id: example-platform
+    company: Example Systems
+    title: Software Engineer
+    start_date: 2024-01
+    highlights:
+      - Delivered a documented internal service.
+education:
+  - id: example-degree
+    institution: Example University
+    degree: Bachelor of Technology
+    start_date: 2018-01
+    end_date: 2021-12
+skills:
+  - id: python
+    name: Python
+    category: Programming language
+evidence:
+  - id: example-service
+    experience_id: example-platform
+    statement: Delivered a documented internal service.
+    tags: [python, documentation]
+    details: [Reviewed service requirements with the team.]
+    verified: true
+answers:
+  - id: work-authorization
+    prompt: Are you authorized to work in Brazil?
+    answer: Yes.
+stories:
+  - id: example-delivery
+    title: Service delivery
+    situation: A team needed a documented internal service.
+    action: Collaborated on delivery and documentation.
+    result: Service released for internal use.
+    evidence_ids: [example-service]

@@ -60,6 +60,7 @@ seriemacv template show .\my-career job
 The command prints the fictitious YAML examples created by `init`. The job template
 is the input shape for `seriemacv jobs import`; the importer adds its own `source`
 metadata to the stored canonical document.
+Tracked copies are also available in [`examples/`](examples/).
 
 ## Render a resume
 
