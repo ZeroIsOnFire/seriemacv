@@ -1,75 +1,123 @@
 # AGENTS.md — seriemaCV
 
-## Propósito do projeto
+## Project purpose
 
-seriemaCV é uma suíte local-first para gestão de carreira. Ela mantém os dados
-canônicos de carreira em YAML e os usa para criar representações Markdown, DOCX e
-PDF, analisar vagas, gerar relatórios de compatibilidade explicáveis e preparar
-candidaturas.
+seriemaCV is a local-first career-management suite. It keeps canonical career
+data in YAML and uses it to create Markdown, DOCX, and PDF representations,
+analyze job descriptions, generate explainable compatibility reports, and
+prepare applications.
 
-O produto deve funcionar sem IA. Quando usada, a IA é uma integração opcional e agnóstica de provedor — nunca dona dos dados ou do fluxo de trabalho do usuário.
+The product must work without AI. When used, AI is an optional,
+provider-agnostic integration and never owns the user's data or workflow.
 
-## Princípios inegociáveis
+## Non-negotiable principles
 
-- A carreira do usuário é local, portátil e inspecionável. `career.yml` é a
-  fonte canônica dos dados de carreira; SQLite serve para índices, estado
-  normalizado e cache.
-- Markdown, DOCX e PDF são artefatos gerados a partir do YAML. Um importador ou
-  uma proposta de IA pode sugerir alterações no YAML, mas nada altera a fonte
-  canônica sem uma ação explícita do usuário.
-- Nunca invente experiência profissional, competências, cargos, datas, empregadores, métricas, credenciais ou declarações legais. Sugestões devem usar evidências verificadas e distinguir claramente fatos de informações pendentes.
-- Todo match deve ser explicável: cada requisito da vaga precisa exibir sua classificação e a evidência correspondente, inclusive quando não houver prova.
-- Ações externas (enviar candidatura, submeter formulários, enviar mensagens ou alterar perfis) exigem aprovação humana explícita por padrão.
-- Preserve uma progressão útil: builder estruturado manual → assistência por IA
-  → agentes → automação de navegador. Recursos avançados não podem ser
-  pré-requisitos.
+- The user's career is local, portable, and inspectable. `career.yml` is the
+  canonical career-data source; SQLite is for indexes, normalized state, and cache.
+- Markdown, DOCX, and PDF are artifacts generated from YAML. An importer or AI
+  proposal may suggest YAML changes, but never changes the canonical source without
+  an explicit user action.
+- Never invent professional experience, skills, roles, dates, employers, metrics,
+  credentials, or legal statements. Suggestions must use verified evidence and
+  clearly distinguish facts from pending information.
+- Every match must be explainable: each job requirement shows its classification and
+  corresponding evidence, including when no evidence exists.
+- External actions (applications, form submissions, messages, or profile updates)
+  require explicit human approval by default.
+- Preserve a useful progression: structured manual builder → AI assistance → agents
+  → browser automation. Advanced features cannot be prerequisites.
 
-## Arquitetura e limites
+## Architecture and boundaries
 
-- Centralize regras no núcleo de aplicação/domínio. Studio, CLI, MCP e worker de Playwright devem chamar os mesmos casos de uso; não duplique lógica de negócio na interface.
-- Mantenha limites claros entre domínio, persistência, renderização, IA, conectores de vagas e automação de navegador.
-- Operações de IA que propõem mudanças retornam dados estruturados, `evidence_ids`, confiança e indicação de informação que depende do usuário. Propostas não persistem mudanças automaticamente.
-- Comece a recuperação de contexto com busca lexical e filtros de metadados. Não introduza embeddings ou infraestrutura vetorial sem uma necessidade comprovada.
-- O motor de matching calcula a pontuação a partir de classificações determináveis (`STRONG_MATCH`, `MATCH`, `PARTIAL_MATCH`, `TRANSFERABLE`, `NO_EVIDENCE`, `CONFLICT`), e não de uma porcentagem livre gerada pelo modelo.
-- O fluxo de navegador é uma máquina de estados. Priorize: dados de perfil determinísticos, respostas salvas, regras, proposta de IA baseada em evidência e, por último, pergunta ao usuário. Nunca submeta campos obrigatórios sem resolver.
+- Centralize rules in the application/domain core. Studio, CLI, MCP, and the
+  Playwright worker must use the same use cases; do not duplicate business logic in
+  interfaces.
+- Keep clear boundaries between domain, persistence, rendering, AI, job connectors,
+  and browser automation.
+- AI operations that propose changes return structured data, `evidence_ids`,
+  confidence, and information requiring user input. Proposals never persist changes
+  automatically.
+- Start context retrieval with lexical search and metadata filters. Do not introduce
+  embeddings or vector infrastructure without a proven need.
+- The matching engine calculates scores from deterministic classifications:
+  `STRONG_MATCH`, `MATCH`, `PARTIAL_MATCH`, `TRANSFERABLE`, `NO_EVIDENCE`, and
+  `CONFLICT`; never from a free-form model percentage.
+- Browser workflows are state machines. Prioritize deterministic profile data, saved
+  answers, rules, evidence-based AI proposals, then user questions. Never submit an
+  unresolved required field.
 
-## Privacidade e segurança
+## Privacy and security
 
-- Não inclua texto de currículo em telemetria por padrão. Explique qual contexto será enviado a cada provedor de IA.
-- Use armazenamento seguro do sistema operacional para segredos quando possível; nunca exponha tokens, senhas, credenciais ou valores sensíveis em logs.
-- Valide toda entrada externa: URLs, Markdown/YAML/JSON, arquivos, respostas de conectores, variáveis de ambiente e resultados de IA.
-- Isole perfis de navegador por projeto ou usuário. Logs e diagnósticos devem redigir credenciais e campos sensíveis; bundles diagnósticos não incluem dados pessoais sem seleção explícita.
-- Não preencha ou aceite declarações legais, autorização de trabalho, histórico salarial, dados demográficos ou autoidentificação sem dados configurados pelo usuário e uma revisão apropriada.
+- Do not include resume text in telemetry by default. Explain what context is sent
+  to every AI provider.
+- Use operating-system secure storage for secrets where possible; never expose
+  tokens, passwords, credentials, or sensitive values in logs.
+- Validate all external input: URLs, Markdown, YAML, JSON, files, connector
+  responses, environment variables, and AI results.
+- Isolate browser profiles per project or user. Logs and diagnostics must redact
+  credentials and sensitive fields; diagnostic bundles exclude personal data unless
+  explicitly selected.
+- Do not fill or accept legal statements, work authorization, salary history,
+  demographic data, or self-identification without user-configured data and suitable
+  review.
 
-## Desenvolvimento e qualidade
+## Development and quality
 
-- Antes de ler arquivos grandes, busque trechos relevantes com `rg`; evite artefatos gerados, logs e dumps desnecessários.
-- O núcleo e a CLI são implementados em Python. No PowerShell, o comando oficial de testes é `$env:PYTHONPATH = 'src'; python -m unittest discover -s tests -v`; quando o Windows não resolver `python`, use uma instalação Python 3.11+ ou o launcher `py -3` configurado. O lint oficial é `python -m ruff check src tests` após instalar `.[dev]`.
-- Arquivos YAML são carregados com `ruamel.yaml` em modo round-trip e validados por modelos Pydantic estritos. Nunca use loaders inseguros nem aceite campos desconhecidos em schemas centrais sem uma decisão explícita de compatibilidade.
-- `seriemacv validate` verifica a estrutura do projeto; `seriemacv career validate` verifica conteúdo, referências e completude de `career.yml`, permitindo que o scaffold inicial seja preenchido incrementalmente.
-- Projetos no layout anterior permanecem válidos em modo de compatibilidade; qualquer conversão para `career.yml` deve ser explícita e não pode apagar os artefatos canônicos legados.
-- `resume render --format markdown|html|pdf` só renderiza um `career.yml` completo e escreve atomicamente em `exports/resume.*`; PDF depende do Chromium do Playwright instalado localmente.
-- Valores canônicos de `skills.level` são códigos em inglês; `i18n.py` localiza rótulos, meses e níveis na renderização. `core` é prioridade editorial explícita, e categorias organizam a lista completa de habilidades.
-- Feche explicitamente toda conexão SQLite, inclusive em leituras: o gerenciador de contexto da conexão confirma ou desfaz transações, mas não garante seu fechamento no Windows.
-- Preserve formatos públicos e contratos estáveis. Erros previsíveis devem ser estruturados e validados nas bordas da aplicação.
-- Para mudança de comportamento, escreva ou atualize primeiro o teste que cobre a regra ou regressão. Testes não devem exigir rede, modelos remotos, GPU, segredos ou dados reais de carreira.
-- Execute validações focadas durante a alteração e uma validação proporcional ao risco antes de concluir. Não informe sucesso se um comando falhou, expirou ou foi ignorado; registre a limitação.
-- Após desenvolver uma funcionalidade, revise o diff não commitado; corrija os problemas acionáveis encontrados e execute novamente as validações afetadas antes de entregar.
-- Não adicione dependências, serviços externos ou automações de plataforma sem autorização explícita.
-- O primeiro vertical slice prioriza: `career.yml` + evidências + vaga → match
-  explicável → proposta/diff de tailoring → variantes geradas (Markdown, DOCX e
-  PDF). Não antecipe autoapply, scrapers frágeis ou infraestrutura complexa.
+- Before reading large files, use `rg` to find relevant excerpts; avoid generated
+  artifacts, logs, and dumps.
+- The core and CLI use Python. In PowerShell, run tests with
+  `$env:PYTHONPATH = 'src'; python -m unittest discover -s tests -v`; if Windows
+  cannot resolve `python`, use Python 3.11+ or `py -3`. Run
+  `python -m ruff check src tests` after installing `.[dev]`.
+- Load YAML with `ruamel.yaml` in round-trip mode and validate it with strict
+  Pydantic models. Do not use unsafe loaders or accept unknown fields in central
+  schemas without an explicit compatibility decision.
+- `seriemacv validate` checks project structure; `seriemacv career validate` checks
+  career content, references, and completeness.
+- Preserve compatibility with legacy projects. Conversions must be explicit and must
+  not delete the legacy canonical file.
+- `resume render --format markdown|html|pdf` validates a complete career document
+  and atomically writes fixed `exports/resume.*` artifacts. PDF requires Playwright
+  Chromium.
+- Canonical `skills.level` values are English codes. `i18n.py` localizes fixed labels,
+  months, and levels; `core` is an explicit editorial priority, while categories keep
+  the complete skills list readable.
+- Explicitly close every SQLite connection, including reads: a connection context
+  manager commits or rolls back transactions but does not guarantee closing on Windows.
+- Preserve public formats and stable contracts. Validate predictable errors at system
+  boundaries and return structured diagnostics.
+- For behavioral changes, write or update the test covering the rule or regression
+  first. Tests must not require network access, remote models, GPUs, secrets, or real
+  career data.
+- Run focused validation while changing code and risk-proportionate validation before
+  completion. Never report success for a failed, timed-out, or skipped command.
+- After development, review the uncommitted diff, fix actionable findings, and rerun
+  affected validation.
+- Do not add dependencies, external services, or platform automation without explicit
+  authorization.
+- The first vertical slice is `career.yml` + evidence + job → explainable match →
+  tailoring proposal/diff → generated Markdown, DOCX, and PDF variants. Do not
+  prematurely add auto-apply, fragile scrapers, or complex infrastructure.
 
-## Git e entrega
+## Git and delivery
 
-- `README.md` é a documentação principal em inglês; `README.pt-BR.md` é a versão em português, e ambos devem manter links cruzados no topo.
-- Mantenha alterações pequenas e focadas; não descarte mudanças existentes do usuário que não estejam no escopo da tarefa.
-- Commits devem ser atômicos, em português, e seguir Conventional Commits.
-- Ao encerrar, informe arquivos alterados, validações executadas, limitações e riscos restantes de forma breve.
+- Keep the main README in English and `README.pt-BR.md` in Portuguese, with visible
+  cross-links near the top of both files.
+- Keep changes small and focused; do not discard existing user changes outside scope.
+- Commits must be atomic, in Portuguese, and follow Conventional Commits.
+- At handoff, briefly report changed files, validations run, limitations, and
+  remaining risks.
 
-## Aprendizados do projeto
+## Project learnings
 
-- Todo aprendizado útil e durável descoberto durante o desenvolvimento — comandos oficiais, decisões arquiteturais, convenções, limitações, armadilhas ou práticas de validação — deve ser adicionado a este `AGENTS.md` de forma concisa, no tópico apropriado. Evite registrar detalhes temporários ou dados sensíveis.
-- A decomposição atual de funcionalidades, dependências e decisões técnicas está em `docs/funcionalidades.md`; atualize-a quando uma decisão de arquitetura mudar.
-- O progresso de implementação é registrado em `docs/checklist.md`. Marque um item como concluído somente após implementação e validação proporcional ao risco.
-- Referências externas de currículo ficam em `docs/referencias/`, com origem e condições de uso documentadas. Elas servem para análise; não reutilize conteúdo pessoal nem as apresente como estilos próprios do produto.
+- Keep durable, useful implementation learnings concise in this file under the
+  relevant heading; omit temporary details and sensitive data.
+- Keep this `AGENTS.md` to at most 150 lines. Near the limit, compact it and remove
+  repeated, temporary, or low-value information.
+- Architecture decisions belong in `docs/funcionalidades.md`; update it when an
+  architecture decision changes.
+- Implementation progress belongs in `docs/checklist.md`. Mark an item complete only
+  after implementation and risk-proportionate validation.
+- External resume references belong in `docs/referencias/`, with provenance and terms
+  of use recorded. They are for analysis only; never reuse personal content or present
+  them as product-owned styles.
