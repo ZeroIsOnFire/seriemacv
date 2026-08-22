@@ -48,7 +48,8 @@ O produto deve funcionar sem IA. Quando usada, a IA é uma integração opcional
 - Arquivos YAML são carregados com `ruamel.yaml` em modo round-trip e validados por modelos Pydantic estritos. Nunca use loaders inseguros nem aceite campos desconhecidos em schemas centrais sem uma decisão explícita de compatibilidade.
 - `seriemacv validate` verifica a estrutura do projeto; `seriemacv career validate` verifica conteúdo, referências e completude de `career.yml`, permitindo que o scaffold inicial seja preenchido incrementalmente.
 - Projetos no layout anterior permanecem válidos em modo de compatibilidade; qualquer conversão para `career.yml` deve ser explícita e não pode apagar os artefatos canônicos legados.
-- `resume render --format markdown` só renderiza um `career.yml` completo e escreve atomicamente em `exports/resume.md`; `resume_language` é definido no `init`, apenas localiza títulos fixos e nunca traduz ou altera o YAML canônico.
+- `resume render --format markdown|html|pdf` só renderiza um `career.yml` completo e escreve atomicamente em `exports/resume.*`; PDF depende do Chromium do Playwright instalado localmente.
+- Valores canônicos de `skills.level` são códigos em inglês; `i18n.py` localiza rótulos, meses e níveis na renderização. `core` é prioridade editorial explícita, e categorias organizam a lista completa de habilidades.
 - Feche explicitamente toda conexão SQLite, inclusive em leituras: o gerenciador de contexto da conexão confirma ou desfaz transações, mas não garante seu fechamento no Windows.
 - Preserve formatos públicos e contratos estáveis. Erros previsíveis devem ser estruturados e validados nas bordas da aplicação.
 - Para mudança de comportamento, escreva ou atualize primeiro o teste que cobre a regra ou regressão. Testes não devem exigir rede, modelos remotos, GPU, segredos ou dados reais de carreira.
@@ -61,6 +62,7 @@ O produto deve funcionar sem IA. Quando usada, a IA é uma integração opcional
 
 ## Git e entrega
 
+- `README.md` é a documentação principal em inglês; `README.pt-BR.md` é a versão em português, e ambos devem manter links cruzados no topo.
 - Mantenha alterações pequenas e focadas; não descarte mudanças existentes do usuário que não estejam no escopo da tarefa.
 - Commits devem ser atômicos, em português, e seguir Conventional Commits.
 - Ao encerrar, informe arquivos alterados, validações executadas, limitações e riscos restantes de forma breve.
