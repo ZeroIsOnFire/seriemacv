@@ -48,10 +48,12 @@ O produto deve funcionar sem IA. Quando usada, a IA é uma integração opcional
 - Arquivos YAML são carregados com `ruamel.yaml` em modo round-trip e validados por modelos Pydantic estritos. Nunca use loaders inseguros nem aceite campos desconhecidos em schemas centrais sem uma decisão explícita de compatibilidade.
 - `seriemacv validate` verifica a estrutura do projeto; `seriemacv career validate` verifica conteúdo, referências e completude de `career.yml`, permitindo que o scaffold inicial seja preenchido incrementalmente.
 - Projetos no layout anterior permanecem válidos em modo de compatibilidade; qualquer conversão para `career.yml` deve ser explícita e não pode apagar os artefatos canônicos legados.
+- `resume render --format markdown` só renderiza um `career.yml` completo e escreve atomicamente em `exports/resume.md`; `resume_language` é definido no `init`, apenas localiza títulos fixos e nunca traduz ou altera o YAML canônico.
 - Feche explicitamente toda conexão SQLite, inclusive em leituras: o gerenciador de contexto da conexão confirma ou desfaz transações, mas não garante seu fechamento no Windows.
 - Preserve formatos públicos e contratos estáveis. Erros previsíveis devem ser estruturados e validados nas bordas da aplicação.
 - Para mudança de comportamento, escreva ou atualize primeiro o teste que cobre a regra ou regressão. Testes não devem exigir rede, modelos remotos, GPU, segredos ou dados reais de carreira.
 - Execute validações focadas durante a alteração e uma validação proporcional ao risco antes de concluir. Não informe sucesso se um comando falhou, expirou ou foi ignorado; registre a limitação.
+- Após desenvolver uma funcionalidade, revise o diff não commitado; corrija os problemas acionáveis encontrados e execute novamente as validações afetadas antes de entregar.
 - Não adicione dependências, serviços externos ou automações de plataforma sem autorização explícita.
 - O primeiro vertical slice prioriza: `career.yml` + evidências + vaga → match
   explicável → proposta/diff de tailoring → variantes geradas (Markdown, DOCX e

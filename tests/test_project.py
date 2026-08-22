@@ -42,6 +42,17 @@ class CreateProjectTests(unittest.TestCase):
             with self.assertRaises(ProjectAlreadyExistsError):
                 create_project(project_path, project_name="Other Career")
 
+    def test_stores_resume_language_in_project_configuration(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            project_path = Path(temporary_directory) / "my-career"
+
+            create_project(
+                project_path, project_name="My Career", resume_language="en"
+            )
+
+            config = (project_path / "seriemacv.yml").read_text(encoding="utf-8")
+            self.assertIn("resume_language: en", config)
+
 
 class ValidateProjectTests(unittest.TestCase):
     def test_reports_missing_required_directory(self) -> None:

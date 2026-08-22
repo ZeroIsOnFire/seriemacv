@@ -48,6 +48,8 @@ PROJECT_ARTIFACTS = {
         '  title: ""\n'
         '  location: ""\n'
         '  email: ""\n'
+        '  linkedin: ""\n'
+        '  portfolio: ""\n'
         "experience: []\n"
         "education: []\n"
         "skills: []\n"
@@ -121,6 +123,7 @@ PROJECT_EXAMPLES = {
         "# Example project configuration. This file contains no secrets.\n"
         "schema_version: 1\n"
         'project_name: "Example Career"\n'
+        "resume_language: pt-BR\n"
     ),
 }
 DATABASE_RELATIVE_PATH = Path(".seriemacv/index/seriemacv.db")
@@ -139,6 +142,7 @@ class CareerProject:
 
     path: Path
     name: str
+    resume_language: str
     database_path: Path
     database_schema_version: int
 
@@ -150,6 +154,7 @@ class ProjectConfiguration(BaseModel):
 
     schema_version: Literal[1]
     project_name: str = Field(min_length=1, max_length=120)
+    resume_language: Literal["pt-BR", "en"] = "pt-BR"
 
     @field_validator("project_name")
     @classmethod
@@ -159,10 +164,16 @@ class ProjectConfiguration(BaseModel):
         return value
 
 
-def create_project(path: Path, *, project_name: str) -> Path:
+def create_project(
+    path: Path, *, project_name: str, resume_language: str = "pt-BR"
+) -> Path:
     """Create a new portable seriemaCV project without overwriting one."""
     project_path = path.expanduser().resolve()
-    ProjectConfiguration(schema_version=1, project_name=project_name)
+    ProjectConfiguration(
+        schema_version=1,
+        project_name=project_name,
+        resume_language=resume_language,
+    )
 
     if (project_path / CONFIG_FILE).exists():
         raise ProjectAlreadyExistsError(
@@ -181,6 +192,7 @@ def create_project(path: Path, *, project_name: str) -> Path:
         "# seriemaCV project configuration\n"
         "schema_version: 1\n"
         f"project_name: {_yaml_string(project_name)}\n"
+        f"resume_language: {resume_language}\n"
     )
     _atomic_write(project_path / CONFIG_FILE, config)
     _initialize_database(project_path / DATABASE_RELATIVE_PATH)
@@ -199,6 +211,7 @@ def open_project(path: Path) -> CareerProject:
     return CareerProject(
         path=project_path,
         name=configuration.project_name,
+        resume_language=configuration.resume_language,
         database_path=database_path,
         database_schema_version=_database_schema_version(database_path),
     )
@@ -254,6 +267,11 @@ def _read_project_configuration(config_path: Path) -> ProjectConfiguration:
     if not isinstance(document, dict):
         raise ValueError(f"{CONFIG_FILE} must contain a mapping")
     return ProjectConfiguration.model_validate(document)
+
+
+def load_project_configuration(path: Path) -> ProjectConfiguration:
+    """Load the strict configuration used by project-scoped commands."""
+    return _read_project_configuration(path.expanduser().resolve() / CONFIG_FILE)
 
 
 def _yaml_string(value: str) -> str:

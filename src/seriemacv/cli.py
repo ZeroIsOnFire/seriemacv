@@ -18,8 +18,10 @@ from seriemacv.career import (
 from seriemacv.project import (
     ProjectAlreadyExistsError,
     create_project,
+    load_project_configuration,
     validate_project,
 )
+from seriemacv.renderer import ResumeRenderError, write_resume
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -29,6 +31,7 @@ def build_parser() -> argparse.ArgumentParser:
     init_parser = subparsers.add_parser("init", help="Create a local career project")
     init_parser.add_argument("path", type=Path)
     init_parser.add_argument("--name", required=True, help="Human-readable project name")
+    init_parser.add_argument("--language", choices=("pt-BR", "en"), default="pt-BR")
 
     validate_parser = subparsers.add_parser(
         "validate", help="Validate a local career project"
@@ -53,6 +56,8 @@ def build_parser() -> argparse.ArgumentParser:
         "location",
         "email",
         "phone",
+        "linkedin",
+        "portfolio",
         "work-preference",
         "work-authorization",
         "notice-period",
@@ -72,6 +77,14 @@ def build_parser() -> argparse.ArgumentParser:
         "section",
         choices=("profile", "summary", "experience", "education", "skills", "evidence", "answers", "stories"),
     )
+
+    resume_parser = subparsers.add_parser("resume", help="Render resume artifacts")
+    resume_subparsers = resume_parser.add_subparsers(dest="resume_command", required=True)
+    render_parser = resume_subparsers.add_parser(
+        "render", help="Render an ATS-safe resume from career.yml"
+    )
+    render_parser.add_argument("path", type=Path)
+    render_parser.add_argument("--format", choices=("markdown", "html", "pdf"), required=True)
     return parser
 
 
@@ -107,6 +120,8 @@ def _add_skill_parser(subparsers: argparse._SubParsersAction[argparse.ArgumentPa
     parser.add_argument("--id", required=True)
     parser.add_argument("--name", required=True)
     parser.add_argument("--category", default="")
+    parser.add_argument("--level", choices=("beginner", "intermediate", "advanced", "expert"))
+    parser.add_argument("--core", action="store_true")
     parser.add_argument("--tag", action="append", default=[])
 
 
@@ -127,7 +142,9 @@ def main(arguments: list[str] | None = None) -> int:
 
     if args.command == "init":
         try:
-            project_path = create_project(args.path, project_name=args.name)
+            project_path = create_project(
+                args.path, project_name=args.name, resume_language=args.language
+            )
         except (OSError, ValueError, ProjectAlreadyExistsError) as error:
             parser.error(str(error))
         print(f"Created seriemaCV project at {project_path}")
@@ -135,6 +152,9 @@ def main(arguments: list[str] | None = None) -> int:
 
     if args.command == "career":
         return _run_career_command(args)
+
+    if args.command == "resume":
+        return _run_resume_command(args)
 
     errors = validate_project(args.path)
     if errors:
@@ -161,7 +181,7 @@ def _run_career_command(args: argparse.Namespace) -> int:
             values = {
                 key: getattr(args, key)
                 for key in (
-                    "name", "title", "location", "email", "phone",
+                    "name", "title", "location", "email", "phone", "linkedin", "portfolio",
                     "work_preference", "work_authorization", "notice_period",
                 )
             }
@@ -187,7 +207,7 @@ def _run_career_command(args: argparse.Namespace) -> int:
         elif args.career_command == "add-skill":
             add_record(career_path, "skills", {
                 "id": args.id, "name": args.name, "category": args.category,
-                "tags": args.tag,
+                "tags": args.tag, "level": args.level, "core": args.core,
             })
         elif args.career_command == "add-evidence":
             add_record(career_path, "evidence", {
@@ -205,6 +225,33 @@ def _run_career_command(args: argparse.Namespace) -> int:
         return 1
 
     print(f"Updated career document: {career_path}")
+    return 0
+
+
+def _run_resume_command(args: argparse.Namespace) -> int:
+    project_path = args.path.expanduser().resolve()
+    career_path = project_path / CAREER_FILE
+    configuration_path = project_path / "seriemacv.yml"
+    diagnostics = validate_career(career_path)
+    if diagnostics:
+        for diagnostic in diagnostics:
+            print(diagnostic.format(career_path), file=sys.stderr)
+        return 1
+    try:
+        configuration = load_project_configuration(project_path)
+    except (OSError, ValueError, ValidationError, YAMLError) as error:
+        print(f"{configuration_path}: {error}", file=sys.stderr)
+        return 1
+    try:
+        from seriemacv.career import load_career
+
+        output_path = write_resume(
+            project_path, load_career(career_path), configuration.resume_language, args.format
+        )
+    except (OSError, ResumeRenderError, ValueError, ValidationError, YAMLError) as error:
+        print(f"{career_path}: {error}", file=sys.stderr)
+        return 1
+    print(f"Rendered Markdown resume: {output_path}")
     return 0
 
 

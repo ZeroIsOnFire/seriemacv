@@ -37,6 +37,8 @@ class CareerProfile(StrictModel):
     location: str = ""
     email: str = ""
     phone: str = ""
+    linkedin: str = ""
+    portfolio: str = ""
     links: dict[str, str] = Field(default_factory=dict)
     languages: list[str] = Field(default_factory=list)
     work_preference: str = ""
@@ -57,6 +59,16 @@ class CareerProfile(StrictModel):
             parsed = urlparse(url)
             if not name.strip() or parsed.scheme not in {"http", "https"} or not parsed.netloc:
                 raise ValueError("must contain named http(s) URLs")
+        return value
+
+    @field_validator("linkedin", "portfolio")
+    @classmethod
+    def profile_urls(cls, value: str) -> str:
+        if not value:
+            return value
+        parsed = urlparse(value)
+        if parsed.scheme not in {"http", "https"} or not parsed.netloc:
+            raise ValueError("must be an http(s) URL")
         return value
 
 
@@ -109,6 +121,8 @@ class Skill(IdentifiedRecord):
     name: str = Field(min_length=1)
     category: str = ""
     tags: list[str] = Field(default_factory=list)
+    level: Literal["beginner", "intermediate", "advanced", "expert"] | None = None
+    core: bool = False
 
 
 class CareerEvidence(IdentifiedRecord):

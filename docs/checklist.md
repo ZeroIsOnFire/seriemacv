@@ -29,13 +29,13 @@ registrada.
   `career.yml`.
 - [ ] Definir o contrato de pacote de estilo (`style.yml`, HTML e CSS).
 - [ ] Implementar primeiro estilo ATS-safe de uma coluna.
-- [ ] Gerar currículo Markdown a partir do YAML.
+- [x] Gerar currículo Markdown a partir do YAML.
 - [ ] Renderizar currículo em HTML.
 - [ ] Exportar PDF por renderizador local de navegador.
 - [ ] Exportar DOCX por renderer próprio, sem converter do PDF.
 - [ ] Exportar DOC para compatibilidade legada, a partir de uma estratégia local
   definida para o formato.
-- [ ] Adicionar CLI para editar dados estruturados, validar e renderizar currículo.
+- [x] Adicionar CLI para editar dados estruturados, validar e renderizar currículo.
 - [ ] Cobrir YAML, importação, validação e renderização com testes e fixtures.
 
 ## MVP 1 — Career Library e assistência por IA

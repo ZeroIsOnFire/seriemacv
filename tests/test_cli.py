@@ -16,10 +16,17 @@ class CliTests(unittest.TestCase):
             stdout = StringIO()
 
             with redirect_stdout(stdout):
-                result = main(["init", str(project_path), "--name", "My Career"])
+                result = main([
+                    "init", str(project_path), "--name", "My Career",
+                    "--language", "en",
+                ])
 
             self.assertEqual(result, 0)
             self.assertIn("Created seriemaCV project", stdout.getvalue())
+            self.assertIn(
+                "resume_language: en",
+                (project_path / "seriemacv.yml").read_text(encoding="utf-8"),
+            )
 
             with redirect_stdout(StringIO()):
                 result = main(["validate", str(project_path)])

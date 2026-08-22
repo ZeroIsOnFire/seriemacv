@@ -1,0 +1,5 @@
+schema_version: 1
+id: clean
+layout: single-column
+page_size: A4
+supported_sections: [summary, experience, education, skills, languages]

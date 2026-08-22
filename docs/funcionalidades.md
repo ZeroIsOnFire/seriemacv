@@ -109,6 +109,8 @@ PDF, DOCX ou DOC, sem modificar o YAML de origem.
 
 **Entregas independentes**
 
+- Renderer Markdown determinístico de uma coluna, ATS-safe, com saída atômica em
+  `exports/resume.md` e sem alterar `career.yml`.
 - Contrato de pacote de estilo: `style.yml`, template HTML, CSS de impressão e
   preview.
 - 2–3 estilos ATS-safe de uma coluna.
@@ -121,6 +123,11 @@ PDF, DOCX ou DOC, sem modificar o YAML de origem.
 **Contrato:** recebe o modelo de currículo e um estilo; produz Markdown, HTML, PDF,
 DOCX ou DOC e metadados do artefato. DOCX será outro renderer, não uma conversão
 de PDF; DOC é um formato legado e não deve orientar o modelo interno.
+
+O primeiro renderer não usa pacote de estilo: `resume render --format markdown`
+exige um `career.yml` completo e escreve no caminho fixo `exports/resume.md`. A
+configuração `resume_language` de `seriemacv.yml`, definida no `init`, seleciona
+apenas os títulos fixos; o sistema não traduz conteúdo do usuário.
 
 **Decisões tecnológicas**
 

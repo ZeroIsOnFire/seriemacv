@@ -1,0 +1,1 @@
+@page { size: A4; margin: 16mm; } body { font: 10pt Arial, sans-serif; line-height: 1.35; } main { max-width: 178mm; margin: auto; } h1 { font-size: 22pt; } h2 { border-bottom: 1px solid #777; margin-top: 18pt; } article { break-inside: avoid; } a { color: inherit; }
