@@ -1,0 +1,56 @@
+# AGENTS.md — seriemaCV
+
+## Propósito do projeto
+
+seriemaCV é uma suíte local-first para gestão de carreira. Ela mantém um currículo Markdown como fonte de verdade e o usa para criar variantes, analisar vagas, gerar relatórios de compatibilidade explicáveis e preparar candidaturas.
+
+O produto deve funcionar sem IA. Quando usada, a IA é uma integração opcional e agnóstica de provedor — nunca dona dos dados ou do fluxo de trabalho do usuário.
+
+## Princípios inegociáveis
+
+- A carreira do usuário é local, portátil e inspecionável. Arquivos Markdown/YAML pertencem ao usuário; SQLite serve para índices, estado normalizado e cache.
+- O currículo mestre é a fonte canônica. Templates e exports são projeções dele; uma variante nunca deve alterar o mestre sem uma edição explícita do usuário.
+- Nunca invente experiência profissional, competências, cargos, datas, empregadores, métricas, credenciais ou declarações legais. Sugestões devem usar evidências verificadas e distinguir claramente fatos de informações pendentes.
+- Todo match deve ser explicável: cada requisito da vaga precisa exibir sua classificação e a evidência correspondente, inclusive quando não houver prova.
+- Ações externas (enviar candidatura, submeter formulários, enviar mensagens ou alterar perfis) exigem aprovação humana explícita por padrão.
+- Preserve uma progressão útil: editor manual → assistência por IA → agentes → automação de navegador. Recursos avançados não podem ser pré-requisitos.
+
+## Arquitetura e limites
+
+- Centralize regras no núcleo de aplicação/domínio. Studio, CLI, MCP e worker de Playwright devem chamar os mesmos casos de uso; não duplique lógica de negócio na interface.
+- Mantenha limites claros entre domínio, persistência, renderização, IA, conectores de vagas e automação de navegador.
+- Operações de IA que propõem mudanças retornam dados estruturados, `evidence_ids`, confiança e indicação de informação que depende do usuário. Propostas não persistem mudanças automaticamente.
+- Comece a recuperação de contexto com busca lexical e filtros de metadados. Não introduza embeddings ou infraestrutura vetorial sem uma necessidade comprovada.
+- O motor de matching calcula a pontuação a partir de classificações determináveis (`STRONG_MATCH`, `MATCH`, `PARTIAL_MATCH`, `TRANSFERABLE`, `NO_EVIDENCE`, `CONFLICT`), e não de uma porcentagem livre gerada pelo modelo.
+- O fluxo de navegador é uma máquina de estados. Priorize: dados de perfil determinísticos, respostas salvas, regras, proposta de IA baseada em evidência e, por último, pergunta ao usuário. Nunca submeta campos obrigatórios sem resolver.
+
+## Privacidade e segurança
+
+- Não inclua texto de currículo em telemetria por padrão. Explique qual contexto será enviado a cada provedor de IA.
+- Use armazenamento seguro do sistema operacional para segredos quando possível; nunca exponha tokens, senhas, credenciais ou valores sensíveis em logs.
+- Valide toda entrada externa: URLs, Markdown/YAML/JSON, arquivos, respostas de conectores, variáveis de ambiente e resultados de IA.
+- Isole perfis de navegador por projeto ou usuário. Logs e diagnósticos devem redigir credenciais e campos sensíveis; bundles diagnósticos não incluem dados pessoais sem seleção explícita.
+- Não preencha ou aceite declarações legais, autorização de trabalho, histórico salarial, dados demográficos ou autoidentificação sem dados configurados pelo usuário e uma revisão apropriada.
+
+## Desenvolvimento e qualidade
+
+- Antes de ler arquivos grandes, busque trechos relevantes com `rg`; evite artefatos gerados, logs e dumps desnecessários.
+- O núcleo e a CLI são implementados em Python. No PowerShell, o comando oficial de testes é `$env:PYTHONPATH = 'src'; python -m unittest discover -s tests -v`; quando o Windows não resolver `python`, use uma instalação Python 3.11+ ou o launcher `py -3` configurado.
+- Arquivos YAML são carregados com `ruamel.yaml` em modo round-trip e validados por modelos Pydantic estritos. Nunca use loaders inseguros nem aceite campos desconhecidos em schemas centrais sem uma decisão explícita de compatibilidade.
+- Feche explicitamente toda conexão SQLite, inclusive em leituras: o gerenciador de contexto da conexão confirma ou desfaz transações, mas não garante seu fechamento no Windows.
+- Preserve formatos públicos e contratos estáveis. Erros previsíveis devem ser estruturados e validados nas bordas da aplicação.
+- Para mudança de comportamento, escreva ou atualize primeiro o teste que cobre a regra ou regressão. Testes não devem exigir rede, modelos remotos, GPU, segredos ou dados reais de carreira.
+- Execute validações focadas durante a alteração e uma validação proporcional ao risco antes de concluir. Não informe sucesso se um comando falhou, expirou ou foi ignorado; registre a limitação.
+- Não adicione dependências, serviços externos ou automações de plataforma sem autorização explícita.
+- O primeiro vertical slice prioriza: currículo mestre + evidências + vaga → match explicável → proposta/diff de tailoring → variante Markdown → PDF. Não antecipe autoapply, scrapers frágeis ou infraestrutura complexa.
+
+## Git e entrega
+
+- Mantenha alterações pequenas e focadas; não descarte mudanças existentes do usuário que não estejam no escopo da tarefa.
+- Commits devem ser atômicos, em português, e seguir Conventional Commits.
+- Ao encerrar, informe arquivos alterados, validações executadas, limitações e riscos restantes de forma breve.
+
+## Aprendizados do projeto
+
+- Todo aprendizado útil e durável descoberto durante o desenvolvimento — comandos oficiais, decisões arquiteturais, convenções, limitações, armadilhas ou práticas de validação — deve ser adicionado a este `AGENTS.md` de forma concisa, no tópico apropriado. Evite registrar detalhes temporários ou dados sensíveis.
+- A decomposição atual de funcionalidades, dependências e decisões técnicas está em `docs/funcionalidades.md`; atualize-a quando uma decisão de arquitetura mudar.
