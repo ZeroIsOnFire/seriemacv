@@ -1,8 +1,8 @@
 # Funcionalidades e decisões técnicas
 
 Este documento separa o design do seriemaCV em capacidades implementáveis. A
-ordem proposta preserva o primeiro fluxo de valor: **currículo mestre + evidências
-+ vaga → match explicável → variante Markdown → PDF**.
+ordem proposta preserva o primeiro fluxo de valor: **`career.yml` + evidências
++ vaga → match explicável → representações geradas → PDF/DOCX/DOC**.
 
 Cada módulo define um contrato próprio. A tecnologia deve ser escolhida por módulo
 somente depois de validar os critérios listados; a interface gráfica não deve ser
@@ -14,7 +14,7 @@ a dona da regra de negócio.
 Projeto de carreira / arquivos
         │
         ├── Perfil e evidências ──┐
-        ├── Currículo Markdown ───┼── Match e tailoring ── Renderização
+        ├── Career YAML ──────────┼── Match e tailoring ── Renderização
         └── Vagas ────────────────┘          │
                                              ├── CLI
                                              ├── Studio
@@ -28,14 +28,16 @@ Projeto de carreira / arquivos
 ## 1. Fundação: projeto de carreira
 
 **Responsabilidade:** criar, abrir e validar um projeto local; definir os caminhos
-de `seriemacv.yml`, `profile.yml`, currículo, conhecimento, vagas,
+de `seriemacv.yml`, `career.yml`, vagas,
 candidaturas, estilos e artefatos internos.
 
 **Entregas independentes**
 
 - Estrutura inicial de diretórios e arquivos de exemplo.
-- Leitura, escrita atômica e validação de Markdown, YAML e JSONL.
+- Leitura, escrita atômica e validação de YAML e JSONL.
 - Configuração versionada sem segredos.
+- Compatibilidade de leitura para projetos criados no layout anterior; migrações de
+  dados canônicos exigem uma ação explícita do usuário.
 - Índice SQLite local para estado, cache e busca futura.
 
 **Contrato:** recebe um diretório de projeto e produz entidades válidas ou erros
@@ -51,26 +53,28 @@ estruturados. Nenhuma interface conhece detalhes de caminhos ou serialização.
 
 **Depende de:** nada.
 
-## 2. Currículo Markdown e validação
+## 2. Career YAML e validação
 
-**Responsabilidade:** interpretar o currículo mestre (front matter YAML + Markdown
-convencional), preservar sua legibilidade e validar estrutura e referências.
+**Responsabilidade:** interpretar e validar `career.yml`, o documento estruturado
+e canônico de carreira, preservando rastreabilidade de cada fato.
 
 **Entregas independentes**
 
-- AST ou modelo intermediário de currículo.
-- Leitura de front matter, seções e experiência.
+- Schema e modelo intermediário de currículo.
+- Leitura de perfil, seções, experiência, evidências e respostas.
 - Diagnósticos de estrutura e de dados ausentes, sem reescrita automática.
-- Criação e validação de variantes Markdown.
+- Criação e validação de variantes estruturadas.
 
-**Contrato:** Markdown entra; modelo de currículo, diagnósticos e Markdown
-normalizado/serializado saem. O módulo não sabe sobre UI, PDF ou provedor de IA.
+**Contrato:** YAML entra; modelo de currículo e diagnósticos saem. O módulo não
+sabe sobre UI, Markdown, PDF ou provedor de IA.
 
 **Decisões tecnológicas**
 
-- Parser Markdown maduro que preserve conteúdo e posições para diagnósticos/diff.
-- Schema mínimo para front matter, sem criar uma linguagem proprietária no v1.
-- Estratégia de diff textual/estrutural para propostas de tailoring.
+- `ruamel.yaml` para preservar o formato do arquivo e Pydantic para schemas
+  estritos e versionados.
+- Estratégia de diff estrutural para propostas de tailoring.
+- Importadores separados para converter Markdown, DOCX ou PDF existentes em
+  propostas de `career.yml`, sempre sujeitas à revisão humana.
 
 **Depende de:** Fundação.
 
@@ -91,7 +95,7 @@ funcionalidade consumidora recebe IDs de evidência, não fatos implícitos em p
 
 **Decisões tecnológicas**
 
-- YAML/Markdown para conteúdo editável; SQLite FTS5 para índice lexical, se
+- YAML para conteúdo editável; SQLite FTS5 para índice lexical, se
   necessário após a primeira versão de busca.
 - Não usar embeddings inicialmente.
 - Modelagem explícita de dados sensíveis e campos permitidos para cada uso.
@@ -100,29 +104,35 @@ funcionalidade consumidora recebe IDs de evidência, não fatos implícitos em p
 
 ## 4. Estilos e renderização
 
-**Responsabilidade:** projetar um currículo em HTML e exportá-lo, inicialmente em
-PDF, sem modificar o conteúdo de origem.
+**Responsabilidade:** projetar o modelo de currículo estruturado em Markdown, HTML,
+PDF, DOCX ou DOC, sem modificar o YAML de origem.
 
 **Entregas independentes**
 
 - Contrato de pacote de estilo: `style.yml`, template HTML, CSS de impressão e
   preview.
 - 2–3 estilos ATS-safe de uma coluna.
-- Preview HTML e exportação PDF determinística.
+- Geração de Markdown e preview HTML.
+- Exportação PDF determinística.
+- Exportação DOCX por renderer próprio e conversão para DOC quando o formato
+  legado for necessário.
 - Diagnósticos de falha de template e de paginação.
 
-**Contrato:** recebe o modelo de currículo e um estilo; produz HTML/PDF e metadados
-do artefato. DOCX será outro renderer, não uma conversão de PDF.
+**Contrato:** recebe o modelo de currículo e um estilo; produz Markdown, HTML, PDF,
+DOCX ou DOC e metadados do artefato. DOCX será outro renderer, não uma conversão
+de PDF; DOC é um formato legado e não deve orientar o modelo interno.
 
 **Decisões tecnológicas**
 
 - Motor de templates HTML compatível com a linguagem escolhida para o núcleo.
 - Renderizador de navegador headless para PDF, escolhido por fidelidade de impressão,
   suporte local e manutenção.
+- Biblioteca/renderer de documentos para DOCX e estratégia de conversão local para
+  DOC, avaliadas por fidelidade, portabilidade e preservação de conteúdo.
 - Testes de snapshot/estrutura para HTML e testes de regressão visual quando houver
   UI.
 
-**Depende de:** Fundação, Currículo Markdown.
+**Depende de:** Fundação, Career YAML.
 
 ## 5. Vagas e normalização
 
@@ -195,7 +205,7 @@ fatos e mantendo o mestre inalterado até aceite explícito.
   compatíveis e endpoint local.
 - Validador posterior à IA que rejeite `evidence_ids` inexistentes.
 
-**Depende de:** Currículo Markdown, Career Library, Match, Renderização para export.
+**Depende de:** Career YAML, Career Library, Match, Renderização para export.
 
 ## 8. Interfaces: CLI, Studio e MCP
 
@@ -203,11 +213,12 @@ fatos e mantendo o mestre inalterado até aceite explícito.
 
 **Entregas independentes**
 
-- CLI como primeira interface de referência: inicializar, validar, renderizar,
-  importar vaga, comparar e salvar variante.
+- CLI como primeira interface de referência: inicializar, validar, importar,
+  editar campos estruturados, renderizar, importar vaga, comparar e salvar variante.
 - API interna de casos de uso e erros estruturados.
 - MCP de leitura e proposta; ferramentas de escrita estreitas.
-- Studio com editor Markdown, preview, diff e workspace de vagas.
+- Um futuro Studio pode oferecer builder de campos estruturados, preview, diff e
+  workspace de vagas; ele não depende de um editor Markdown.
 
 **Contrato:** interfaces adaptam entradas/saídas e não contêm regra de negócio. MCP
 de proposta não altera o projeto; ferramentas de escrita são distintas.
@@ -218,7 +229,7 @@ de proposta não altera o projeto; ferramentas de escrita são distintas.
 - Desktop: avaliar **Tauri + frontend web + host Rust** após o núcleo/CLI estarem
   funcionais; uma aplicação web local é alternativa válida para acelerar feedback.
 - Protocolo MCP conforme SDK oficial da linguagem escolhida.
-- A UI precisa de preview, editor e diff confiáveis antes de investir em comandos
+- A UI precisa de preview, builder estruturado e diff confiáveis antes de investir em comandos
   de IA ou telas secundárias.
 
 **Depende de:** todos os casos de uso que expõe.
@@ -254,7 +265,7 @@ confirmação de uma revisão aprovada pelo usuário.
 | Marco | Módulos | Resultado verificável |
 | --- | --- | --- |
 | Fundação | 1 | Projeto local válido e testável |
-| MVP 0 | 2, 4 e CLI de 8 | Currículo Markdown validado, preview e PDF |
+| MVP 0 | 2, 4 e CLI de 8 | Career YAML validado e exportação Markdown/PDF/DOCX/DOC |
 | MVP 1 | 3, 7 e IA de 8 | Evidências e propostas revisáveis, sem mudar fatos |
 | MVP 2 | 5, 6 e restante de 8 | Vaga, match explicável e variante por vaga |
 | MVP 3 | 9 | Preparação de candidatura com revisão antes de enviar |
@@ -267,7 +278,8 @@ confirmação de uma revisão aprovada pelo usuário.
 2. **Forma do primeiro Studio:** Tauri desde o início ou web local temporária.
 3. **Formato de schemas:** biblioteca de validação e política de compatibilidade
    para `seriemacv.yml`, perfil, evidências, vagas e relatórios.
-4. **Pipeline de PDF:** navegador headless e estratégia de empacotamento local.
+4. **Pipeline de exportação:** navegador headless para PDF, renderer próprio para
+   DOCX e estratégia local para conversão a DOC quando necessária.
 5. **Primeiro adaptador de IA:** manter a interface agnóstica e escolher um
    adaptador compatível com OpenAI, endpoint local ou ambos para desenvolvimento.
 

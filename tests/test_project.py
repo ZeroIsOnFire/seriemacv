@@ -1,7 +1,9 @@
 from __future__ import annotations
 
+import sqlite3
 import tempfile
 import unittest
+from contextlib import closing
 from pathlib import Path
 
 from seriemacv.project import (
@@ -24,6 +26,8 @@ class CreateProjectTests(unittest.TestCase):
 
             self.assertEqual(created, project_path)
             self.assertTrue((project_path / "seriemacv.yml").is_file())
+            self.assertTrue((project_path / "seriemacv.yml.example").is_file())
+            self.assertTrue((project_path / "career.yml.example").is_file())
             for relative_directory in PROJECT_DIRECTORIES:
                 self.assertTrue((project_path / relative_directory).is_dir())
             for relative_path in PROJECT_ARTIFACTS:
@@ -45,7 +49,6 @@ class ValidateProjectTests(unittest.TestCase):
             project_path = Path(temporary_directory) / "my-career"
             create_project(project_path, project_name="My Career")
             (project_path / "resume" / "variants").rmdir()
-            (project_path / "resume" / "master.md").unlink()
             (project_path / "resume").rmdir()
 
             errors = validate_project(project_path)
@@ -98,3 +101,47 @@ class OpenProjectTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temporary_directory:
             with self.assertRaises(InvalidProjectError):
                 open_project(Path(temporary_directory))
+
+    def test_opens_a_project_created_with_the_legacy_layout(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            project_path = Path(temporary_directory) / "legacy-career"
+            _create_legacy_project(project_path)
+
+            project = open_project(project_path)
+
+            self.assertEqual(project.path, project_path)
+            self.assertEqual(validate_project(project_path), [])
+
+
+def _create_legacy_project(project_path: Path) -> None:
+    directories = (
+        "resume/variants",
+        "jobs/sources",
+        "applications",
+        "knowledge",
+        "styles",
+        "exports",
+        ".seriemacv/cache",
+        ".seriemacv/browser",
+        ".seriemacv/index",
+    )
+    for relative_directory in directories:
+        (project_path / relative_directory).mkdir(parents=True, exist_ok=True)
+    artifacts = {
+        "profile.yml": "name: Legacy\nlocation: ''\nemail: ''\n",
+        "resume/master.md": "# Legacy\n",
+        "knowledge/achievements.yml": "[]\n",
+        "knowledge/skills.yml": "[]\n",
+        "knowledge/answers.md": "# Answers\n",
+        "knowledge/stories.md": "# Stories\n",
+    }
+    for relative_path, content in artifacts.items():
+        (project_path / relative_path).write_text(content, encoding="utf-8")
+    (project_path / "seriemacv.yml").write_text(
+        "schema_version: 1\nproject_name: Legacy Career\n", encoding="utf-8"
+    )
+    database_path = project_path / ".seriemacv/index/seriemacv.db"
+    with closing(sqlite3.connect(database_path)) as connection:
+        with connection:
+            connection.execute("CREATE TABLE schema_migrations (version INTEGER PRIMARY KEY)")
+            connection.execute("INSERT INTO schema_migrations (version) VALUES (1)")

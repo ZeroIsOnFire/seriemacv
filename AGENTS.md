@@ -2,18 +2,27 @@
 
 ## Propósito do projeto
 
-seriemaCV é uma suíte local-first para gestão de carreira. Ela mantém um currículo Markdown como fonte de verdade e o usa para criar variantes, analisar vagas, gerar relatórios de compatibilidade explicáveis e preparar candidaturas.
+seriemaCV é uma suíte local-first para gestão de carreira. Ela mantém os dados
+canônicos de carreira em YAML e os usa para criar representações Markdown, DOCX e
+PDF, analisar vagas, gerar relatórios de compatibilidade explicáveis e preparar
+candidaturas.
 
 O produto deve funcionar sem IA. Quando usada, a IA é uma integração opcional e agnóstica de provedor — nunca dona dos dados ou do fluxo de trabalho do usuário.
 
 ## Princípios inegociáveis
 
-- A carreira do usuário é local, portátil e inspecionável. Arquivos Markdown/YAML pertencem ao usuário; SQLite serve para índices, estado normalizado e cache.
-- O currículo mestre é a fonte canônica. Templates e exports são projeções dele; uma variante nunca deve alterar o mestre sem uma edição explícita do usuário.
+- A carreira do usuário é local, portátil e inspecionável. `career.yml` é a
+  fonte canônica dos dados de carreira; SQLite serve para índices, estado
+  normalizado e cache.
+- Markdown, DOCX e PDF são artefatos gerados a partir do YAML. Um importador ou
+  uma proposta de IA pode sugerir alterações no YAML, mas nada altera a fonte
+  canônica sem uma ação explícita do usuário.
 - Nunca invente experiência profissional, competências, cargos, datas, empregadores, métricas, credenciais ou declarações legais. Sugestões devem usar evidências verificadas e distinguir claramente fatos de informações pendentes.
 - Todo match deve ser explicável: cada requisito da vaga precisa exibir sua classificação e a evidência correspondente, inclusive quando não houver prova.
 - Ações externas (enviar candidatura, submeter formulários, enviar mensagens ou alterar perfis) exigem aprovação humana explícita por padrão.
-- Preserve uma progressão útil: editor manual → assistência por IA → agentes → automação de navegador. Recursos avançados não podem ser pré-requisitos.
+- Preserve uma progressão útil: builder estruturado manual → assistência por IA
+  → agentes → automação de navegador. Recursos avançados não podem ser
+  pré-requisitos.
 
 ## Arquitetura e limites
 
@@ -35,14 +44,18 @@ O produto deve funcionar sem IA. Quando usada, a IA é uma integração opcional
 ## Desenvolvimento e qualidade
 
 - Antes de ler arquivos grandes, busque trechos relevantes com `rg`; evite artefatos gerados, logs e dumps desnecessários.
-- O núcleo e a CLI são implementados em Python. No PowerShell, o comando oficial de testes é `$env:PYTHONPATH = 'src'; python -m unittest discover -s tests -v`; quando o Windows não resolver `python`, use uma instalação Python 3.11+ ou o launcher `py -3` configurado.
+- O núcleo e a CLI são implementados em Python. No PowerShell, o comando oficial de testes é `$env:PYTHONPATH = 'src'; python -m unittest discover -s tests -v`; quando o Windows não resolver `python`, use uma instalação Python 3.11+ ou o launcher `py -3` configurado. O lint oficial é `python -m ruff check src tests` após instalar `.[dev]`.
 - Arquivos YAML são carregados com `ruamel.yaml` em modo round-trip e validados por modelos Pydantic estritos. Nunca use loaders inseguros nem aceite campos desconhecidos em schemas centrais sem uma decisão explícita de compatibilidade.
+- `seriemacv validate` verifica a estrutura do projeto; `seriemacv career validate` verifica conteúdo, referências e completude de `career.yml`, permitindo que o scaffold inicial seja preenchido incrementalmente.
+- Projetos no layout anterior permanecem válidos em modo de compatibilidade; qualquer conversão para `career.yml` deve ser explícita e não pode apagar os artefatos canônicos legados.
 - Feche explicitamente toda conexão SQLite, inclusive em leituras: o gerenciador de contexto da conexão confirma ou desfaz transações, mas não garante seu fechamento no Windows.
 - Preserve formatos públicos e contratos estáveis. Erros previsíveis devem ser estruturados e validados nas bordas da aplicação.
 - Para mudança de comportamento, escreva ou atualize primeiro o teste que cobre a regra ou regressão. Testes não devem exigir rede, modelos remotos, GPU, segredos ou dados reais de carreira.
 - Execute validações focadas durante a alteração e uma validação proporcional ao risco antes de concluir. Não informe sucesso se um comando falhou, expirou ou foi ignorado; registre a limitação.
 - Não adicione dependências, serviços externos ou automações de plataforma sem autorização explícita.
-- O primeiro vertical slice prioriza: currículo mestre + evidências + vaga → match explicável → proposta/diff de tailoring → variante Markdown → PDF. Não antecipe autoapply, scrapers frágeis ou infraestrutura complexa.
+- O primeiro vertical slice prioriza: `career.yml` + evidências + vaga → match
+  explicável → proposta/diff de tailoring → variantes geradas (Markdown, DOCX e
+  PDF). Não antecipe autoapply, scrapers frágeis ou infraestrutura complexa.
 
 ## Git e entrega
 
@@ -54,3 +67,5 @@ O produto deve funcionar sem IA. Quando usada, a IA é uma integração opcional
 
 - Todo aprendizado útil e durável descoberto durante o desenvolvimento — comandos oficiais, decisões arquiteturais, convenções, limitações, armadilhas ou práticas de validação — deve ser adicionado a este `AGENTS.md` de forma concisa, no tópico apropriado. Evite registrar detalhes temporários ou dados sensíveis.
 - A decomposição atual de funcionalidades, dependências e decisões técnicas está em `docs/funcionalidades.md`; atualize-a quando uma decisão de arquitetura mudar.
+- O progresso de implementação é registrado em `docs/checklist.md`. Marque um item como concluído somente após implementação e validação proporcional ao risco.
+- Referências externas de currículo ficam em `docs/referencias/`, com origem e condições de uso documentadas. Elas servem para análise; não reutilize conteúdo pessoal nem as apresente como estilos próprios do produto.

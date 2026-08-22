@@ -3,6 +3,7 @@ from __future__ import annotations
 import os
 import sqlite3
 import tempfile
+from collections.abc import Collection
 from contextlib import closing
 from dataclasses import dataclass
 from pathlib import Path
@@ -19,6 +20,18 @@ PROJECT_DIRECTORIES = (
     "jobs",
     "jobs/sources",
     "applications",
+    "styles",
+    "exports",
+    ".seriemacv/cache",
+    ".seriemacv/browser",
+    ".seriemacv/index",
+)
+LEGACY_PROJECT_DIRECTORIES = (
+    "resume",
+    "resume/variants",
+    "jobs",
+    "jobs/sources",
+    "applications",
     "knowledge",
     "styles",
     "exports",
@@ -27,27 +40,88 @@ PROJECT_DIRECTORIES = (
     ".seriemacv/index",
 )
 PROJECT_ARTIFACTS = {
-    "profile.yml": (
-        "# Reusable, deterministic application data\n"
+    "career.yml": (
+        "# Canonical, user-owned career data\n"
         "schema_version: 1\n"
-        'name: ""\n'
-        'location: ""\n'
-        'email: ""\n'
+        "profile:\n"
+        '  name: ""\n'
+        '  title: ""\n'
+        '  location: ""\n'
+        '  email: ""\n'
+        "experience: []\n"
+        "education: []\n"
+        "skills: []\n"
+        "evidence: []\n"
+        "answers: []\n"
+        "stories: []\n"
     ),
-    "resume/master.md": (
-        "---\n"
-        'name: ""\n'
-        'title: ""\n'
-        'location: ""\n'
-        "---\n\n"
-        "# Your Name\n\n"
-        "## Experience\n\n"
-        "## Skills\n"
+}
+LEGACY_PROJECT_ARTIFACTS = (
+    "profile.yml",
+    "resume/master.md",
+    "knowledge/achievements.yml",
+    "knowledge/skills.yml",
+    "knowledge/answers.md",
+    "knowledge/stories.md",
+)
+PROJECT_EXAMPLES = {
+    "career.yml.example": (
+        "# Fictitious example. Replace it with facts you have verified.\n"
+        "schema_version: 1\n"
+        "profile:\n"
+        "  name: Avery Example\n"
+        "  title: Software Engineer\n"
+        "  location: Example City, Brazil\n"
+        "  email: avery@example.invalid\n"
+        "  phone: '+55 11 5555-0100'\n"
+        "  links:\n"
+        "    github: https://github.com/avery-example\n"
+        "  languages: [Portuguese, English]\n"
+        "  work_preference: Remote\n"
+        "  work_authorization: Authorized to work in Brazil\n"
+        "  notice_period: 30 days\n"
+        "summary: Build reliable software with collaborative teams.\n"
+        "experience:\n"
+        "  - id: example-platform\n"
+        "    company: Example Systems\n"
+        "    title: Software Engineer\n"
+        "    start_date: 2024-01\n"
+        "    highlights:\n"
+        "      - Delivered a documented internal service.\n"
+        "education:\n"
+        "  - id: example-degree\n"
+        "    institution: Example University\n"
+        "    degree: Bachelor of Technology\n"
+        "    start_date: 2018-01\n"
+        "    end_date: 2021-12\n"
+        "skills:\n"
+        "  - id: python\n"
+        "    name: Python\n"
+        "    category: Programming language\n"
+        "evidence:\n"
+        "  - id: example-service\n"
+        "    experience_id: example-platform\n"
+        "    statement: Delivered a documented internal service.\n"
+        "    tags: [python, documentation]\n"
+        "    details: [Reviewed service requirements with the team.]\n"
+        "    verified: true\n"
+        "answers:\n"
+        "  - id: work-authorization\n"
+        "    prompt: Are you authorized to work in Brazil?\n"
+        "    answer: Yes.\n"
+        "stories:\n"
+        "  - id: example-delivery\n"
+        "    title: Service delivery\n"
+        "    situation: A team needed a documented internal service.\n"
+        "    action: Collaborated on delivery and documentation.\n"
+        "    result: Service released for internal use.\n"
+        "    evidence_ids: [example-service]\n"
     ),
-    "knowledge/achievements.yml": "[]\n",
-    "knowledge/skills.yml": "[]\n",
-    "knowledge/answers.md": "# Application answers\n",
-    "knowledge/stories.md": "# Interview stories\n",
+    "seriemacv.yml.example": (
+        "# Example project configuration. This file contains no secrets.\n"
+        "schema_version: 1\n"
+        'project_name: "Example Career"\n'
+    ),
 }
 DATABASE_RELATIVE_PATH = Path(".seriemacv/index/seriemacv.db")
 
@@ -100,6 +174,8 @@ def create_project(path: Path, *, project_name: str) -> Path:
         (project_path / relative_directory).mkdir(parents=True, exist_ok=True)
     for relative_path, content in PROJECT_ARTIFACTS.items():
         _atomic_write(project_path / relative_path, content)
+    for relative_path, content in PROJECT_EXAMPLES.items():
+        _atomic_write(project_path / relative_path, content)
 
     config = (
         "# seriemaCV project configuration\n"
@@ -139,10 +215,11 @@ def validate_project(path: Path) -> list[str]:
     else:
         errors.extend(_validate_config(config_path))
 
-    for relative_directory in PROJECT_DIRECTORIES:
+    directories, artifacts = _project_contract(project_path)
+    for relative_directory in directories:
         if not (project_path / relative_directory).is_dir():
             errors.append(f"Required directory is missing: {relative_directory}")
-    for relative_path in PROJECT_ARTIFACTS:
+    for relative_path in artifacts:
         if not (project_path / relative_path).is_file():
             errors.append(f"Required file is missing: {relative_path}")
 
@@ -153,6 +230,15 @@ def validate_project(path: Path) -> list[str]:
         errors.append("Invalid local SQLite index")
 
     return errors
+
+
+def _project_contract(project_path: Path) -> tuple[tuple[str, ...], Collection[str]]:
+    """Choose the compatible project layout without mutating user-owned files."""
+    if (project_path / "career.yml").is_file() or not (
+        project_path / "profile.yml"
+    ).is_file():
+        return PROJECT_DIRECTORIES, PROJECT_ARTIFACTS
+    return LEGACY_PROJECT_DIRECTORIES, LEGACY_PROJECT_ARTIFACTS
 
 
 def _validate_config(config_path: Path) -> list[str]:
