@@ -124,10 +124,11 @@ PDF, DOCX ou DOC, sem modificar o YAML de origem.
 DOCX ou DOC e metadados do artefato. DOCX será outro renderer, não uma conversão
 de PDF; DOC é um formato legado e não deve orientar o modelo interno.
 
-O primeiro renderer não usa pacote de estilo: `resume render --format markdown`
-exige um `career.yml` completo e escreve no caminho fixo `exports/resume.md`. A
-configuração `resume_language` de `seriemacv.yml`, definida no `init`, seleciona
-apenas os títulos fixos; o sistema não traduz conteúdo do usuário.
+O primeiro renderer distribui internamente o estilo único `clean`: um layout A4,
+de uma coluna e ATS-safe. `resume render --format markdown|html|pdf` exige um
+`career.yml` completo e escreve em caminhos fixos dentro de `exports/`. A configuração
+`resume_language` de `seriemacv.yml`, definida no `init`, seleciona apenas os títulos
+fixos; o sistema não traduz conteúdo do usuário.
 
 **Decisões tecnológicas**
 
@@ -146,9 +147,17 @@ apenas os títulos fixos; o sistema não traduz conteúdo do usuário.
 **Responsabilidade:** importar uma vaga a partir de texto, URL, captura de navegador
 ou JSON e convertê-la no modelo interno `Job`.
 
+**Primeiro corte implementado:** cada vaga é um `jobs/<id>.yml` estrito e
+versionado, com metadados, requisitos explícitos e a origem bruta preservada no
+mesmo documento por escrita atômica. A CLI aceita cadastro por flags e importação
+local de propostas JSON ou YAML estruturadas, inclusive quando criadas por IA
+externa. Não há inferência de requisitos, acesso a URL, scraping ou IA no núcleo.
+`template show <projeto> career|job` expõe exemplos fictícios para ferramentas
+externas consumirem os contratos atuais sem acesso direto aos arquivos do projeto.
+
 **Entregas independentes**
 
-- Inclusão de vaga por texto/Markdown e JSON estruturado no primeiro corte.
+- Inclusão de vaga por propostas JSON ou YAML estruturadas no primeiro corte.
 - Armazenamento da origem e texto original.
 - Extração/edição de título, senioridade, requisitos, localidade, idioma, modelo de
   trabalho e remuneração quando disponível.
@@ -161,7 +170,8 @@ explícitos. Um conector não altera o currículo ou cria candidatura.
 
 - Adaptadores por fonte; nenhuma regra de domínio em scraper.
 - Cliente HTTP e extração de página somente quando forem autorizados e testáveis.
-- Parser determinístico primeiro; IA opcional como proposta revisável de extração.
+- Validador determinístico de propostas estruturadas; IA opcional como produtora de
+  proposta revisável de extração.
 
 **Depende de:** Fundação.
 

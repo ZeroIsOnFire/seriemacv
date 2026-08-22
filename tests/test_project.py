@@ -6,6 +6,7 @@ import unittest
 from contextlib import closing
 from pathlib import Path
 
+from seriemacv.jobs import load_yaml_payload
 from seriemacv.project import (
     PROJECT_ARTIFACTS,
     PROJECT_DIRECTORIES,
@@ -28,6 +29,12 @@ class CreateProjectTests(unittest.TestCase):
             self.assertTrue((project_path / "seriemacv.yml").is_file())
             self.assertTrue((project_path / "seriemacv.yml.example").is_file())
             self.assertTrue((project_path / "career.yml.example").is_file())
+            self.assertTrue((project_path / "job.yml.example").is_file())
+            job_template = (project_path / "job.yml.example").read_text(encoding="utf-8")
+            job = load_yaml_payload(job_template)
+            self.assertEqual(job.id, "example-platform-engineer")
+            self.assertTrue(job.description)
+            self.assertIn("120,000", job.salary_range)
             for relative_directory in PROJECT_DIRECTORIES:
                 self.assertTrue((project_path / relative_directory).is_dir())
             for relative_path in PROJECT_ARTIFACTS:

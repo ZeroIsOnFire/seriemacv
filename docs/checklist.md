@@ -27,16 +27,16 @@ registrada.
 - [ ] Criar e validar variantes estruturadas em `resume/variants/`.
 - [ ] Importar currículo Markdown, DOCX ou PDF como proposta revisável de
   `career.yml`.
-- [ ] Definir o contrato de pacote de estilo (`style.yml`, HTML e CSS).
-- [ ] Implementar primeiro estilo ATS-safe de uma coluna.
+- [x] Definir o contrato de pacote de estilo (`style.yml`, HTML e CSS).
+- [x] Implementar primeiro estilo ATS-safe de uma coluna.
 - [x] Gerar currículo Markdown a partir do YAML.
-- [ ] Renderizar currículo em HTML.
-- [ ] Exportar PDF por renderizador local de navegador.
+- [x] Renderizar currículo em HTML.
+- [x] Exportar PDF por renderizador local de navegador.
 - [ ] Exportar DOCX por renderer próprio, sem converter do PDF.
 - [ ] Exportar DOC para compatibilidade legada, a partir de uma estratégia local
   definida para o formato.
 - [x] Adicionar CLI para editar dados estruturados, validar e renderizar currículo.
-- [ ] Cobrir YAML, importação, validação e renderização com testes e fixtures.
+- [x] Cobrir YAML, validação e renderização com testes e fixtures.
 
 ## MVP 1 — Career Library e assistência por IA
 
@@ -54,17 +54,19 @@ registrada.
 
 ## MVP 2 — Vagas, Match e interfaces
 
-- [ ] Definir schemas de vaga, requisito e relatório de match.
-- [ ] Importar vaga de texto/Markdown.
-- [ ] Importar vaga de JSON estruturado.
-- [ ] Preservar conteúdo e origem da vaga importada.
+- [x] Definir schemas de vaga e requisito.
+- [ ] Definir schema de relatório de match.
+- [x] Importar vaga de JSON ou YAML estruturado.
+- [x] Preservar conteúdo e origem da vaga importada.
+- [x] Expor templates de carreira e vaga para ferramentas externas.
 - [ ] Extrair requisitos de forma determinística ou como proposta revisável.
 - [ ] Recuperar evidências relevantes para cada requisito.
 - [ ] Classificar requisitos com os estados oficiais de match.
 - [ ] Calcular score a partir das classificações e pesos configuráveis.
 - [ ] Gerar relatório explicável com evidências, lacunas e conflitos.
 - [ ] Integrar tailoring de currículo a uma vaga.
-- [ ] Expandir a CLI para vagas, match e variantes.
+- [x] Expandir a CLI para vagas.
+- [ ] Expandir a CLI para match e variantes.
 - [ ] Expor MCP somente de leitura e proposta inicialmente.
 - [ ] Implementar Studio após os casos de uso do núcleo estarem estáveis.
 - [ ] Cobrir fluxos de sucesso, dados ausentes, conflito e `NO_EVIDENCE`.

@@ -82,6 +82,12 @@ provider-agnostic integration and never owns the user's data or workflow.
 - Canonical `skills.level` values are English codes. `i18n.py` localizes fixed labels,
   months, and levels; `core` is an explicit editorial priority, while categories keep
   the complete skills list readable.
+- Job documents live in `jobs/<id>.yml`. Import only strict structured JSON or YAML
+  proposals, preserve their raw local source in the document, and never infer
+  requirements or their `required`/`preferred` priority. Import may lowercase IDs;
+  all other kebab-case violations remain errors.
+- `template show <project> career|job` is the read-only interface for external tools
+  to retrieve the current fictitious career and job contracts.
 - Explicitly close every SQLite connection, including reads: a connection context
   manager commits or rolls back transactions but does not guarantee closing on Windows.
 - Preserve public formats and stable contracts. Validate predictable errors at system

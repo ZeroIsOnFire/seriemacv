@@ -19,6 +19,49 @@ Cada projeto inclui `career.yml` vazio e exemplos fictícios em
 `career.yml.example` e `seriemacv.yml.example`. `career.yml` é sempre a fonte
 canônica.
 
+## Vagas locais
+
+```powershell
+seriemacv jobs add .\minha-carreira --id engenheiro-plataforma --title "Engenheiro de Plataforma" --description "Construa sistemas confiáveis." --requirement python="Experiência profissional com Python"
+seriemacv jobs import .\minha-carreira .\vaga.yml
+seriemacv jobs validate .\minha-carreira
+seriemacv jobs list .\minha-carreira
+```
+
+As vagas ficam em `jobs/<id>.yml` por escrita atômica. A importação aceita somente
+propostas estruturadas JSON ou YAML, que podem ser produzidas por IA ou outra
+ferramenta local; a proposta original é preservada literalmente como metadado de origem.
+Letras maiúsculas nos IDs da vaga e dos requisitos são normalizadas para minúsculas
+na importação; outros caracteres fora de kebab-case são rejeitados.
+
+```yaml
+schema_version: 1
+id: engenheiro-plataforma
+title: Engenheiro de Plataforma
+description: Construir e operar serviços confiáveis de plataforma em nuvem.
+requirements:
+  - id: python
+    statement: Experiência profissional com Python
+    priority: required
+salary_range: USD 120,000-150,000 por ano
+```
+
+Os mesmos campos também podem ser informados em JSON.
+
+## Templates para ferramentas de IA
+
+Uma IA externa ou script local pode consultar os contratos atuais sem ler arquivos
+do projeto diretamente:
+
+```powershell
+seriemacv template show .\minha-carreira career
+seriemacv template show .\minha-carreira job
+```
+
+O comando imprime os exemplos YAML fictícios criados pelo `init`. O template de vaga
+é o formato de entrada de `seriemacv jobs import`; o importador adiciona os metadados
+`source` ao documento canônico armazenado.
+
 ## Gerar currículo
 
 ```powershell

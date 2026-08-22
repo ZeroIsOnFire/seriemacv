@@ -42,3 +42,19 @@ class CliTests(unittest.TestCase):
 
             self.assertEqual(result, 1)
             self.assertIn("seriemacv.yml", stderr.getvalue())
+
+    def test_template_show_prints_career_and_job_examples(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            project_path = Path(temporary_directory) / "my-career"
+            with redirect_stdout(StringIO()):
+                main(["init", str(project_path), "--name", "My Career"])
+
+            with redirect_stdout(StringIO()) as output:
+                result = main(["template", "show", str(project_path), "career"])
+            self.assertEqual(result, 0)
+            self.assertIn("Avery Example", output.getvalue())
+
+            with redirect_stdout(StringIO()) as output:
+                result = main(["template", "show", str(project_path), "job"])
+            self.assertEqual(result, 0)
+            self.assertIn("example-platform-engineer", output.getvalue())

@@ -15,10 +15,26 @@ from seriemacv.career import (
     set_profile,
     validate_career,
 )
+from seriemacv.jobs import (
+    JOB_DIRECTORY,
+    JobImportPayload,
+    JobSource,
+    create_job,
+    dump_job,
+    job_path,
+    load_job,
+    load_jobs,
+    load_json_payload,
+    load_yaml_payload,
+    source_format_for_path,
+    validate_job,
+    validate_jobs,
+)
 from seriemacv.project import (
     ProjectAlreadyExistsError,
     create_project,
     load_project_configuration,
+    load_template,
     validate_project,
 )
 from seriemacv.renderer import ResumeRenderError, write_resume
@@ -85,6 +101,36 @@ def build_parser() -> argparse.ArgumentParser:
     )
     render_parser.add_argument("path", type=Path)
     render_parser.add_argument("--format", choices=("markdown", "html", "pdf"), required=True)
+
+    jobs_parser = subparsers.add_parser("jobs", help="Manage local job documents")
+    jobs_subparsers = jobs_parser.add_subparsers(dest="jobs_command", required=True)
+    _add_job_parser(jobs_subparsers)
+    _add_job_import_parser(jobs_subparsers)
+
+    jobs_validate = jobs_subparsers.add_parser(
+        "validate", help="Validate one or all job documents"
+    )
+    jobs_validate.add_argument("path", type=Path)
+    jobs_validate.add_argument("id", nargs="?")
+
+    jobs_list = jobs_subparsers.add_parser("list", help="List validated job documents")
+    jobs_list.add_argument("path", type=Path)
+
+    jobs_show = jobs_subparsers.add_parser("show", help="Print a validated job document")
+    jobs_show.add_argument("path", type=Path)
+    jobs_show.add_argument("id")
+
+    template_parser = subparsers.add_parser(
+        "template", help="Read built-in structured-data templates"
+    )
+    template_subparsers = template_parser.add_subparsers(
+        dest="template_command", required=True
+    )
+    template_show = template_subparsers.add_parser(
+        "show", help="Print a career or job template for an external tool"
+    )
+    template_show.add_argument("path", type=Path)
+    template_show.add_argument("name", choices=("career", "job"))
     return parser
 
 
@@ -136,6 +182,35 @@ def _add_evidence_parser(subparsers: argparse._SubParsersAction[argparse.Argumen
     parser.add_argument("--verified", action="store_true")
 
 
+def _add_job_parser(subparsers: argparse._SubParsersAction[argparse.ArgumentParser]) -> None:
+    parser = subparsers.add_parser("add", help="Add a job from explicit fields")
+    parser.add_argument("path", type=Path)
+    _add_job_fields(parser, required_identity=True)
+    parser.add_argument("--description", required=True)
+
+
+def _add_job_import_parser(subparsers: argparse._SubParsersAction[argparse.ArgumentParser]) -> None:
+    parser = subparsers.add_parser("import", help="Import a structured local JSON or YAML job")
+    parser.add_argument("path", type=Path)
+    parser.add_argument("source", type=Path)
+
+
+def _add_job_fields(parser: argparse.ArgumentParser, *, required_identity: bool) -> None:
+    parser.add_argument("--id", required=required_identity)
+    parser.add_argument("--title", required=required_identity)
+    parser.add_argument("--company", default="")
+    parser.add_argument("--location", default="")
+    parser.add_argument("--work-model", default="")
+    parser.add_argument("--employment-type", default="")
+    parser.add_argument("--seniority", default="")
+    parser.add_argument("--language", default="")
+    parser.add_argument("--salary-range", default="")
+    parser.add_argument("--requirement", action="append", default=[], metavar="ID=TEXT")
+    parser.add_argument(
+        "--preferred-requirement", action="append", default=[], metavar="ID=TEXT"
+    )
+
+
 def main(arguments: list[str] | None = None) -> int:
     parser = build_parser()
     args = parser.parse_args(arguments)
@@ -155,6 +230,17 @@ def main(arguments: list[str] | None = None) -> int:
 
     if args.command == "resume":
         return _run_resume_command(args)
+
+    if args.command == "jobs":
+        return _run_jobs_command(args)
+
+    if args.command == "template":
+        try:
+            print(load_template(args.path, args.name), end="")
+        except OSError as error:
+            print(f"{args.path}: {error}", file=sys.stderr)
+            return 1
+        return 0
 
     errors = validate_project(args.path)
     if errors:
@@ -253,6 +339,91 @@ def _run_resume_command(args: argparse.Namespace) -> int:
         return 1
     print(f"Rendered Markdown resume: {output_path}")
     return 0
+
+
+def _run_jobs_command(args: argparse.Namespace) -> int:
+    project_path = args.path.expanduser().resolve()
+    try:
+        if args.jobs_command == "validate":
+            if args.id:
+                document_path = job_path(project_path, args.id)
+                diagnostics = [(document_path, item) for item in validate_job(document_path)]
+            else:
+                diagnostics = validate_jobs(project_path)
+            if diagnostics:
+                for invalid_job_path, diagnostic in diagnostics:
+                    print(diagnostic.format(invalid_job_path), file=sys.stderr)
+                return 1
+            print(f"Valid job document(s): {project_path / JOB_DIRECTORY}")
+            return 0
+
+        if args.jobs_command == "list":
+            print(dump_job(load_jobs(project_path)), end="")
+            return 0
+
+        if args.jobs_command == "show":
+            document_path = job_path(project_path, args.id)
+            diagnostics = validate_job(document_path)
+            if diagnostics:
+                for diagnostic in diagnostics:
+                    print(diagnostic.format(document_path), file=sys.stderr)
+                return 1
+            print(dump_job(load_job(document_path)), end="")
+            return 0
+
+        if args.jobs_command == "add":
+            payload = _job_payload_from_args(args)
+            source = JobSource(format="manual", content=args.description)
+        elif args.jobs_command == "import":
+            source_path = args.source.expanduser().resolve()
+            source_content = source_path.read_text(encoding="utf-8")
+            source_format = source_format_for_path(source_path)
+            if source_format == "json":
+                payload = load_json_payload(source_content)
+            else:
+                payload = load_yaml_payload(source_content)
+            source = JobSource(
+                format=source_format, filename=source_path.name, content=source_content
+            )
+        else:  # pragma: no cover - argparse guards this branch
+            raise ValueError(f"Unknown jobs command: {args.jobs_command}")
+
+        saved_job_path = create_job(project_path, payload, source)
+    except (OSError, ValueError, ValidationError, YAMLError) as error:
+        print(f"{project_path / JOB_DIRECTORY}: {error}", file=sys.stderr)
+        return 1
+
+    print(f"Saved job document: {saved_job_path}")
+    return 0
+
+
+def _job_payload_from_args(args: argparse.Namespace) -> JobImportPayload:
+    requirements = _requirements_from_args(args.requirement, "required")
+    requirements.extend(_requirements_from_args(args.preferred_requirement, "preferred"))
+    return JobImportPayload(
+        schema_version=1,
+        id=args.id,
+        title=args.title,
+        description=args.description,
+        company=args.company,
+        location=args.location,
+        work_model=args.work_model,
+        employment_type=args.employment_type,
+        seniority=args.seniority,
+        language=args.language,
+        salary_range=args.salary_range,
+        requirements=requirements,
+    )
+
+
+def _requirements_from_args(values: list[str], priority: str) -> list[dict[str, str]]:
+    requirements: list[dict[str, str]] = []
+    for value in values:
+        identifier, separator, statement = value.partition("=")
+        if not separator or not identifier or not statement:
+            raise ValueError("requirements must use ID=TEXT")
+        requirements.append({"id": identifier, "statement": statement, "priority": priority})
+    return requirements
 
 
 def _key_values(values: list[str], option: str) -> dict[str, str]:
