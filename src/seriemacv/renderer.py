@@ -4,11 +4,18 @@ from __future__ import annotations
 
 import os
 import tempfile
+from dataclasses import dataclass
 from html import escape
 from importlib.resources import files
+from io import BytesIO
 from pathlib import Path
 from typing import Literal, Protocol
 
+from docx import Document
+from docx.enum.style import WD_STYLE_TYPE
+from docx.oxml import OxmlElement
+from docx.oxml.ns import qn
+from docx.shared import Mm, Pt
 from pydantic import BaseModel, ConfigDict
 from ruamel.yaml import YAML
 
@@ -16,8 +23,13 @@ from seriemacv.career import CareerDocument, Education, Experience, Skill
 from seriemacv.i18n import Locale, translate
 
 ResumeLocale = Literal["pt-BR", "en"]
-ResumeFormat = Literal["markdown", "html", "pdf"]
-_FILENAMES = {"markdown": "resume.md", "html": "resume.html", "pdf": "resume.pdf"}
+ResumeFormat = Literal["markdown", "html", "pdf", "docx"]
+_FILENAMES = {
+    "markdown": "resume.md",
+    "html": "resume.html",
+    "pdf": "resume.pdf",
+    "docx": "resume.docx",
+}
 
 
 class ResumeRenderError(ValueError):
@@ -31,6 +43,16 @@ class StyleManifest(BaseModel):
     layout: Literal["single-column"]
     page_size: Literal["A4"]
     supported_sections: list[str]
+
+
+@dataclass(frozen=True)
+class ResumePresentation:
+    career: CareerDocument
+    labels: dict[str, str]
+    contacts: tuple[str, ...]
+    links: tuple[tuple[str, str], ...]
+    experience: list[Experience]
+    education: list[Education]
 
 
 class PdfRenderer(Protocol):
@@ -59,27 +81,22 @@ class PlaywrightPdfRenderer:
 
 
 def render_markdown(career: CareerDocument, locale: ResumeLocale) -> str:
-    labels = _labels(locale)
-    profile = career.profile
+    presentation = _presentation(career, locale)
+    labels = presentation.labels
+    profile = presentation.career.profile
     blocks = [f"# {profile.name}", profile.title]
-    contact = [x for x in (profile.location, profile.email, profile.phone) if x]
-    if contact:
-        blocks.append(" | ".join(contact))
-    links = {**profile.links}
-    if profile.linkedin:
-        links.setdefault("LinkedIn", profile.linkedin)
-    if profile.portfolio:
-        links.setdefault("Portfolio", profile.portfolio)
-    blocks.extend(f"{name}: {url}" for name, url in links.items())
+    if presentation.contacts:
+        blocks.append(" | ".join(presentation.contacts))
+    blocks.extend(f"{name}: {url}" for name, url in presentation.links)
     if career.summary:
         blocks.append(_md_section(labels["summary"], career.summary))
-    if career.experience:
+    if presentation.experience:
         blocks.append(
-            _md_records(labels["experience"], _ordered(career.experience), labels, True)
+            _md_records(labels["experience"], presentation.experience, labels, True)
         )
-    if career.education:
+    if presentation.education:
         blocks.append(
-            _md_records(labels["education"], _ordered(career.education), labels, False)
+            _md_records(labels["education"], presentation.education, labels, False)
         )
     if career.skills:
         blocks.append(
@@ -95,36 +112,30 @@ def render_markdown(career: CareerDocument, locale: ResumeLocale) -> str:
 
 
 def render_html(career: CareerDocument, locale: ResumeLocale) -> str:
-    labels = _labels(locale)
-    profile = career.profile
+    presentation = _presentation(career, locale)
+    labels = presentation.labels
+    profile = presentation.career.profile
     manifest, template, css = _assets()
-    contact = " · ".join(
-        escape(x) for x in (profile.location, profile.email, profile.phone) if x
-    )
-    profile_links = {**profile.links}
-    if profile.linkedin:
-        profile_links.setdefault("LinkedIn", profile.linkedin)
-    if profile.portfolio:
-        profile_links.setdefault("Portfolio", profile.portfolio)
+    contact = " | ".join(escape(item) for item in presentation.contacts)
     links = " ".join(
         f'<a href="{escape(url, quote=True)}">{escape(name)}</a>'
-        for name, url in profile_links.items()
+        for name, url in presentation.links
     )
     sections = []
     if career.summary:
         sections.append(
             _html_section(labels["summary"], f"<p>{escape(career.summary)}</p>")
         )
-    if career.experience:
+    if presentation.experience:
         sections.append(
             _html_records(
-                labels["experience"], _ordered(career.experience), labels, True
+                labels["experience"], presentation.experience, labels, True
             )
         )
-    if career.education:
+    if presentation.education:
         sections.append(
             _html_records(
-                labels["education"], _ordered(career.education), labels, False
+                labels["education"], presentation.education, labels, False
             )
         )
     if career.skills:
@@ -144,6 +155,69 @@ def render_html(career: CareerDocument, locale: ResumeLocale) -> str:
     )
 
 
+def render_docx(career: CareerDocument, locale: ResumeLocale) -> bytes:
+    presentation = _presentation(career, locale)
+    document = Document()
+    _configure_docx(document)
+    profile = presentation.career.profile
+
+    name = document.add_paragraph()
+    name.paragraph_format.space_after = Pt(2)
+    name_run = name.add_run(profile.name)
+    name_run.bold = True
+    name_run.font.size = Pt(22)
+
+    title = document.add_paragraph(profile.title)
+    title.paragraph_format.space_after = Pt(2)
+    if presentation.contacts:
+        document.add_paragraph(" | ".join(presentation.contacts))
+    for label, url in presentation.links:
+        document.add_paragraph(f"{label}: {url}")
+
+    if career.summary:
+        _docx_section(document, presentation.labels["summary"])
+        document.add_paragraph(career.summary)
+    if presentation.experience:
+        _docx_records(
+            document,
+            presentation.labels["experience"],
+            presentation.experience,
+            presentation.labels,
+            True,
+        )
+    if presentation.education:
+        _docx_records(
+            document,
+            presentation.labels["education"],
+            presentation.education,
+            presentation.labels,
+            False,
+        )
+    if career.skills:
+        _docx_section(document, presentation.labels["skills"])
+        for category, skills in _skill_groups(career.skills, presentation.labels).items():
+            paragraph = document.add_paragraph()
+            if category:
+                category_run = paragraph.add_run(f"{category}: ")
+                category_run.bold = True
+            for index, skill in enumerate(skills):
+                if index:
+                    paragraph.add_run(", ")
+                skill_run = paragraph.add_run(skill.name)
+                skill_run.bold = skill.core
+                if skill.level:
+                    paragraph.add_run(
+                        f" ({translate(_locale_for(presentation.labels), f'level.{skill.level}')})"
+                    )
+    if profile.languages:
+        _docx_section(document, presentation.labels["languages"])
+        document.add_paragraph(" | ".join(profile.languages))
+
+    stream = BytesIO()
+    document.save(stream)
+    return stream.getvalue()
+
+
 def write_resume(
     project_path: Path,
     career: CareerDocument,
@@ -158,10 +232,12 @@ def write_resume(
         content = render_markdown(career, locale).encode()
     elif output_format == "html":
         content = render_html(career, locale).encode()
-    else:
+    elif output_format == "pdf":
         content = (pdf_renderer or PlaywrightPdfRenderer()).render(
             render_html(career, locale)
         )
+    else:
+        content = render_docx(career, locale)
     _atomic_write(path, content)
     return path
 
@@ -170,6 +246,93 @@ def write_markdown_resume(
     project_path: Path, career: CareerDocument, locale: ResumeLocale
 ) -> Path:
     return write_resume(project_path, career, locale, "markdown")
+
+
+def _presentation(career: CareerDocument, locale: ResumeLocale) -> ResumePresentation:
+    profile = career.profile
+    links = {**profile.links}
+    if profile.linkedin:
+        links.setdefault("LinkedIn", profile.linkedin)
+    if profile.portfolio:
+        links.setdefault("Portfolio", profile.portfolio)
+    return ResumePresentation(
+        career=career,
+        labels=_labels(locale),
+        contacts=tuple(
+            item for item in (profile.location, profile.email, profile.phone) if item
+        ),
+        links=tuple(links.items()),
+        experience=list(_ordered(career.experience)),
+        education=list(_ordered(career.education)),
+    )
+
+
+def _configure_docx(document: Document) -> None:
+    section = document.sections[0]
+    section.page_width = Mm(210)
+    section.page_height = Mm(297)
+    section.top_margin = Mm(16)
+    section.bottom_margin = Mm(16)
+    section.left_margin = Mm(16)
+    section.right_margin = Mm(16)
+    normal = document.styles["Normal"]
+    normal.font.name = "Arial"
+    normal.font.size = Pt(10)
+    normal.paragraph_format.line_spacing = 1.35
+    normal.paragraph_format.space_after = Pt(0)
+    heading = document.styles.add_style("Resume Heading", WD_STYLE_TYPE.PARAGRAPH)
+    heading.font.name = "Arial"
+    heading.font.size = Pt(14)
+    heading.font.bold = True
+    heading.paragraph_format.space_before = Pt(18)
+    heading.paragraph_format.space_after = Pt(4)
+
+
+def _docx_section(document: Document, title: str) -> None:
+    paragraph = document.add_paragraph(title, style="Resume Heading")
+    borders = OxmlElement("w:pBdr")
+    bottom = OxmlElement("w:bottom")
+    bottom.set(qn("w:val"), "single")
+    bottom.set(qn("w:sz"), "4")
+    bottom.set(qn("w:space"), "1")
+    bottom.set(qn("w:color"), "777777")
+    borders.append(bottom)
+    paragraph._p.get_or_add_pPr().append(borders)
+
+
+def _docx_records(
+    document: Document,
+    title: str,
+    records: list[Experience] | list[Education],
+    labels: dict[str, str],
+    experience: bool,
+) -> None:
+    _docx_section(document, title)
+    for record in records:
+        heading = _record_heading(record, experience)
+        name = document.add_paragraph()
+        name_run = name.add_run(heading)
+        name_run.bold = True
+        name_run.font.size = Pt(11)
+        document.add_paragraph(_details(record, labels, experience))
+        for highlight in record.highlights:
+            _docx_plain_bullet(document, highlight)
+
+
+def _docx_plain_bullet(document: Document, value: str) -> None:
+    """Use visible text rather than Word list XML for straightforward ATS parsing."""
+    paragraph = document.add_paragraph(f"- {value}")
+    paragraph.paragraph_format.left_indent = Mm(4.5)
+    paragraph.paragraph_format.first_line_indent = Mm(-3)
+
+
+def _record_heading(record: Experience | Education, experience: bool) -> str:
+    values = (
+        (record.title, record.company)
+        if experience
+        else (record.degree, record.institution)
+    )
+    return " - ".join(values)
 
 
 def _assets() -> tuple[StyleManifest, str, str]:
@@ -221,7 +384,7 @@ def _details(
     end = (
         _format_date(record.end_date, labels) if record.end_date else labels["current"]
     )
-    values.append(f"{_format_date(record.start_date, labels)} — {end}")
+    values.append(" - ".join((_format_date(record.start_date, labels), end)))
     return " | ".join(x for x in values if x)
 
 
@@ -329,11 +492,7 @@ def _md_records(
 ) -> str:
     values = []
     for x in records:
-        heading = (
-            f"{x.title} — {x.company}"
-            if experience
-            else f"{x.degree} — {x.institution}"
-        )
+        heading = _record_heading(x, experience)
         values.append(
             "\n".join(
                 [
@@ -362,11 +521,7 @@ def _html_records(
 ) -> str:
     articles = []
     for x in records:
-        heading = (
-            f"{x.title} — {x.company}"
-            if experience
-            else f"{x.degree} — {x.institution}"
-        )
+        heading = _record_heading(x, experience)
         articles.append(
             f"<article><h3>{escape(heading)}</h3><p>{escape(_details(x, labels, experience))}</p>{_html_list(x.highlights) if x.highlights else ''}</article>"
         )

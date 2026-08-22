@@ -32,7 +32,7 @@ registrada.
 - [x] Gerar currículo Markdown a partir do YAML.
 - [x] Renderizar currículo em HTML.
 - [x] Exportar PDF por renderizador local de navegador.
-- [ ] Exportar DOCX por renderer próprio, sem converter do PDF.
+- [x] Exportar DOCX por renderer próprio, sem converter do PDF.
 - [ ] Exportar DOC para compatibilidade legada, a partir de uma estratégia local
   definida para o formato.
 - [x] Adicionar CLI para editar dados estruturados, validar e renderizar currículo.

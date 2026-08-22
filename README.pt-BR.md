@@ -69,11 +69,15 @@ Cópias rastreadas também estão disponíveis em [`examples/`](examples/).
 seriemacv resume render .\minha-carreira --format markdown
 seriemacv resume render .\minha-carreira --format html
 seriemacv resume render .\minha-carreira --format pdf
+seriemacv resume render .\minha-carreira --format docx
 ```
 
 O comando valida `career.yml` antes de escrever `exports/resume.md`,
 `exports/resume.html` ou `exports/resume.pdf`. Para PDF, instale o Chromium local:
 `python -m playwright install chromium`.
+
+A exportação DOCX escreve `exports/resume.docx`: um documento A4 editável, de uma
+coluna, com o layout interno `clean`. A exportação legada `.doc` ainda não está disponível.
 
 `resume_language`, definido no `init`, localiza apenas rótulos fixos; o conteúdo
 canônico nunca é traduzido ou reescrito.

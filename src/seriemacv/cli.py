@@ -100,7 +100,9 @@ def build_parser() -> argparse.ArgumentParser:
         "render", help="Render an ATS-safe resume from career.yml"
     )
     render_parser.add_argument("path", type=Path)
-    render_parser.add_argument("--format", choices=("markdown", "html", "pdf"), required=True)
+    render_parser.add_argument(
+        "--format", choices=("markdown", "html", "pdf", "docx"), required=True
+    )
 
     jobs_parser = subparsers.add_parser("jobs", help="Manage local job documents")
     jobs_subparsers = jobs_parser.add_subparsers(dest="jobs_command", required=True)
@@ -337,7 +339,7 @@ def _run_resume_command(args: argparse.Namespace) -> int:
     except (OSError, ResumeRenderError, ValueError, ValidationError, YAMLError) as error:
         print(f"{career_path}: {error}", file=sys.stderr)
         return 1
-    print(f"Rendered Markdown resume: {output_path}")
+    print(f"Rendered {args.format.upper()} resume: {output_path}")
     return 0
 
 

@@ -76,9 +76,12 @@ provider-agnostic integration and never owns the user's data or workflow.
   career content, references, and completeness.
 - Preserve compatibility with legacy projects. Conversions must be explicit and must
   not delete the legacy canonical file.
-- `resume render --format markdown|html|pdf` validates a complete career document
+- `resume render --format markdown|html|pdf|docx` validates a complete career document
   and atomically writes fixed `exports/resume.*` artifacts. PDF requires Playwright
   Chromium.
+- DOCX uses a dedicated `python-docx` renderer with the `clean` A4 layout. Keep it
+  ATS-safe: linear text flow, plain-text bullets, no tables, images, text boxes, or
+  automatic list XML. `.doc` remains deferred until a local conversion strategy exists.
 - Canonical `skills.level` values are English codes. `i18n.py` localizes fixed labels,
   months, and levels; `core` is an explicit editorial priority, while categories keep
   the complete skills list readable.

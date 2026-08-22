@@ -125,10 +125,14 @@ DOCX ou DOC e metadados do artefato. DOCX será outro renderer, não uma convers
 de PDF; DOC é um formato legado e não deve orientar o modelo interno.
 
 O primeiro renderer distribui internamente o estilo único `clean`: um layout A4,
-de uma coluna e ATS-safe. `resume render --format markdown|html|pdf` exige um
+de uma coluna e ATS-safe. `resume render --format markdown|html|pdf|docx` exige um
 `career.yml` completo e escreve em caminhos fixos dentro de `exports/`. A configuração
 `resume_language` de `seriemacv.yml`, definida no `init`, seleciona apenas os títulos
 fixos; o sistema não traduz conteúdo do usuário.
+
+O renderer DOCX próprio produz `exports/resume.docx` editável com a mesma hierarquia,
+tipografia e margens do `clean`, dentro das limitações do Word. O formato `.doc`
+continua pendente de uma estratégia local de conversão.
 
 **Decisões tecnológicas**
 

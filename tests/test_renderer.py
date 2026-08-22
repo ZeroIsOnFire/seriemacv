@@ -3,14 +3,18 @@ from __future__ import annotations
 import tempfile
 import unittest
 from contextlib import redirect_stderr
-from io import StringIO
+from io import BytesIO, StringIO
 from pathlib import Path
 from unittest.mock import patch
+
+from docx import Document
+from docx.shared import Pt
 
 from seriemacv.career import CareerDocument
 from seriemacv.cli import main
 from seriemacv.project import create_project
 from seriemacv.renderer import (
+    render_docx,
     render_html,
     render_markdown,
     write_markdown_resume,
@@ -19,6 +23,64 @@ from seriemacv.renderer import (
 
 
 class MarkdownRendererTests(unittest.TestCase):
+    def test_docx_matches_clean_layout_and_resume_content(self) -> None:
+        career_data = self._career().model_dump()
+        career_data["skills"] = [
+            {"id": "python", "name": "Python", "category": "Languages", "core": True},
+            {"id": "yaml", "name": "YAML", "category": "Languages", "level": "advanced"},
+        ]
+        career_data["experience"][0]["title"] = f"Build {chr(0x2014)} Systems"
+        career = CareerDocument.model_validate(career_data)
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            output_path = write_resume(Path(temporary_directory), career, "en", "docx")
+            document = Document(output_path)
+
+        section = document.sections[0]
+        texts = [paragraph.text for paragraph in document.paragraphs]
+        self.assertEqual(output_path.name, "resume.docx")
+        self.assertAlmostEqual(section.page_width / 36000, 210, places=1)
+        self.assertAlmostEqual(section.page_height / 36000, 297, places=1)
+        self.assertAlmostEqual(section.top_margin / 36000, 16, places=1)
+        self.assertEqual(document.styles["Normal"].font.name, "Arial")
+        self.assertIn("Avery Example", texts)
+        self.assertIn("Professional Experience", texts)
+        self.assertIn(f"Build {chr(0x2014)} Systems - Earlier Corp", texts)
+        self.assertIn("Jan 2024", "\n".join(texts))
+        self.assertIn("Present", "\n".join(texts))
+        self.assertIn("Portfolio: https://example.invalid/avery", texts)
+        self.assertIn("Advanced", "\n".join(texts))
+        self.assertTrue(any(run.bold for paragraph in document.paragraphs for run in paragraph.runs if run.text == "Python"))
+        self.assertEqual(document.tables, [])
+        self.assertEqual(len(document.inline_shapes), 0)
+        self.assertNotIn("List Bullet", [paragraph.style.name for paragraph in document.paragraphs])
+        self.assertIn("- Built reliable tools.", texts)
+        self.assertNotIn(chr(0xFFFD), "\n".join(texts))
+        self.assertTrue(any("w:pBdr" in paragraph._p.xml for paragraph in document.paragraphs if paragraph.text == "Summary"))
+        self.assertEqual(document.paragraphs[0].runs[0].font.size, Pt(22))
+
+    def test_docx_localizes_headings_and_omits_empty_sections(self) -> None:
+        localized = Document(BytesIO(render_docx(self._career(), "pt-BR")))
+        localized_texts = [paragraph.text for paragraph in localized.paragraphs]
+        self.assertIn("Resumo", localized_texts)
+        self.assertIn("Experiência profissional", localized_texts)
+        self.assertIn("Atual", "\n".join(localized_texts))
+        self.assertIn("Portuguese | English", localized_texts)
+
+        career = CareerDocument.model_validate(
+            {
+                "schema_version": 1,
+                "profile": {"name": "Avery", "title": "Engineer", "email": "avery@example.invalid"},
+            }
+        )
+
+        document = Document(BytesIO(render_docx(career, "pt-BR")))
+        texts = [paragraph.text for paragraph in document.paragraphs]
+
+        self.assertIn("Avery", texts)
+        self.assertNotIn("Resumo", texts)
+        self.assertNotIn("ExperiÃªncia profissional", texts)
+        self.assertNotIn("Idiomas", texts)
+
     def test_html_is_semantic_and_escapes_canonical_content(self) -> None:
         career = self._career().model_copy(
             update={"summary": "<script>alert(1)</script>"}
@@ -93,7 +155,7 @@ class MarkdownRendererTests(unittest.TestCase):
             rendered.index("New University"), rendered.index("Old University")
         )
         self.assertLess(rendered.index("Python"), rendered.index("YAML"))
-        self.assertIn("Jan 2024 — Present", rendered)
+        self.assertIn("Jan 2024 - Present", rendered)
         self.assertIn("Remote | Contract", rendered)
 
     def test_writes_the_single_resume_artifact(self) -> None:
@@ -124,6 +186,23 @@ class MarkdownRendererTests(unittest.TestCase):
                 output_path.read_text(encoding="utf-8"), "previous artifact"
             )
             self.assertEqual(list(exports_path.glob(".resume.md.*.tmp")), [])
+
+    def test_docx_atomic_write_keeps_existing_artifact_when_replacement_fails(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            project_path = Path(temporary_directory)
+            exports_path = project_path / "exports"
+            exports_path.mkdir()
+            output_path = exports_path / "resume.docx"
+            output_path.write_bytes(b"previous artifact")
+
+            with patch(
+                "seriemacv.renderer.os.replace", side_effect=OSError("disk error")
+            ):
+                with self.assertRaises(OSError):
+                    write_resume(project_path, self._career(), "en", "docx")
+
+            self.assertEqual(output_path.read_bytes(), b"previous artifact")
+            self.assertEqual(list(exports_path.glob(".resume.docx.*.tmp")), [])
 
     @staticmethod
     def _career() -> CareerDocument:
@@ -229,6 +308,13 @@ stories: []
             self.assertEqual(result, 0)
             self.assertTrue((project_path / "exports/resume.html").exists())
 
+            result = main([
+                "resume", "render", str(project_path), "--format", "docx",
+            ])
+
+            self.assertEqual(result, 0)
+            self.assertTrue((project_path / "exports/resume.docx").exists())
+
     def test_cli_does_not_overwrite_artifact_when_career_is_incomplete(self) -> None:
         with tempfile.TemporaryDirectory() as temporary_directory:
             project_path = Path(temporary_directory) / "career-project"
@@ -253,6 +339,21 @@ stories: []
             self.assertEqual(
                 output_path.read_text(encoding="utf-8"), "previous artifact"
             )
+
+    def test_cli_does_not_overwrite_docx_when_career_is_incomplete(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            project_path = Path(temporary_directory) / "career-project"
+            create_project(project_path, project_name="Career Project")
+            output_path = project_path / "exports/resume.docx"
+            output_path.write_bytes(b"previous DOCX artifact")
+
+            with redirect_stderr(StringIO()):
+                result = main([
+                    "resume", "render", str(project_path), "--format", "docx",
+                ])
+
+            self.assertEqual(result, 1)
+            self.assertEqual(output_path.read_bytes(), b"previous DOCX artifact")
 
     def test_cli_reports_invalid_project_configuration_at_its_path(self) -> None:
         with tempfile.TemporaryDirectory() as temporary_directory:
