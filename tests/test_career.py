@@ -29,7 +29,7 @@ class CareerSchemaTests(unittest.TestCase):
             diagnostics = validate_career(project_path / "career.yml")
 
             self.assertEqual({item.path for item in diagnostics}, {
-                "profile.name", "profile.title", "profile.email"
+                "profile.name", "profile.email"
             })
             self.assertTrue(all(item.line is not None for item in diagnostics))
 
@@ -38,8 +38,8 @@ class CareerSchemaTests(unittest.TestCase):
             project_path = _create_project(temporary_directory)
             career_path = project_path / "career.yml"
             career_path.write_text(
-                "schema_version: 1\nprofile: {}\nexperience:\n"
-                "  - id: broken\n    company: Example\n    title: Engineer\n"
+                "schema_version: 2\nprofile: {}\nexperience:\n"
+                "  - id: broken\n    company: Example\n"
                 "    start_date: 2024-13\n    unexpected: true\n",
                 encoding="utf-8",
             )
@@ -54,9 +54,9 @@ class CareerSchemaTests(unittest.TestCase):
             project_path = _create_project(temporary_directory)
             career_path = project_path / "career.yml"
             career_path.write_text(
-                "schema_version: 1\nprofile: {}\nexperience:\n"
-                "  - id: repeated\n    company: Example\n    title: Engineer\n    start_date: 2024-01\n"
-                "  - id: repeated\n    company: Example\n    title: Engineer\n    start_date: 2024-02\n"
+                "schema_version: 2\nprofile: {}\nexperience:\n"
+                "  - id: repeated\n    company: Example\n    start_date: 2024-01\n"
+                "  - id: repeated\n    company: Example\n    start_date: 2024-02\n"
                 "evidence:\n  - id: proof\n    statement: A fact\n"
                 "    experience_id: missing\n",
                 encoding="utf-8",
@@ -71,7 +71,7 @@ class CareerSchemaTests(unittest.TestCase):
             project_path = _create_project(temporary_directory)
             career_path = project_path / "career.yml"
             career_path.write_text(
-                "schema_version: 1\nprofile: {}\nevidence:\n"
+                "schema_version: 2\nprofile: {}\nevidence:\n"
                 "  - id: proof\n    statement: A fact\n"
                 "    experience_id: missing\n",
                 encoding="utf-8",
@@ -100,13 +100,13 @@ class CareerSchemaTests(unittest.TestCase):
             project_path = _create_project(temporary_directory)
             career_path = project_path / "career.yml"
             career_path.write_text(
-                "# Keep this comment\nschema_version: 1\nprofile: {}\n",
+                "# Keep this comment\nschema_version: 2\nprofile: {}\n",
                 encoding="utf-8",
             )
 
-            set_profile(career_path, {"name": "Seriema", "title": "Engineer"})
+            set_profile(career_path, {"name": "Seriema"})
             add_record(career_path, "skills", {
-                "id": "python", "name": "Python", "category": "Language", "tags": []
+                "id": "python", "tags": []
             })
 
             updated = career_path.read_text(encoding="utf-8")
@@ -121,7 +121,7 @@ class CareerCliTests(unittest.TestCase):
             with redirect_stdout(StringIO()):
                 result = main([
                     "career", "set-profile", str(project_path), "--name", "Seriema",
-                    "--title", "Engineer", "--email", "seriema@example.invalid",
+                    "--email", "seriema@example.invalid",
                     "--link", "github=https://github.com/seriema",
                 ])
             self.assertEqual(result, 0)
@@ -129,8 +129,7 @@ class CareerCliTests(unittest.TestCase):
             with redirect_stdout(StringIO()):
                 result = main([
                     "career", "add-experience", str(project_path), "--id", "example-job",
-                    "--company", "Example", "--title", "Engineer", "--start-date", "2024-01",
-                    "--highlight", "Delivered an internal tool",
+                    "--company", "Example", "--start-date", "2024-01",
                 ])
             self.assertEqual(result, 0)
 

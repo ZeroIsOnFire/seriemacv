@@ -12,8 +12,11 @@ from seriemacv.career import (
     add_record,
     dump_section,
     list_section,
+    list_locales,
+    load_localized_career,
     set_profile,
     validate_career,
+    validate_locale,
 )
 from seriemacv.jobs import (
     JOB_DIRECTORY,
@@ -48,7 +51,7 @@ def build_parser() -> argparse.ArgumentParser:
     init_parser = subparsers.add_parser("init", help="Create a local career project")
     init_parser.add_argument("path", type=Path)
     init_parser.add_argument("--name", required=True, help="Human-readable project name")
-    init_parser.add_argument("--language", choices=("pt-BR", "en"), default="pt-BR")
+    init_parser.add_argument("--language", default="pt-BR", help="Default BCP 47 resume locale")
     init_parser.add_argument("--style", choices=STYLE_IDS, default="clean")
 
     validate_parser = subparsers.add_parser(
@@ -64,25 +67,27 @@ def build_parser() -> argparse.ArgumentParser:
     )
     career_validate.add_argument("path", nargs="?", type=Path, default=Path.cwd())
 
+    locale_parser = career_subparsers.add_parser("locale", help="Manage localized resume content")
+    locale_subparsers = locale_parser.add_subparsers(dest="locale_command", required=True)
+    locale_list = locale_subparsers.add_parser("list", help="List available locales")
+    locale_list.add_argument("path", type=Path)
+    locale_validate = locale_subparsers.add_parser("validate", help="Validate one locale")
+    locale_validate.add_argument("path", type=Path)
+    locale_validate.add_argument("--language", required=True)
+
     profile_parser = career_subparsers.add_parser(
         "set-profile", help="Set one or more profile fields"
     )
     profile_parser.add_argument("path", type=Path)
     for field in (
         "name",
-        "title",
-        "location",
         "email",
         "phone",
         "linkedin",
         "portfolio",
-        "work-preference",
-        "work-authorization",
-        "notice-period",
     ):
         profile_parser.add_argument(f"--{field}")
     profile_parser.add_argument("--link", action="append", default=[], metavar="NAME=URL")
-    profile_parser.add_argument("--language", action="append", default=[])
 
     _add_experience_parser(career_subparsers)
     _add_education_parser(career_subparsers)
@@ -93,7 +98,7 @@ def build_parser() -> argparse.ArgumentParser:
     list_parser.add_argument("path", type=Path)
     list_parser.add_argument(
         "section",
-        choices=("profile", "summary", "experience", "education", "skills", "evidence", "answers", "stories"),
+        choices=("profile", "experience", "education", "skills", "evidence", "answers", "stories"),
     )
 
     resume_parser = subparsers.add_parser("resume", help="Render resume artifacts")
@@ -102,10 +107,9 @@ def build_parser() -> argparse.ArgumentParser:
         "render", help="Render an ATS-safe resume from career.yml"
     )
     render_parser.add_argument("path", type=Path)
-    render_parser.add_argument(
-        "--format", choices=("markdown", "html", "pdf", "docx"), required=True
-    )
+    render_parser.add_argument("--format", choices=("markdown", "html", "pdf", "docx"), required=True, action="append")
     render_parser.add_argument("--style", choices=STYLE_IDS)
+    render_parser.add_argument("--language")
     resume_subparsers.add_parser(
         "styles", help="List built-in resume styles and their capabilities"
     )
@@ -129,12 +133,8 @@ def _add_experience_parser(subparsers: argparse._SubParsersAction[argparse.Argum
     parser.add_argument("path", type=Path)
     parser.add_argument("--id", required=True)
     parser.add_argument("--company", required=True)
-    parser.add_argument("--title", required=True)
     parser.add_argument("--start-date", required=True)
     parser.add_argument("--end-date")
-    parser.add_argument("--location", default="")
-    parser.add_argument("--employment-type", default="")
-    parser.add_argument("--highlight", action="append", default=[])
 
 
 def _add_education_parser(subparsers: argparse._SubParsersAction[argparse.ArgumentParser]) -> None:
@@ -142,20 +142,14 @@ def _add_education_parser(subparsers: argparse._SubParsersAction[argparse.Argume
     parser.add_argument("path", type=Path)
     parser.add_argument("--id", required=True)
     parser.add_argument("--institution", required=True)
-    parser.add_argument("--degree", required=True)
     parser.add_argument("--start-date", required=True)
     parser.add_argument("--end-date")
-    parser.add_argument("--field-of-study", default="")
-    parser.add_argument("--location", default="")
-    parser.add_argument("--highlight", action="append", default=[])
 
 
 def _add_skill_parser(subparsers: argparse._SubParsersAction[argparse.ArgumentParser]) -> None:
     parser = subparsers.add_parser("add-skill", help="Add a skill record")
     parser.add_argument("path", type=Path)
     parser.add_argument("--id", required=True)
-    parser.add_argument("--name", required=True)
-    parser.add_argument("--category", default="")
     parser.add_argument("--level", choices=("beginner", "intermediate", "advanced", "expert"))
     parser.add_argument("--core", action="store_true")
     parser.add_argument("--tag", action="append", default=[])
@@ -242,6 +236,19 @@ def main(arguments: list[str] | None = None) -> int:
 
 
 def _run_career_command(args: argparse.Namespace) -> int:
+    if args.career_command == "locale":
+        project_path = args.path.expanduser().resolve()
+        if args.locale_command == "list":
+            for locale in list_locales(project_path):
+                print(locale)
+            return 0
+        diagnostics = validate_locale(project_path, args.language)
+        if diagnostics:
+            for diagnostic in diagnostics:
+                print(diagnostic.format(project_path / "career.locales" / f"{args.language}.yml"), file=sys.stderr)
+            return 1
+        print(f"Valid locale document: {args.language}")
+        return 0
     career_path = args.path.expanduser().resolve() / CAREER_FILE
     if args.career_command == "validate":
         diagnostics = validate_career(career_path)
@@ -256,34 +263,24 @@ def _run_career_command(args: argparse.Namespace) -> int:
         if args.career_command == "set-profile":
             values = {
                 key: getattr(args, key)
-                for key in (
-                    "name", "title", "location", "email", "phone", "linkedin", "portfolio",
-                    "work_preference", "work_authorization", "notice_period",
+            for key in (
+                    "name", "email", "phone", "linkedin", "portfolio",
                 )
             }
             if args.link:
                 values["links"] = _key_values(args.link, "--link")
-            if args.language:
-                values["languages"] = args.language
             set_profile(career_path, values)
         elif args.career_command == "add-experience":
             add_record(career_path, "experience", {
-                "id": args.id, "company": args.company, "title": args.title,
-                "start_date": args.start_date, "end_date": args.end_date,
-                "location": args.location, "employment_type": args.employment_type,
-                "highlights": args.highlight,
+                "id": args.id, "company": args.company, "start_date": args.start_date, "end_date": args.end_date,
             })
         elif args.career_command == "add-education":
             add_record(career_path, "education", {
-                "id": args.id, "institution": args.institution, "degree": args.degree,
-                "start_date": args.start_date, "end_date": args.end_date,
-                "field_of_study": args.field_of_study, "location": args.location,
-                "highlights": args.highlight,
+                "id": args.id, "institution": args.institution, "start_date": args.start_date, "end_date": args.end_date,
             })
         elif args.career_command == "add-skill":
             add_record(career_path, "skills", {
-                "id": args.id, "name": args.name, "category": args.category,
-                "tags": args.tag, "level": args.level, "core": args.core,
+                "id": args.id, "tags": args.tag, "level": args.level, "core": args.core,
             })
         elif args.career_command == "add-evidence":
             add_record(career_path, "evidence", {
@@ -326,20 +323,14 @@ def _run_resume_command(args: argparse.Namespace) -> int:
         print(f"{configuration_path}: {error}", file=sys.stderr)
         return 1
     try:
-        from seriemacv.career import load_career
-
         style_id = args.style or configuration.resume_style
-        output_path = write_resume(
-            project_path,
-            load_career(career_path),
-            configuration.resume_language,
-            args.format,
-            style_id=style_id,
-        )
+        locale = args.language or configuration.resume_language
+        career = load_localized_career(project_path, locale)
+        output_paths = [write_resume(project_path, career, locale, output_format, style_id=style_id) for output_format in args.format]
     except (OSError, ResumeRenderError, ValueError, ValidationError, YAMLError) as error:
         print(f"{career_path}: {error}", file=sys.stderr)
         return 1
-    print(f"Rendered {args.format.upper()} resume using {style_id}: {output_path}")
+    print(f"Rendered {', '.join(item.upper() for item in args.format)} resume using {style_id}: {', '.join(str(path) for path in output_paths)}")
     return 0
 
 

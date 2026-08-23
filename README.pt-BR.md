@@ -24,15 +24,15 @@ templates e solução de problemas.
 
 ```powershell
 seriemacv init .\minha-carreira --name "Minha carreira" --language pt-BR --style modern
-seriemacv career set-profile .\minha-carreira --name "Seu Nome" --title "Seu cargo" --email voce@example.com
-seriemacv career add-experience .\minha-carreira --id empresa-atual --company "Empresa" --title "Cargo" --start-date 2024-01
+seriemacv career set-profile .\minha-carreira --name "Seu Nome" --email voce@example.com
+seriemacv career add-experience .\minha-carreira --id empresa-atual --company "Empresa" --start-date 2024-01
 seriemacv career validate .\minha-carreira
 ```
 
 Cada projeto inclui `career.yml` vazio e exemplos fictícios em
 `career.yml.example` e `seriemacv.yml.example`. `career.yml` é sempre a fonte
-canônica. `resume_language` localiza apenas rótulos fixos; o conteúdo informado pelo
-usuário nunca é traduzido.
+canônica dos fatos. O texto por idioma e seu catálogo ficam em
+`career.locales/<locale>.yml`.
 
 A área de vagas está temporariamente pausada. Arquivos existentes e o domínio
 validado permanecem intactos, mas os comandos de vagas não são expostos pela CLI.
@@ -42,6 +42,7 @@ validado permanecem intactos, mas os comandos de vagas não são expostos pela C
 ```powershell
 seriemacv resume styles
 seriemacv resume render .\minha-carreira --format markdown
+seriemacv resume render .\minha-carreira --language en --format pdf --format docx
 seriemacv resume render .\minha-carreira --format html --style classic
 seriemacv resume render .\minha-carreira --format pdf --style modern
 seriemacv resume render .\minha-carreira --format docx --style compact

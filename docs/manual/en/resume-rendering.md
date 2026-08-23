@@ -2,7 +2,8 @@
 
 [Back to the complete guide](index.md) · [Português](../pt-BR/renderizacao.md)
 
-Resume generation is a read-only projection of a complete `career.yml`. Each output
+Resume generation is a read-only projection of canonical `career.yml` facts plus a
+complete `career.locales/<locale>.yml` editorial document. Each output
 is written atomically to a fixed path under `exports/`.
 
 ## List styles
@@ -44,9 +45,9 @@ execution only.
 
 | Format | Output | Notes |
 | --- | --- | --- |
-| `markdown` | `exports/resume.md` | Portable text; fonts, colors, and columns are flattened |
+| `markdown` | `exports/resume.<locale>.md` | Portable text; fonts, colors, and columns are flattened |
 | `html` | `exports/resume.html` | Semantic standalone HTML with embedded CSS and no network assets |
-| `pdf` | `exports/resume.pdf` | A4 PDF generated from HTML in local Chromium |
+| `pdf` | `exports/resume.<locale>.pdf` | A4 PDF generated from HTML in local Chromium |
 | `docx` | `exports/resume.docx` | Editable Word document from the dedicated renderer |
 
 Rendering another style in the same format replaces that format's previous artifact.

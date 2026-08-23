@@ -19,16 +19,16 @@ from docx.oxml.ns import qn
 from docx.shared import Mm, Pt, RGBColor
 
 from seriemacv.career import CareerDocument, Education, Experience, Skill
-from seriemacv.i18n import Locale, translate
+from seriemacv.i18n import translate
 from seriemacv.styles import ResumeStyleId, StyleManifest, StylePackage, load_style
 
-ResumeLocale = Literal["pt-BR", "en"]
+ResumeLocale = str
 ResumeFormat = Literal["markdown", "html", "pdf", "docx"]
 _FILENAMES = {
-    "markdown": "resume.md",
-    "html": "resume.html",
-    "pdf": "resume.pdf",
-    "docx": "resume.docx",
+    "markdown": "md",
+    "html": "html",
+    "pdf": "pdf",
+    "docx": "docx",
 }
 
 
@@ -194,7 +194,7 @@ def write_resume(
     pdf_renderer: PdfRenderer | None = None,
     style_id: ResumeStyleId = "clean",
 ) -> Path:
-    path = project_path / "exports" / _FILENAMES[output_format]
+    path = project_path / "exports" / f"resume.{locale}.{_FILENAMES[output_format]}"
     path.parent.mkdir(parents=True, exist_ok=True)
     style = load_style(style_id).manifest
     _ensure_supported(style, output_format)
@@ -265,9 +265,13 @@ def _presentation(career: CareerDocument, locale: ResumeLocale) -> ResumePresent
         links.setdefault("LinkedIn", profile.linkedin)
     if profile.portfolio:
         links.setdefault("Portfolio", profile.portfolio)
+    labels = dict(career.catalog.labels) if career.catalog else _labels(locale)
+    if career.catalog:
+        labels["__months"] = "\x1f".join(career.catalog.months)
+        labels["__date_format"] = career.catalog.date_format
     return ResumePresentation(
         career=career,
-        labels=_labels(locale),
+        labels=labels,
         contacts=tuple(
             item for item in (profile.location, profile.email, profile.phone) if item
         ),
@@ -362,7 +366,7 @@ def _markdown_skills(
 def _markdown_skill(skill: Skill, labels: dict[str, str]) -> str:
     name = f"**{skill.name}**" if skill.core else skill.name
     return name + (
-        f" ({translate(_locale_for(labels), f'level.{skill.level}')})"
+        f" ({_level_label(labels, skill.level)})"
         if skill.level
         else ""
     )
@@ -554,7 +558,7 @@ def _html_skills(skills: list[Skill], labels: dict[str, str]) -> str:
                 else escape(skill.name)
             )
             level = (
-                translate(_locale_for(labels), f"level.{skill.level}")
+                _level_label(labels, skill.level)
                 if skill.level
                 else ""
             )
@@ -768,7 +772,7 @@ def _docx_skills(
             skill_run.bold = skill.core
             if skill.level:
                 paragraph.add_run(
-                    f" ({translate(_locale_for(labels), f'level.{skill.level}')})"
+                    f" ({_level_label(labels, skill.level)})"
                 )
 
 
@@ -898,6 +902,10 @@ def _labels(locale: str) -> dict[str, str]:
             "languages",
             "current",
             "other",
+            "level.beginner",
+            "level.intermediate",
+            "level.advanced",
+            "level.expert",
         )
     }
 
@@ -955,26 +963,22 @@ def _skill_groups(
     return groups
 
 
-def _locale_for(labels: dict[str, str]) -> Locale:
-    return "pt-BR" if labels["current"] == "Atual" else "en"
+def _level_label(labels: dict[str, str], level: str) -> str:
+    return labels[f"level.{level}"]
 
 
 def _format_date(value: str, labels: dict[str, str]) -> str:
     year, month = value.split("-")
-    is_portuguese = labels["current"] == "Atual"
-    names = (
-        (
-            "Jan.", "Fev.", "Mar.", "Abr.", "Mai.", "Jun.",
-            "Jul.", "Ago.", "Set.", "Out.", "Nov.", "Dez.",
-        )
-        if is_portuguese
-        else (
-            "Jan", "Feb", "Mar", "Apr", "May", "Jun",
-            "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
-        )
-    )
-    name = names[int(month) - 1]
-    return f"{name} de {year}" if is_portuguese else f"{name} {year}"
+    if "__months" in labels:
+        name = labels["__months"].split("\x1f")[int(month) - 1]
+        return labels["__date_format"].replace("{month}", name).replace("{year}", year)
+    # Localized documents carry their catalog; built-in locales retain the
+    # previous deterministic formatting path for renderer-only callers.
+    names = None
+    if labels["current"] == "Atual":
+        names = ("Jan.", "Fev.", "Mar.", "Abr.", "Mai.", "Jun.", "Jul.", "Ago.", "Set.", "Out.", "Nov.", "Dez.")
+        return f"{names[int(month) - 1]} de {year}"
+    return f"{('Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec')[int(month) - 1]} {year}"
 
 
 def _atomic_write(path: Path, content: bytes) -> None:

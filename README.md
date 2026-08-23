@@ -23,14 +23,14 @@ troubleshooting.
 
 ```powershell
 seriemacv init .\my-career --name "My career" --language en --style modern
-seriemacv career set-profile .\my-career --name "Your Name" --title "Your role" --email you@example.com
-seriemacv career add-experience .\my-career --id current-company --company "Company" --title "Role" --start-date 2024-01
+seriemacv career set-profile .\my-career --name "Your Name" --email you@example.com
+seriemacv career add-experience .\my-career --id current-company --company "Company" --start-date 2024-01
 seriemacv career validate .\my-career
 ```
 
 Each project includes an empty `career.yml` plus fictional `career.yml.example`
-and `seriemacv.yml.example` files. `career.yml` is always the canonical source.
-`resume_language` localizes fixed labels; canonical user content is never translated.
+and `seriemacv.yml.example` files. `career.yml` is the canonical source for facts;
+`career.locales/<locale>.yml` contains the localized resume wording and catalog.
 
 The jobs workspace is temporarily paused. Existing job files and the underlying
 validated domain remain intact, but job commands are not exposed by the CLI.
@@ -40,6 +40,7 @@ validated domain remain intact, but job commands are not exposed by the CLI.
 ```powershell
 seriemacv resume styles
 seriemacv resume render .\my-career --format markdown
+seriemacv resume render .\my-career --language en --format pdf --format docx
 seriemacv resume render .\my-career --format html --style classic
 seriemacv resume render .\my-career --format pdf --style modern
 seriemacv resume render .\my-career --format docx --style compact

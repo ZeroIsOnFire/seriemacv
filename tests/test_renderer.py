@@ -176,7 +176,7 @@ class MarkdownRendererTests(unittest.TestCase):
 
         section = document.sections[0]
         texts = [paragraph.text for paragraph in document.paragraphs]
-        self.assertEqual(output_path.name, "resume.docx")
+        self.assertEqual(output_path.name, "resume.en.docx")
         self.assertAlmostEqual(section.page_width / 36000, 210, places=1)
         self.assertAlmostEqual(section.page_height / 36000, 297, places=1)
         self.assertAlmostEqual(section.top_margin / 36000, 16, places=1)
@@ -243,7 +243,7 @@ class MarkdownRendererTests(unittest.TestCase):
             project_path = Path(temporary_directory)
             output_path = write_resume(project_path, self._career(), "en", "pdf", fake)
 
-            self.assertEqual(output_path.name, "resume.pdf")
+            self.assertEqual(output_path.name, "resume.en.pdf")
             self.assertEqual(output_path.read_bytes(), b"%PDF-fake")
             self.assertIn("Professional Experience", fake.html)
             self.assertFalse((project_path / "exports/resume.html").exists())
@@ -323,7 +323,7 @@ class MarkdownRendererTests(unittest.TestCase):
             exports_path.mkdir()
             output_path = write_markdown_resume(project_path, self._career(), "pt-BR")
 
-            self.assertEqual(output_path, exports_path / "resume.md")
+            self.assertEqual(output_path, exports_path / "resume.pt-BR.md")
             self.assertTrue(output_path.exists())
 
     def test_atomic_write_keeps_existing_artifact_when_replacement_fails(self) -> None:
@@ -436,7 +436,7 @@ class ResumeRenderCliTests(unittest.TestCase):
                     "resume", "render", str(project_path), "--format", "html",
                 ])
             self.assertEqual(result, 0)
-            output_path = project_path / "exports/resume.html"
+            output_path = project_path / "exports/resume.en.html"
             self.assertIn('data-style="modern"', output_path.read_text(encoding="utf-8"))
 
             with redirect_stdout(StringIO()):
@@ -457,23 +457,7 @@ class ResumeRenderCliTests(unittest.TestCase):
             create_project(
                 project_path, project_name="Career Project", resume_language="en"
             )
-            career_path = project_path / "career.yml"
-            career_path.write_text(
-                """schema_version: 1
-profile:
-  name: Seriema Example
-  title: Engineer
-  email: seriema@example.invalid
-summary: Canonical content.
-experience: []
-education: []
-skills: []
-evidence: []
-answers: []
-stories: []
-""",
-                encoding="utf-8",
-            )
+            self._write_complete_career(project_path)
 
             result = main(
                 [
@@ -486,7 +470,7 @@ stories: []
             )
 
             self.assertEqual(result, 0)
-            output_path = project_path / "exports/resume.md"
+            output_path = project_path / "exports/resume.en.md"
             self.assertTrue(output_path.exists())
             self.assertIn("## Summary", output_path.read_text(encoding="utf-8"))
 
@@ -495,14 +479,14 @@ stories: []
             ])
 
             self.assertEqual(result, 0)
-            self.assertTrue((project_path / "exports/resume.html").exists())
+            self.assertTrue((project_path / "exports/resume.en.html").exists())
 
             result = main([
                 "resume", "render", str(project_path), "--format", "docx",
             ])
 
             self.assertEqual(result, 0)
-            self.assertTrue((project_path / "exports/resume.docx").exists())
+            self.assertTrue((project_path / "exports/resume.en.docx").exists())
 
     def test_cli_does_not_overwrite_artifact_when_career_is_incomplete(self) -> None:
         with tempfile.TemporaryDirectory() as temporary_directory:
@@ -549,10 +533,9 @@ stories: []
             project_path = Path(temporary_directory) / "career-project"
             create_project(project_path, project_name="Career Project")
             (project_path / "career.yml").write_text(
-                """schema_version: 1
+                """schema_version: 2
 profile:
   name: Seriema Example
-  title: Engineer
   email: seriema@example.invalid
 experience: []
 education: []
@@ -565,7 +548,7 @@ stories: []
             )
             configuration_path = project_path / "seriemacv.yml"
             configuration_path.write_text(
-                "schema_version: 1\nproject_name: Career Project\nresume_language: fr\n",
+                "schema_version: 2\nproject_name: Career Project\nresume_language: invalid locale\n",
                 encoding="utf-8",
             )
             stderr = StringIO()
@@ -583,23 +566,36 @@ stories: []
 
             self.assertEqual(result, 1)
             self.assertIn(str(configuration_path), stderr.getvalue())
-            self.assertFalse((project_path / "exports/resume.md").exists())
+            self.assertFalse((project_path / "exports/resume.pt-BR.md").exists())
 
     @staticmethod
     def _write_complete_career(project_path: Path) -> None:
         (project_path / "career.yml").write_text(
-            """schema_version: 1
+            """schema_version: 2
 profile:
   name: Seriema Example
-  title: Engineer
   email: seriema@example.invalid
-summary: Canonical content.
 experience: []
 education: []
 skills: []
 evidence: []
 answers: []
 stories: []
+""",
+            encoding="utf-8",
+        )
+        (project_path / "career.locales" / "en.yml").write_text(
+            """schema_version: 1
+locale: en
+catalog:
+  labels: {summary: Summary, experience: Experience, education: Education, skills: Skills, languages: Languages, current: Present, other: Other, level.beginner: Beginner, level.intermediate: Intermediate, level.advanced: Advanced, level.expert: Expert}
+  months: [Jan, Feb, Mar, Apr, May, Jun, Jul, Aug, Sep, Oct, Nov, Dec]
+  date_format: '{month} {year}'
+profile: {title: Engineer}
+summary: Canonical content.
+experience: {}
+education: {}
+skills: {}
 """,
             encoding="utf-8",
         )

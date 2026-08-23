@@ -2,7 +2,8 @@
 
 [Voltar ao guia completo](index.md) · [English](../en/resume-rendering.md)
 
-A geração de currículo é uma projeção somente leitura de um `career.yml` completo.
+A geração de currículo é uma projeção somente leitura dos fatos em `career.yml` e
+do documento editorial em `career.locales/<locale>.yml`.
 Cada saída é escrita atomicamente em um caminho fixo dentro de `exports/`.
 
 ## Listar estilos
@@ -44,9 +45,9 @@ naquela execução.
 
 | Formato | Saída | Observações |
 | --- | --- | --- |
-| `markdown` | `exports/resume.md` | Texto portátil; fontes, cores e colunas são achatadas |
+| `markdown` | `exports/resume.<locale>.md` | Texto portátil; fontes, cores e colunas são achatadas |
 | `html` | `exports/resume.html` | HTML semântico independente, com CSS embutido e sem recursos de rede |
-| `pdf` | `exports/resume.pdf` | PDF A4 gerado do HTML no Chromium local |
+| `pdf` | `exports/resume.<locale>.pdf` | PDF A4 gerado do HTML no Chromium local |
 | `docx` | `exports/resume.docx` | Documento Word editável produzido pelo renderer dedicado |
 
 Renderizar outro estilo no mesmo formato substitui o artefato anterior daquele

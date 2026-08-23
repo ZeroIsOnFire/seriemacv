@@ -23,8 +23,10 @@ from ruamel.yaml.comments import CommentedMap
 from ruamel.yaml.error import YAMLError
 
 CAREER_FILE = "career.yml"
+LOCALES_DIRECTORY = "career.locales"
 _ID_PATTERN = re.compile(r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
 _YEAR_MONTH_PATTERN = re.compile(r"^\d{4}-(0[1-9]|1[0-2])$")
+_LOCALE_PATTERN = re.compile(r"^[A-Za-z]{2,8}(?:-[A-Za-z0-9]{2,8})*$")
 
 
 class StrictModel(BaseModel):
@@ -148,7 +150,9 @@ class CareerStory(IdentifiedRecord):
 
 
 class CareerDocument(StrictModel):
-    schema_version: Literal[1]
+    """The fully localized document consumed by resume renderers."""
+
+    schema_version: Literal[1, 2]
     profile: CareerProfile = Field(default_factory=CareerProfile)
     summary: str = ""
     experience: list[Experience] = Field(default_factory=list)
@@ -157,6 +161,7 @@ class CareerDocument(StrictModel):
     evidence: list[CareerEvidence] = Field(default_factory=list)
     answers: list[SavedAnswer] = Field(default_factory=list)
     stories: list[CareerStory] = Field(default_factory=list)
+    catalog: "LocaleCatalog | None" = None
 
     @model_validator(mode="after")
     def references_are_valid(self) -> "CareerDocument":
@@ -184,6 +189,149 @@ class CareerDocument(StrictModel):
         return self
 
 
+class CareerFactsProfile(StrictModel):
+    name: str = ""
+    email: str = ""
+    phone: str = ""
+    linkedin: str = ""
+    portfolio: str = ""
+    links: dict[str, str] = Field(default_factory=dict)
+
+    @field_validator("email")
+    @classmethod
+    def email_format(cls, value: str) -> str:
+        if value and ("@" not in value or value.startswith("@") or value.endswith("@")):
+            raise ValueError("must be a valid email address")
+        return value
+
+    @field_validator("links")
+    @classmethod
+    def http_links(cls, value: dict[str, str]) -> dict[str, str]:
+        for name, url in value.items():
+            parsed = urlparse(url)
+            if not name.strip() or parsed.scheme not in {"http", "https"} or not parsed.netloc:
+                raise ValueError("must contain named http(s) URLs")
+        return value
+
+    @field_validator("linkedin", "portfolio")
+    @classmethod
+    def profile_urls(cls, value: str) -> str:
+        if not value:
+            return value
+        parsed = urlparse(value)
+        if parsed.scheme not in {"http", "https"} or not parsed.netloc:
+            raise ValueError("must be an http(s) URL")
+        return value
+
+
+class FactExperience(DatedRecord):
+    company: str = Field(min_length=1)
+
+
+class FactEducation(DatedRecord):
+    institution: str = Field(min_length=1)
+
+
+class FactSkill(IdentifiedRecord):
+    tags: list[str] = Field(default_factory=list)
+    level: Literal["beginner", "intermediate", "advanced", "expert"] | None = None
+    core: bool = False
+
+
+class CareerFactsDocument(StrictModel):
+    """Language-independent, user-owned career facts (schema version 2)."""
+
+    schema_version: Literal[2]
+    profile: CareerFactsProfile = Field(default_factory=CareerFactsProfile)
+    experience: list[FactExperience] = Field(default_factory=list)
+    education: list[FactEducation] = Field(default_factory=list)
+    skills: list[FactSkill] = Field(default_factory=list)
+    evidence: list[CareerEvidence] = Field(default_factory=list)
+    answers: list[SavedAnswer] = Field(default_factory=list)
+    stories: list[CareerStory] = Field(default_factory=list)
+
+    @model_validator(mode="after")
+    def references_are_valid(self) -> "CareerFactsDocument":
+        _ensure_unique_ids(self.experience, "experience")
+        _ensure_unique_ids(self.education, "education")
+        _ensure_unique_ids(self.skills, "skills")
+        _ensure_unique_ids(self.evidence, "evidence")
+        _ensure_unique_ids(self.answers, "answers")
+        _ensure_unique_ids(self.stories, "stories")
+        experience_ids = {record.id for record in self.experience}
+        evidence_ids = {record.id for record in self.evidence}
+        for record in self.evidence:
+            if record.experience_id and record.experience_id not in experience_ids:
+                raise ValueError(f"evidence '{record.id}' references unknown experience_id '{record.experience_id}'")
+        for record in self.stories:
+            unknown = set(record.evidence_ids) - evidence_ids
+            if unknown:
+                raise ValueError(f"story '{record.id}' references unknown evidence_ids: {', '.join(sorted(unknown))}")
+        return self
+
+
+class LocaleCatalog(StrictModel):
+    labels: dict[str, str]
+    months: list[str] = Field(min_length=12, max_length=12)
+    date_format: str = "{month} {year}"
+
+    @model_validator(mode="after")
+    def complete_labels_and_date_format(self) -> "LocaleCatalog":
+        required = {"summary", "experience", "education", "skills", "languages", "current", "other", "level.beginner", "level.intermediate", "level.advanced", "level.expert"}
+        missing = required - set(self.labels)
+        if missing:
+            raise ValueError(f"labels is missing required keys: {', '.join(sorted(missing))}")
+        if "{month}" not in self.date_format or "{year}" not in self.date_format:
+            raise ValueError("date_format must contain {month} and {year}")
+        return self
+
+
+class LocalizedProfile(StrictModel):
+    title: str = ""
+    location: str = ""
+    languages: list[str] = Field(default_factory=list)
+    work_preference: str = ""
+    work_authorization: str = ""
+    notice_period: str = ""
+
+
+class LocalizedExperience(StrictModel):
+    title: str = ""
+    location: str = ""
+    employment_type: str = ""
+    highlights: list[str] = Field(default_factory=list)
+
+
+class LocalizedEducation(StrictModel):
+    degree: str = ""
+    field_of_study: str = ""
+    location: str = ""
+    highlights: list[str] = Field(default_factory=list)
+
+
+class LocalizedSkill(StrictModel):
+    name: str = ""
+    category: str = ""
+
+
+class CareerLocaleDocument(StrictModel):
+    schema_version: Literal[1]
+    locale: str
+    catalog: LocaleCatalog
+    profile: LocalizedProfile = Field(default_factory=LocalizedProfile)
+    summary: str = ""
+    experience: dict[str, LocalizedExperience] = Field(default_factory=dict)
+    education: dict[str, LocalizedEducation] = Field(default_factory=dict)
+    skills: dict[str, LocalizedSkill] = Field(default_factory=dict)
+
+    @field_validator("locale")
+    @classmethod
+    def valid_locale(cls, value: str) -> str:
+        if not _LOCALE_PATTERN.fullmatch(value):
+            raise ValueError("must be a BCP 47 locale identifier")
+        return value
+
+
 def _ensure_unique_ids(records: list[IdentifiedRecord], section: str) -> None:
     ids = [record.id for record in records]
     if len(ids) != len(set(ids)):
@@ -204,9 +352,13 @@ class CareerDiagnostic:
         return f"{location}: {self.path}: {self.message}"
 
 
-def load_career(path: Path) -> CareerDocument:
+def load_career(path: Path) -> CareerFactsDocument:
+    """Load v2 canonical facts.
+
+    Use :func:`load_localized_career` when a renderable document is required.
+    """
     document = _load_yaml(path)
-    return CareerDocument.model_validate(document)
+    return CareerFactsDocument.model_validate(document)
 
 
 def validate_career(path: Path) -> list[CareerDiagnostic]:
@@ -215,12 +367,12 @@ def validate_career(path: Path) -> list[CareerDiagnostic]:
     except (OSError, ValueError, YAMLError) as error:
         return [CareerDiagnostic("document", f"invalid YAML: {error}")]
     try:
-        career = CareerDocument.model_validate(document)
+        career = CareerFactsDocument.model_validate(document)
     except ValidationError as error:
         return [_diagnostic_from_error(document, item) for item in error.errors()]
 
     diagnostics: list[CareerDiagnostic] = []
-    for field in ("name", "title", "email"):
+    for field in ("name", "email"):
         if not getattr(career.profile, field).strip():
             diagnostics.append(
                 _diagnostic_for_path(
@@ -241,7 +393,7 @@ def set_profile(path: Path, values: dict[str, Any]) -> None:
     if "links" in updates and isinstance(profile.get("links", {}), dict):
         updates["links"] = {**profile.get("links", {}), **updates["links"]}
     profile.update(updates)
-    CareerDocument.model_validate(document)
+    CareerFactsDocument.model_validate(document)
     _write_yaml(path, document)
 
 
@@ -253,15 +405,95 @@ def add_record(path: Path, section: str, values: dict[str, Any]) -> None:
     if not isinstance(records, list):
         raise ValueError(f"{section} must be a list")
     records.append(values)
-    CareerDocument.model_validate(document)
+    CareerFactsDocument.model_validate(document)
     _write_yaml(path, document)
 
 
 def list_section(path: Path, section: str) -> Any:
     career = load_career(path)
-    if section not in CareerDocument.model_fields:
+    if section not in CareerFactsDocument.model_fields:
         raise ValueError(f"Unknown career section: {section}")
     return getattr(career, section)
+
+
+def locale_path(project_path: Path, locale: str) -> Path:
+    if not _LOCALE_PATTERN.fullmatch(locale):
+        raise ValueError(f"Invalid locale identifier: {locale}")
+    return project_path / LOCALES_DIRECTORY / f"{locale}.yml"
+
+
+def list_locales(project_path: Path) -> list[str]:
+    directory = project_path / LOCALES_DIRECTORY
+    if not directory.is_dir():
+        return []
+    return sorted(path.stem for path in directory.glob("*.yml") if _LOCALE_PATTERN.fullmatch(path.stem))
+
+
+def load_localized_career(project_path: Path, locale: str) -> CareerDocument:
+    facts = CareerFactsDocument.model_validate(_load_yaml(project_path / CAREER_FILE))
+    path = locale_path(project_path, locale)
+    if not path.is_file():
+        raise ValueError(f"Locale document is missing: {path.relative_to(project_path)}")
+    translated = CareerLocaleDocument.model_validate(_load_yaml(path))
+    if translated.locale != locale:
+        raise ValueError(f"locale document declares '{translated.locale}', expected '{locale}'")
+    _ensure_locale_references(facts, translated)
+    return CareerDocument.model_validate({
+        "schema_version": 2,
+        "profile": {**facts.profile.model_dump(), **translated.profile.model_dump()},
+        "summary": translated.summary,
+        "experience": [
+            {**item.model_dump(), **translated.experience[item.id].model_dump()}
+            for item in facts.experience
+        ],
+        "education": [
+            {**item.model_dump(), **translated.education[item.id].model_dump()}
+            for item in facts.education
+        ],
+        "skills": [
+            {**item.model_dump(), **translated.skills[item.id].model_dump()}
+            for item in facts.skills
+        ],
+        "evidence": [item.model_dump() for item in facts.evidence],
+        "answers": [item.model_dump() for item in facts.answers],
+        "stories": [item.model_dump() for item in facts.stories],
+        "catalog": translated.catalog.model_dump(),
+    })
+
+
+def validate_locale(project_path: Path, locale: str) -> list[CareerDiagnostic]:
+    path = locale_path(project_path, locale)
+    try:
+        load_localized_career(project_path, locale)
+    except (OSError, ValueError, YAMLError, ValidationError) as error:
+        return [CareerDiagnostic("document", str(error))]
+    return []
+
+
+def _ensure_locale_references(facts: CareerFactsDocument, locale: CareerLocaleDocument) -> None:
+    for name, source, translated in (
+        ("experience", facts.experience, locale.experience),
+        ("education", facts.education, locale.education),
+        ("skills", facts.skills, locale.skills),
+    ):
+        source_ids = {item.id for item in source}
+        unknown = set(translated) - source_ids
+        missing = source_ids - set(translated)
+        if unknown:
+            raise ValueError(f"locale {name} references unknown ids: {', '.join(sorted(unknown))}")
+        if missing:
+            raise ValueError(f"locale {name} is missing ids: {', '.join(sorted(missing))}")
+    if not locale.profile.title.strip():
+        raise ValueError("profile.title is required in every locale")
+    for item in facts.experience:
+        if not locale.experience[item.id].title.strip():
+            raise ValueError(f"experience '{item.id}' title is required in every locale")
+    for item in facts.education:
+        if not locale.education[item.id].degree.strip():
+            raise ValueError(f"education '{item.id}' degree is required in every locale")
+    for item in facts.skills:
+        if not locale.skills[item.id].name.strip():
+            raise ValueError(f"skill '{item.id}' name is required in every locale")
 
 
 def dump_section(value: Any) -> str:

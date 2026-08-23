@@ -87,7 +87,7 @@ class CreateProjectTests(unittest.TestCase):
             create_project(project_path, project_name="My Career")
             config_path = project_path / "seriemacv.yml"
             config_path.write_text(
-                "schema_version: 1\nproject_name: My Career\nresume_language: en\n",
+                "schema_version: 2\nproject_name: My Career\nresume_language: en\n",
                 encoding="utf-8",
             )
 
@@ -113,14 +113,14 @@ class ValidateProjectTests(unittest.TestCase):
             project_path = Path(temporary_directory) / "my-career"
             create_project(project_path, project_name="My Career")
             (project_path / "seriemacv.yml").write_text(
-                "schema_version: 2\nproject_name: My Career\n",
+                "schema_version: 3\nproject_name: My Career\n",
                 encoding="utf-8",
             )
 
             errors = validate_project(project_path)
 
             self.assertTrue(
-                any("schema_version" in error and "1" in error for error in errors)
+                any("schema_version" in error and "2" in error for error in errors)
             )
 
     def test_rejects_unknown_configuration_fields(self) -> None:
@@ -128,7 +128,7 @@ class ValidateProjectTests(unittest.TestCase):
             project_path = Path(temporary_directory) / "my-career"
             create_project(project_path, project_name="My Career")
             (project_path / "seriemacv.yml").write_text(
-                "schema_version: 1\nproject_name: My Career\nunexpected: true\n",
+                "schema_version: 2\nproject_name: My Career\nunexpected: true\n",
                 encoding="utf-8",
             )
 
@@ -191,7 +191,7 @@ def _create_legacy_project(project_path: Path) -> None:
     for relative_path, content in artifacts.items():
         (project_path / relative_path).write_text(content, encoding="utf-8")
     (project_path / "seriemacv.yml").write_text(
-        "schema_version: 1\nproject_name: Legacy Career\n", encoding="utf-8"
+        "schema_version: 2\nproject_name: Legacy Career\n", encoding="utf-8"
     )
     database_path = project_path / ".seriemacv/index/seriemacv.db"
     with closing(sqlite3.connect(database_path)) as connection:

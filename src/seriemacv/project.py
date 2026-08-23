@@ -17,6 +17,7 @@ from seriemacv.styles import ResumeStyleId
 
 CONFIG_FILE = "seriemacv.yml"
 PROJECT_DIRECTORIES = (
+    "career.locales",
     "resume",
     "resume/variants",
     "jobs",
@@ -44,11 +45,9 @@ LEGACY_PROJECT_DIRECTORIES = (
 PROJECT_ARTIFACTS = {
     "career.yml": (
         "# Canonical, user-owned career data\n"
-        "schema_version: 1\n"
+        "schema_version: 2\n"
         "profile:\n"
         '  name: ""\n'
-        '  title: ""\n'
-        '  location: ""\n'
         '  email: ""\n'
         '  linkedin: ""\n'
         '  portfolio: ""\n'
@@ -58,6 +57,18 @@ PROJECT_ARTIFACTS = {
         "evidence: []\n"
         "answers: []\n"
         "stories: []\n"
+    ),
+    "career.locales/pt-BR.yml": (
+        "schema_version: 1\nlocale: pt-BR\ncatalog:\n"
+        "  labels: {summary: Resumo, experience: Experiencia profissional, education: Formacao academica, skills: Habilidades, languages: Idiomas, current: Atual, other: Outras, level.beginner: Iniciante, level.intermediate: Intermediario, level.advanced: Avancado, level.expert: Especialista}\n"
+        "  months: [Jan., Fev., Mar., Abr., Mai., Jun., Jul., Ago., Set., Out., Nov., Dez.]\n"
+        "  date_format: '{month} de {year}'\nprofile: {title: '', location: ''}\nsummary: ''\nexperience: {}\neducation: {}\nskills: {}\n"
+    ),
+    "career.locales/en.yml": (
+        "schema_version: 1\nlocale: en\ncatalog:\n"
+        "  labels: {summary: Summary, experience: Professional Experience, education: Education, skills: Skills, languages: Languages, current: Present, other: Other, level.beginner: Beginner, level.intermediate: Intermediate, level.advanced: Advanced, level.expert: Expert}\n"
+        "  months: [Jan, Feb, Mar, Apr, May, Jun, Jul, Aug, Sep, Oct, Nov, Dec]\n"
+        "  date_format: '{month} {year}'\nprofile: {title: '', location: ''}\nsummary: ''\nexperience: {}\neducation: {}\nskills: {}\n"
     ),
 }
 LEGACY_PROJECT_ARTIFACTS = (
@@ -71,37 +82,24 @@ LEGACY_PROJECT_ARTIFACTS = (
 PROJECT_EXAMPLES = {
     "career.yml.example": (
         "# Fictitious example. Replace it with facts you have verified.\n"
-        "schema_version: 1\n"
+        "schema_version: 2\n"
         "profile:\n"
         "  name: Seriema Example\n"
-        "  title: Software Engineer\n"
-        "  location: Example City, Brazil\n"
         "  email: seriema@example.invalid\n"
         "  phone: '+55 11 5555-0100'\n"
         "  links:\n"
         "    github: https://github.com/seriema-example\n"
-        "  languages: [Portuguese, English]\n"
-        "  work_preference: Remote\n"
-        "  work_authorization: Authorized to work in Brazil\n"
-        "  notice_period: 30 days\n"
-        "summary: Build reliable software with collaborative teams.\n"
         "experience:\n"
         "  - id: example-platform\n"
         "    company: Example Systems\n"
-        "    title: Software Engineer\n"
         "    start_date: 2024-01\n"
-        "    highlights:\n"
-        "      - Delivered a documented internal service.\n"
         "education:\n"
         "  - id: example-degree\n"
         "    institution: Example University\n"
-        "    degree: Bachelor of Technology\n"
         "    start_date: 2018-01\n"
         "    end_date: 2021-12\n"
         "skills:\n"
         "  - id: python\n"
-        "    name: Python\n"
-        "    category: Programming language\n"
         "evidence:\n"
         "  - id: example-service\n"
         "    experience_id: example-platform\n"
@@ -123,7 +121,7 @@ PROJECT_EXAMPLES = {
     ),
     "seriemacv.yml.example": (
         "# Example project configuration. This file contains no secrets.\n"
-        "schema_version: 1\n"
+        "schema_version: 2\n"
         'project_name: "Example Career"\n'
         "resume_language: pt-BR\n"
         "resume_style: clean\n"
@@ -149,8 +147,21 @@ PROJECT_EXAMPLES = {
         "    statement: Cloud-platform experience.\n"
         "    priority: preferred\n"
     ),
+    "career.locales/pt-BR.yml.example": (
+        "schema_version: 1\nlocale: pt-BR\ncatalog:\n"
+        "  labels: {summary: Resumo, experience: Experiencia profissional, education: Formacao academica, skills: Habilidades, languages: Idiomas, current: Atual, other: Outras, level.beginner: Iniciante, level.intermediate: Intermediario, level.advanced: Avancado, level.expert: Especialista}\n"
+        "  months: [Jan., Fev., Mar., Abr., Mai., Jun., Jul., Ago., Set., Out., Nov., Dez.]\n"
+        "  date_format: '{month} de {year}'\nprofile: {title: Engenheiro de Software, location: 'Cidade Exemplo, Brasil', languages: [Português, Inglês]}\nsummary: Desenvolve software confiável com equipes colaborativas.\nexperience: {example-platform: {title: Engenheiro de Software, highlights: [Entregou um serviço interno documentado.]}}\neducation: {example-degree: {degree: Bacharelado em Tecnologia}}\nskills: {python: {name: Python, category: Linguagem de programação}}\n"
+    ),
+    "career.locales/en.yml.example": (
+        "schema_version: 1\nlocale: en\ncatalog:\n"
+        "  labels: {summary: Summary, experience: Professional Experience, education: Education, skills: Skills, languages: Languages, current: Present, other: Other, level.beginner: Beginner, level.intermediate: Intermediate, level.advanced: Advanced, level.expert: Expert}\n"
+        "  months: [Jan, Feb, Mar, Apr, May, Jun, Jul, Aug, Sep, Oct, Nov, Dec]\n"
+        "  date_format: '{month} {year}'\nprofile: {title: Software Engineer, location: 'Example City, Brazil', languages: [Portuguese, English]}\nsummary: Build reliable software with collaborative teams.\nexperience: {example-platform: {title: Software Engineer, highlights: [Delivered a documented internal service.]}}\neducation: {example-degree: {degree: Bachelor of Technology}}\nskills: {python: {name: Python, category: Programming language}}\n"
+    ),
 }
 DATABASE_RELATIVE_PATH = Path(".seriemacv/index/seriemacv.db")
+
 
 class ProjectAlreadyExistsError(FileExistsError):
     """Raised when creating a project would overwrite its configuration."""
@@ -177,9 +188,9 @@ class ProjectConfiguration(BaseModel):
 
     model_config = ConfigDict(extra="forbid", strict=True)
 
-    schema_version: Literal[1]
+    schema_version: Literal[2]
     project_name: str = Field(min_length=1, max_length=120)
-    resume_language: Literal["pt-BR", "en"] = "pt-BR"
+    resume_language: str = "pt-BR"
     resume_style: ResumeStyleId = "clean"
 
     @field_validator("project_name")
@@ -187,6 +198,14 @@ class ProjectConfiguration(BaseModel):
     def project_name_cannot_be_blank(cls, value: str) -> str:
         if not value.strip():
             raise ValueError("must not be blank")
+        return value
+
+    @field_validator("resume_language")
+    @classmethod
+    def resume_language_is_locale(cls, value: str) -> str:
+        import re
+        if not re.fullmatch(r"[A-Za-z]{2,8}(?:-[A-Za-z0-9]{2,8})*", value):
+            raise ValueError("must be a BCP 47 locale identifier")
         return value
 
 
@@ -200,7 +219,7 @@ def create_project(
     """Create a new portable seriemaCV project without overwriting one."""
     project_path = path.expanduser().resolve()
     ProjectConfiguration(
-        schema_version=1,
+        schema_version=2,
         project_name=project_name,
         resume_language=resume_language,
         resume_style=resume_style,
@@ -221,7 +240,7 @@ def create_project(
 
     config = (
         "# seriemaCV project configuration\n"
-        "schema_version: 1\n"
+        "schema_version: 2\n"
         f"project_name: {_yaml_string(project_name)}\n"
         f"resume_language: {resume_language}\n"
         f"resume_style: {resume_style}\n"
