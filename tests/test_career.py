@@ -104,7 +104,7 @@ class CareerSchemaTests(unittest.TestCase):
                 encoding="utf-8",
             )
 
-            set_profile(career_path, {"name": "Avery", "title": "Engineer"})
+            set_profile(career_path, {"name": "Seriema", "title": "Engineer"})
             add_record(career_path, "skills", {
                 "id": "python", "name": "Python", "category": "Language", "tags": []
             })
@@ -120,9 +120,9 @@ class CareerCliTests(unittest.TestCase):
             project_path = _create_project(temporary_directory)
             with redirect_stdout(StringIO()):
                 result = main([
-                    "career", "set-profile", str(project_path), "--name", "Avery",
-                    "--title", "Engineer", "--email", "avery@example.invalid",
-                    "--link", "github=https://github.com/avery",
+                    "career", "set-profile", str(project_path), "--name", "Seriema",
+                    "--title", "Engineer", "--email", "seriema@example.invalid",
+                    "--link", "github=https://github.com/seriema",
                 ])
             self.assertEqual(result, 0)
 
@@ -160,8 +160,8 @@ class CareerCliTests(unittest.TestCase):
             with redirect_stdout(StringIO()):
                 main([
                     "career", "set-profile", str(project_path), "--link",
-                    "github=https://github.com/avery", "--link",
-                    "linkedin=https://linkedin.com/in/avery",
+                    "github=https://github.com/seriema", "--link",
+                    "linkedin=https://linkedin.com/in/seriema",
                 ])
                 result = main([
                     "career", "set-profile", str(project_path), "--link",
@@ -180,7 +180,7 @@ class CareerCliTests(unittest.TestCase):
 
             with redirect_stderr(stderr):
                 result = main([
-                    "career", "set-profile", str(project_path), "--name", "Avery",
+                    "career", "set-profile", str(project_path), "--name", "Seriema",
                 ])
 
             self.assertEqual(result, 1)

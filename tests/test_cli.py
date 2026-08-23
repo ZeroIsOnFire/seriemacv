@@ -56,7 +56,7 @@ class CliTests(unittest.TestCase):
             with redirect_stdout(StringIO()) as output:
                 result = main(["template", "show", str(project_path), "career"])
             self.assertEqual(result, 0)
-            self.assertIn("Avery Example", output.getvalue())
+            self.assertIn("Seriema Example", output.getvalue())
 
             with redirect_stderr(StringIO()):
                 with self.assertRaises(SystemExit):

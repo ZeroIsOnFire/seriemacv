@@ -32,10 +32,10 @@ class MarkdownRendererTests(unittest.TestCase):
                     html = render_html(self._career(), locale, style_id)
                     document = Document(BytesIO(render_docx(self._career(), locale, style_id)))
 
-                    self.assertIn("Avery Example", markdown)
+                    self.assertIn("Seriema Example", markdown)
                     self.assertIn(f'data-style="{style_id}"', html)
                     self.assertNotIn("{{", html)
-                    self.assertIn("Avery Example", "\n".join(p.text for p in document.paragraphs))
+                    self.assertIn("Seriema Example", "\n".join(p.text for p in document.paragraphs))
                     self.assertEqual(len(document.inline_shapes), 0)
                     if style_id == "sidebar":
                         self.assertIn('<aside class="sidebar">', html)
@@ -52,7 +52,7 @@ class MarkdownRendererTests(unittest.TestCase):
                             else "Professional Experience"
                         )
                         self.assertIn(expected_heading, table_text)
-                        self.assertIn("Portfolio: https://example.invalid/avery", table_text)
+                        self.assertIn("Portfolio: https://example.invalid/seriema", table_text)
                         self.assertIn('w:val="nil"', document.tables[0]._tbl.xml)
                     else:
                         self.assertNotIn('<aside class="sidebar">', html)
@@ -70,8 +70,8 @@ class MarkdownRendererTests(unittest.TestCase):
 
         self.assertEqual(len(set(rendered.values())), len(STYLE_IDS))
         self.assertIn("=============", rendered["classic"])
-        self.assertIn("# Avery Example | Software Engineer", rendered["compact"])
-        self.assertIn("> Remote | avery@example.invalid", rendered["sidebar"])
+        self.assertIn("# Seriema Example | Software Engineer", rendered["compact"])
+        self.assertIn("> Remote | seriema@example.invalid", rendered["sidebar"])
 
     def test_docx_matches_clean_layout_and_resume_content(self) -> None:
         career_data = self._career().model_dump()
@@ -92,12 +92,12 @@ class MarkdownRendererTests(unittest.TestCase):
         self.assertAlmostEqual(section.page_height / 36000, 297, places=1)
         self.assertAlmostEqual(section.top_margin / 36000, 16, places=1)
         self.assertEqual(document.styles["Normal"].font.name, "Arial")
-        self.assertIn("Avery Example", texts)
+        self.assertIn("Seriema Example", texts)
         self.assertIn("Professional Experience", texts)
         self.assertIn(f"Build {chr(0x2014)} Systems - Earlier Corp", texts)
         self.assertIn("Jan 2024", "\n".join(texts))
         self.assertIn("Present", "\n".join(texts))
-        self.assertIn("Portfolio: https://example.invalid/avery", texts)
+        self.assertIn("Portfolio: https://example.invalid/seriema", texts)
         self.assertIn("Advanced", "\n".join(texts))
         self.assertTrue(any(run.bold for paragraph in document.paragraphs for run in paragraph.runs if run.text == "Python"))
         self.assertEqual(document.tables, [])
@@ -119,14 +119,14 @@ class MarkdownRendererTests(unittest.TestCase):
         career = CareerDocument.model_validate(
             {
                 "schema_version": 1,
-                "profile": {"name": "Avery", "title": "Engineer", "email": "avery@example.invalid"},
+                "profile": {"name": "Seriema", "title": "Engineer", "email": "seriema@example.invalid"},
             }
         )
 
         document = Document(BytesIO(render_docx(career, "pt-BR")))
         texts = [paragraph.text for paragraph in document.paragraphs]
 
-        self.assertIn("Avery", texts)
+        self.assertIn("Seriema", texts)
         self.assertNotIn("Resumo", texts)
         self.assertNotIn("ExperiÃªncia profissional", texts)
         self.assertNotIn("Idiomas", texts)
@@ -197,9 +197,9 @@ class MarkdownRendererTests(unittest.TestCase):
             {
                 "schema_version": 1,
                 "profile": {
-                    "name": "Avery Example",
+                    "name": "Seriema Example",
                     "title": "Engineer",
-                    "email": "avery@example.invalid",
+                    "email": "seriema@example.invalid",
                 },
                 "evidence": [{"id": "private-proof", "statement": "Do not render"}],
             }
@@ -279,12 +279,12 @@ class MarkdownRendererTests(unittest.TestCase):
             {
                 "schema_version": 1,
                 "profile": {
-                    "name": "Avery Example",
+                    "name": "Seriema Example",
                     "title": "Software Engineer",
                     "location": "Remote",
-                    "email": "avery@example.invalid",
+                    "email": "seriema@example.invalid",
                     "phone": "+1 555 0100",
-                    "links": {"Portfolio": "https://example.invalid/avery"},
+                    "links": {"Portfolio": "https://example.invalid/seriema"},
                     "languages": ["Portuguese", "English"],
                 },
                 "summary": "Texto canônico sem tradução.",
@@ -372,9 +372,9 @@ class ResumeRenderCliTests(unittest.TestCase):
             career_path.write_text(
                 """schema_version: 1
 profile:
-  name: Avery Example
+  name: Seriema Example
   title: Engineer
-  email: avery@example.invalid
+  email: seriema@example.invalid
 summary: Canonical content.
 experience: []
 education: []
@@ -462,9 +462,9 @@ stories: []
             (project_path / "career.yml").write_text(
                 """schema_version: 1
 profile:
-  name: Avery Example
+  name: Seriema Example
   title: Engineer
-  email: avery@example.invalid
+  email: seriema@example.invalid
 experience: []
 education: []
 skills: []
@@ -501,9 +501,9 @@ stories: []
         (project_path / "career.yml").write_text(
             """schema_version: 1
 profile:
-  name: Avery Example
+  name: Seriema Example
   title: Engineer
-  email: avery@example.invalid
+  email: seriema@example.invalid
 summary: Canonical content.
 experience: []
 education: []

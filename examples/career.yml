@@ -1,13 +1,13 @@
 # Fictitious example. Replace it with facts you have verified.
 schema_version: 1
 profile:
-  name: Avery Example
+  name: Seriema Example
   title: Software Engineer
   location: Example City, Brazil
-  email: avery@example.invalid
+  email: seriema@example.invalid
   phone: '+55 11 5555-0100'
   links:
-    github: https://github.com/avery-example
+    github: https://github.com/seriema-example
   languages: [Portuguese, English]
   work_preference: Remote
   work_authorization: Authorized to work in Brazil
