@@ -106,5 +106,5 @@ arquivos e compatibilidade existentes permanecem preservados para retomada.
 - [ ] Garantir que diagnósticos não exportem artefatos pessoais por padrão.
 - [ ] Adicionar formatter, linter e análise de tipos compatíveis com a stack.
 - [ ] Configurar CI para testes e verificações estáticas.
-- [ ] Documentar instalação, uso local e comandos oficiais.
+- [x] Documentar instalação, uso local e comandos oficiais em guia bilíngue por funcionalidade.
 - [ ] Revisar dependências e políticas de atualização.

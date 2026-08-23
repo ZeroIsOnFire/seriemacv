@@ -1,0 +1,66 @@
+# Troubleshooting
+
+[Back to the complete guide](index.md) · [Português](../pt-BR/solucao-de-problemas.md)
+
+## `seriemacv` is not recognized
+
+Install the local checkout and confirm its Scripts directory is on `PATH`:
+
+```powershell
+python -m pip install -e .
+python -m pip show seriemacv
+```
+
+## Windows opens the Microsoft Store Python alias
+
+Use the full installed Python 3.11+ path, use a working `py -3.12`, or disable the
+conflicting application execution alias in Windows settings.
+
+## Project validation fails
+
+Run:
+
+```powershell
+seriemacv validate .\my-career
+```
+
+Restore the specifically reported missing directory or artifact. Do not recreate the
+SQLite file as plain text. If the project predates the current layout, validation
+automatically recognizes the supported legacy contract.
+
+## Career validation fails
+
+```powershell
+seriemacv career validate .\my-career
+```
+
+Read diagnostics as `file:line:column: field.path: message`. Common causes are an
+empty name/title/email, invalid indentation, an unknown field, duplicate IDs, an
+invalid date, or an evidence reference to a missing experience.
+
+Dates must use `YYYY-MM`, for example `2024-01`. Current records omit `end_date`.
+
+## PDF says Chromium is missing
+
+```powershell
+python -m playwright install chromium
+```
+
+Run the command with the same Python environment that installed seriemaCV.
+
+## A different style replaced my resume
+
+Outputs are deliberately fixed as `exports/resume.<ext>`. Rendering a second style
+in the same format replaces the previous artifact atomically. Copy or rename an
+artifact before rendering another style when both versions must be kept.
+
+## Markdown does not look like PDF or DOCX
+
+Markdown has no reliable representation for page geometry, fonts, colors, or
+sidebars. It preserves content and varies only structural elements such as headings,
+separators, density, and grouping.
+
+## `sidebar` is parsed poorly by an ATS
+
+This is expected: `sidebar` is explicitly non-ATS-safe. Render `clean`, `classic`,
+`modern`, or `compact` for automated parsing.

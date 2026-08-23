@@ -7,6 +7,12 @@
 Local-first workspace for maintaining canonical career data in YAML and rendering
 editable or publication-ready resumes.
 
+## Documentation
+
+See the [complete usage guide](docs/manual/en/index.md) for installation, project
+configuration, every Career Builder command, resume formats, templates, and
+troubleshooting.
+
 ## Career Builder
 
 ```powershell

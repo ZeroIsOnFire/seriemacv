@@ -7,6 +7,12 @@
 Workspace local-first para manter dados canônicos de carreira em YAML e gerar
 currículos editáveis ou prontos para publicação.
 
+## Documentação
+
+Consulte o [guia completo de uso](docs/manual/pt-BR/index.md) para instalação,
+configuração de projetos, todos os comandos do Career Builder, formatos de currículo,
+templates e solução de problemas.
+
 ## Career Builder
 
 ```powershell

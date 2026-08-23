@@ -110,6 +110,8 @@ provider-agnostic integration and never owns the user's data or workflow.
 
 - Keep the main README in English and `README.pt-BR.md` in Portuguese, with visible
   cross-links near the top of both files.
+- Keep the feature-based user manual under `docs/manual/` in English and Portuguese;
+  both README files link to their language index as the complete usage guide.
 - Keep changes small and focused; do not discard existing user changes outside scope.
 - Commits must be atomic, in Portuguese, and follow Conventional Commits.
 - At handoff, briefly report changed files, validations run, limitations, and
