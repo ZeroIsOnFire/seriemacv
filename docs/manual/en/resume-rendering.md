@@ -23,6 +23,11 @@ The `sidebar` DOCX uses a borderless table and its HTML/PDF uses a visual grid.
 Prefer one of the four linear styles when an applicant tracking system will parse the
 document.
 
+Each family also provides `clean-alt`, `classic-alt`, `modern-alt`, `compact-alt`,
+and `sidebar-alt`. Standard IDs draw section-title dividers; `-alt` IDs remove them
+while preserving typography, spacing, layout, formats, and ATS status. The centered
+`classic` header never has a bottom divider in either variant.
+
 ## Render an artifact
 
 ```powershell

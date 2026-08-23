@@ -52,6 +52,8 @@ currículo. Vagas, match e tailoring permanecem pausados nesta fase.
 - [x] Criar registro estrito de estilos internos e seleção por configuração/CLI.
 - [x] Entregar `classic`, `modern` e `compact` como estilos ATS-safe de uma coluna.
 - [x] Entregar `sidebar` como estilo visual experimental de duas colunas.
+- [x] Entregar variantes `-alt` sem divisores para todas as famílias, mantendo os IDs
+  padrão com divisores de seção e o cabeçalho do `classic` sempre sem linha inferior.
 - [x] Gerar variações estruturais de Markdown para todos os estilos.
 - [x] Versionar galeria fictícia com previews e PDFs reproduzíveis.
 - [x] Gerar currículo Markdown a partir do YAML.

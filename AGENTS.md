@@ -81,7 +81,10 @@ provider-agnostic integration and never owns the user's data or workflow.
   supplies the default style; PDF requires Playwright Chromium.
 - Built-in ATS-safe styles use linear DOCX text with plain bullets and no tables,
   images, text boxes, or automatic lists. A manifest marked `ats_safe: false` may use
-  non-linear structures; `sidebar` uses a borderless table and stays experimental.
+  non-linear structures; the `sidebar` family uses a borderless table and stays
+  experimental.
+- Each built-in style family has a standard ID with section dividers and an `-alt`
+  ID without them. Neither `classic` variant draws a divider below its header.
 - Canonical `skills.level` values are English codes. `i18n.py` localizes fixed labels,
   months, and levels; `core` is an explicit editorial priority, while categories keep
   the complete skills list readable.

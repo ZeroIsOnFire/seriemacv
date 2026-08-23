@@ -23,6 +23,22 @@ from seriemacv.renderer import (
 from seriemacv.styles import STYLE_IDS
 
 
+def _docx_resume_headings(document: Document) -> list[object]:
+    paragraphs = list(document.paragraphs)
+    for table in document.tables:
+        paragraphs.extend(
+            paragraph
+            for row in table.rows
+            for cell in row.cells
+            for paragraph in cell.paragraphs
+        )
+    return [
+        paragraph
+        for paragraph in paragraphs
+        if paragraph.style.name == "Resume Heading"
+    ]
+
+
 class MarkdownRendererTests(unittest.TestCase):
     def test_all_styles_render_markdown_html_and_docx_in_both_locales(self) -> None:
         for style_id in STYLE_IDS:
@@ -37,7 +53,7 @@ class MarkdownRendererTests(unittest.TestCase):
                     self.assertNotIn("{{", html)
                     self.assertIn("Seriema Example", "\n".join(p.text for p in document.paragraphs))
                     self.assertEqual(len(document.inline_shapes), 0)
-                    if style_id == "sidebar":
+                    if style_id.startswith("sidebar"):
                         self.assertIn('<aside class="sidebar">', html)
                         self.assertEqual(len(document.tables), 1)
                         table_text = "\n".join(
@@ -72,6 +88,43 @@ class MarkdownRendererTests(unittest.TestCase):
         self.assertIn("=============", rendered["classic"])
         self.assertIn("# Seriema Example | Software Engineer", rendered["compact"])
         self.assertIn("> Remote | seriema@example.invalid", rendered["sidebar"])
+
+    def test_standard_and_alt_styles_toggle_section_dividers(self) -> None:
+        for family in ("clean", "classic", "modern", "compact", "sidebar"):
+            with self.subTest(family=family):
+                standard_html = render_html(self._career(), "en", family)
+                alt_html = render_html(self._career(), "en", f"{family}-alt")
+                standard_docx = Document(
+                    BytesIO(render_docx(self._career(), "en", family))
+                )
+                alt_docx = Document(
+                    BytesIO(render_docx(self._career(), "en", f"{family}-alt"))
+                )
+                standard_headings = _docx_resume_headings(standard_docx)
+                alt_headings = _docx_resume_headings(alt_docx)
+
+                self.assertTrue(standard_headings)
+                self.assertTrue(alt_headings)
+                self.assertIn("border-bottom", standard_html)
+                self.assertNotIn("border-bottom", alt_html)
+                self.assertTrue(
+                    all("w:pBdr" in paragraph._p.xml for paragraph in standard_headings)
+                )
+                self.assertTrue(
+                    all("w:pBdr" not in paragraph._p.xml for paragraph in alt_headings)
+                )
+                self.assertIn("\n---", render_markdown(self._career(), "en", family))
+                self.assertNotIn(
+                    "\n---", render_markdown(self._career(), "en", f"{family}-alt")
+                )
+
+    def test_classic_never_draws_a_header_divider(self) -> None:
+        for style_id in ("classic", "classic-alt"):
+            with self.subTest(style=style_id):
+                html = render_html(self._career(), "en", style_id)
+                header_rule = html.split("header {", 1)[1].split("}", 1)[0]
+
+                self.assertNotIn("border", header_rule)
 
     def test_docx_matches_clean_layout_and_resume_content(self) -> None:
         career_data = self._career().model_dump()
@@ -353,10 +406,10 @@ class ResumeRenderCliTests(unittest.TestCase):
             with redirect_stdout(StringIO()):
                 result = main([
                     "resume", "render", str(project_path), "--format", "html",
-                    "--style", "compact",
+                    "--style", "compact-alt",
                 ])
             self.assertEqual(result, 0)
-            self.assertIn('data-style="compact"', output_path.read_text(encoding="utf-8"))
+            self.assertIn('data-style="compact-alt"', output_path.read_text(encoding="utf-8"))
             self.assertIn(
                 "resume_style: modern",
                 (project_path / "seriemacv.yml").read_text(encoding="utf-8"),

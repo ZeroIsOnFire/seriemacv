@@ -81,10 +81,18 @@ def render_markdown(
     style = load_style(style_id).manifest
     _ensure_supported(style, "markdown")
     variant = style.markdown_variant
+    show_dividers = style.tokens.section_divider != "none"
     profile = career.profile
-    blocks = _markdown_header(presentation, variant)
+    blocks = _markdown_header(presentation, variant, show_dividers)
     if career.summary:
-        blocks.append(_md_section(presentation.labels["summary"], career.summary, variant))
+        blocks.append(
+            _md_section(
+                presentation.labels["summary"],
+                career.summary,
+                variant,
+                show_dividers,
+            )
+        )
     if presentation.experience:
         blocks.append(
             _md_records(
@@ -93,6 +101,7 @@ def render_markdown(
                 presentation.labels,
                 True,
                 variant,
+                show_dividers,
             )
         )
     if presentation.education:
@@ -103,6 +112,7 @@ def render_markdown(
                 presentation.labels,
                 False,
                 variant,
+                show_dividers,
             )
         )
     if career.skills:
@@ -111,6 +121,7 @@ def render_markdown(
                 presentation.labels["skills"],
                 _markdown_skills(career.skills, presentation.labels, variant),
                 variant,
+                show_dividers,
             )
         )
     if profile.languages:
@@ -120,7 +131,12 @@ def render_markdown(
             else "\n".join(f"- {item}" for item in profile.languages)
         )
         blocks.append(
-            _md_section(presentation.labels["languages"], language_text, variant)
+            _md_section(
+                presentation.labels["languages"],
+                language_text,
+                variant,
+                show_dividers,
+            )
         )
     separator = "\n" if variant == "compact" else "\n\n"
     return separator.join(block for block in blocks if block) + "\n"
@@ -259,7 +275,7 @@ def _presentation(career: CareerDocument, locale: ResumeLocale) -> ResumePresent
 
 
 def _markdown_header(
-    presentation: ResumePresentation, variant: str
+    presentation: ResumePresentation, variant: str, show_dividers: bool
 ) -> list[str]:
     profile = presentation.career.profile
     contact = " | ".join(presentation.contacts)
@@ -267,7 +283,9 @@ def _markdown_header(
     if variant == "classic":
         values = [profile.name, "=" * len(profile.name), f"*{profile.title}*"]
     elif variant == "modern":
-        values = [f"# {profile.name}", f"**{profile.title}**", "---"]
+        values = [f"# {profile.name}", f"**{profile.title}**"]
+        if show_dividers:
+            values.append("---")
     elif variant == "compact":
         values = [f"# {profile.name} | {profile.title}"]
     elif variant == "sidebar":
@@ -284,14 +302,16 @@ def _markdown_header(
     return values
 
 
-def _md_section(title: str, content: str, variant: str) -> str:
+def _md_section(
+    title: str, content: str, variant: str, show_dividers: bool
+) -> str:
     if variant == "classic":
-        return f"{title}\n{'-' * len(title)}\n\n{content}"
-    if variant == "modern":
-        return f"## {title}\n\n{content}\n\n---"
+        heading = f"{title}\n{'-' * len(title)}" if show_dividers else f"## {title}"
+        return f"{heading}\n\n{content}"
+    divider = "\n---" if show_dividers else ""
     if variant == "compact":
-        return f"## {title}\n{content}"
-    return f"## {title}\n\n{content}"
+        return f"## {title}{divider}\n{content}"
+    return f"## {title}{divider}\n\n{content}"
 
 
 def _md_records(
@@ -300,6 +320,7 @@ def _md_records(
     labels: dict[str, str],
     experience: bool,
     variant: str,
+    show_dividers: bool,
 ) -> str:
     values = []
     for record in records:
@@ -317,7 +338,7 @@ def _md_records(
             )
         )
     separator = "\n" if variant == "compact" else "\n\n"
-    return _md_section(title, separator.join(values), variant)
+    return _md_section(title, separator.join(values), variant, show_dividers)
 
 
 def _markdown_skills(

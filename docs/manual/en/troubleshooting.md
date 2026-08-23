@@ -62,5 +62,5 @@ separators, density, and grouping.
 
 ## `sidebar` is parsed poorly by an ATS
 
-This is expected: `sidebar` is explicitly non-ATS-safe. Render `clean`, `classic`,
-`modern`, or `compact` for automated parsing.
+This is expected: the `sidebar` family is explicitly non-ATS-safe. Render `clean`,
+`classic`, `modern`, `compact`, or one of their `-alt` variants for automated parsing.

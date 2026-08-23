@@ -29,9 +29,40 @@ class ResumeStyleTests(unittest.TestCase):
         self.assertEqual(tuple(style.id for style in styles), STYLE_IDS)
         self.assertEqual(
             {style.id for style in styles if style.ats_safe},
-            {"clean", "classic", "modern", "compact"},
+            {
+                "clean",
+                "clean-alt",
+                "classic",
+                "classic-alt",
+                "modern",
+                "modern-alt",
+                "compact",
+                "compact-alt",
+            },
         )
         self.assertEqual(load_style("sidebar").manifest.layout, "two-column")
+        self.assertEqual(load_style("sidebar-alt").manifest.layout, "two-column")
+        for family in ("clean", "classic", "modern", "compact", "sidebar"):
+            standard = load_style(family).manifest
+            alternative = load_style(f"{family}-alt").manifest
+
+            self.assertEqual(standard.layout, alternative.layout)
+            self.assertEqual(standard.ats_safe, alternative.ats_safe)
+            self.assertEqual(standard.supported_formats, alternative.supported_formats)
+            self.assertEqual(standard.markdown_variant, alternative.markdown_variant)
+            self.assertNotEqual(
+                standard.tokens.section_divider,
+                "none",
+            )
+            self.assertEqual(
+                alternative.tokens.section_divider,
+                "none",
+            )
+            standard_tokens = standard.tokens.model_dump()
+            alternative_tokens = alternative.tokens.model_dump()
+            standard_tokens.pop("section_divider")
+            alternative_tokens.pop("section_divider")
+            self.assertEqual(standard_tokens, alternative_tokens)
         for style_id in STYLE_IDS:
             package = load_style(style_id)
             self.assertIn("{{main}}", package.template)

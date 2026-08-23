@@ -9,17 +9,33 @@ from typing import Literal
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 from ruamel.yaml import YAML
 
-ResumeStyleId = Literal["clean", "classic", "modern", "compact", "sidebar"]
+ResumeStyleId = Literal[
+    "clean",
+    "clean-alt",
+    "classic",
+    "classic-alt",
+    "modern",
+    "modern-alt",
+    "compact",
+    "compact-alt",
+    "sidebar",
+    "sidebar-alt",
+]
 ResumeLayout = Literal["single-column", "two-column"]
 MarkdownVariant = Literal["standard", "classic", "modern", "compact", "sidebar"]
 SupportedFormat = Literal["markdown", "html", "pdf", "docx"]
 
 STYLE_IDS: tuple[ResumeStyleId, ...] = (
     "clean",
+    "clean-alt",
     "classic",
+    "classic-alt",
     "modern",
+    "modern-alt",
     "compact",
+    "compact-alt",
     "sidebar",
+    "sidebar-alt",
 )
 
 

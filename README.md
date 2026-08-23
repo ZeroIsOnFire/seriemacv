@@ -49,6 +49,10 @@ fonts, colors, or columns. DOCX remains editable. `clean`, `classic`, `modern`, 
 `compact` preserve a linear ATS-safe structure. `sidebar` is a two-column visual
 layout and is explicitly experimental and not ATS-safe.
 
+Every family has a standard style with section divider lines and an `-alt` style
+without them. `classic` and `classic-alt` never draw a line below the centered
+header; only their section-title dividers differ.
+
 ## Built-in style gallery
 
 All previews and PDFs below use the fictitious [gallery career](examples/style-career.yml).
@@ -56,10 +60,15 @@ All previews and PDFs below use the fictitious [gallery career](examples/style-c
 | Style | Preview | Characteristics | Example |
 | --- | --- | --- | --- |
 | `clean` | <img src="examples/styles/clean/preview.png" width="180" alt="Clean resume preview"> | Neutral, single-column, ATS-safe | [PDF](examples/styles/clean/resume.pdf) |
+| `clean-alt` | <img src="examples/styles/clean-alt/preview.png" width="180" alt="Clean Alt resume preview"> | Clean without section dividers, ATS-safe | [PDF](examples/styles/clean-alt/resume.pdf) |
 | `classic` | <img src="examples/styles/classic/preview.png" width="180" alt="Classic resume preview"> | Traditional serif, centered header, ATS-safe | [PDF](examples/styles/classic/resume.pdf) |
+| `classic-alt` | <img src="examples/styles/classic-alt/preview.png" width="180" alt="Classic Alt resume preview"> | Classic without section dividers, ATS-safe | [PDF](examples/styles/classic-alt/resume.pdf) |
 | `modern` | <img src="examples/styles/modern/preview.png" width="180" alt="Modern resume preview"> | Contemporary navy accents, ATS-safe | [PDF](examples/styles/modern/resume.pdf) |
+| `modern-alt` | <img src="examples/styles/modern-alt/preview.png" width="180" alt="Modern Alt resume preview"> | Modern without section dividers, ATS-safe | [PDF](examples/styles/modern-alt/resume.pdf) |
 | `compact` | <img src="examples/styles/compact/preview.png" width="180" alt="Compact resume preview"> | Dense layout for longer careers, ATS-safe | [PDF](examples/styles/compact/resume.pdf) |
+| `compact-alt` | <img src="examples/styles/compact-alt/preview.png" width="180" alt="Compact Alt resume preview"> | Compact without section dividers, ATS-safe | [PDF](examples/styles/compact-alt/resume.pdf) |
 | `sidebar` | <img src="examples/styles/sidebar/preview.png" width="180" alt="Sidebar resume preview"> | Two-column, human-first, not ATS-safe | [PDF](examples/styles/sidebar/resume.pdf) |
+| `sidebar-alt` | <img src="examples/styles/sidebar-alt/preview.png" width="180" alt="Sidebar Alt resume preview"> | Sidebar without section dividers, not ATS-safe | [PDF](examples/styles/sidebar-alt/resume.pdf) |
 
 Regenerate the gallery with:
 

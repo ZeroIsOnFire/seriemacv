@@ -133,8 +133,8 @@ PDF, DOCX ou DOC, sem modificar o YAML de origem.
   `exports/resume.md` e sem alterar `career.yml`.
 - Contrato de pacote de estilo: `style.yml`, template HTML, CSS de impressão e
   preview.
-- Registro interno com os estilos `clean`, `classic`, `modern`, `compact` e
-  `sidebar`.
+- Registro interno com as famílias `clean`, `classic`, `modern`, `compact` e
+  `sidebar`, cada uma com uma variante `-alt`.
 - Geração de Markdown e preview HTML.
 - Exportação PDF determinística.
 - Exportação DOCX por renderer próprio e conversão para DOC quando o formato
@@ -145,11 +145,13 @@ PDF, DOCX ou DOC, sem modificar o YAML de origem.
 DOCX ou DOC e metadados do artefato. DOCX será outro renderer, não uma conversão
 de PDF; DOC é um formato legado e não deve orientar o modelo interno.
 
-Os cinco estilos internos usam manifests estritos e tokens compartilhados por HTML,
-PDF e DOCX. `clean`, `classic`, `modern` e `compact` mantêm fluxo linear ATS-safe;
-`sidebar` é visual, experimental e não ATS-safe, com duas colunas no HTML/PDF e
-tabela sem bordas no DOCX. Markdown oferece variações estruturais, mas não reproduz
-fontes, cores ou colunas.
+Os dez IDs internos usam manifests estritos e tokens compartilhados por HTML, PDF e
+DOCX. O ID padrão de cada família possui divisores nos títulos de seção e o sufixo
+`-alt` os remove. Em `classic` e `classic-alt`, o cabeçalho centralizado nunca possui
+divisor inferior. `clean`, `classic`, `modern`, `compact` e suas variantes mantêm
+fluxo linear ATS-safe; `sidebar` e `sidebar-alt` são visuais, experimentais e não
+ATS-safe, com duas colunas no HTML/PDF e tabela sem bordas no DOCX. Markdown oferece
+as mesmas alternativas estruturais, mas não reproduz fontes, cores ou colunas.
 
 `resume_style` de `seriemacv.yml` define o estilo padrão e `--style` permite override
 sem persistência. Projetos antigos assumem `clean`. Todos os estilos escrevem

@@ -1,0 +1,24 @@
+schema_version: 1
+id: classic-alt
+name: Classic Alt
+description: Traditional serif resume without header or section divider lines.
+layout: single-column
+page_size: A4
+ats_safe: true
+supported_sections: [summary, experience, education, skills, languages]
+supported_formats: [markdown, html, pdf, docx]
+markdown_variant: classic
+tokens:
+  font_family: Georgia
+  body_size_pt: 10.2
+  name_size_pt: 23.0
+  section_size_pt: 13.0
+  record_size_pt: 11.0
+  margins_mm: 18.0
+  line_spacing: 1.35
+  section_spacing_pt: 16.0
+  primary_color: '1F1F1F'
+  accent_color: '555555'
+  header_alignment: center
+  section_divider: none
+  sidebar_width_mm:

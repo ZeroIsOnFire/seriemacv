@@ -60,5 +60,6 @@ títulos, separadores, densidade e agrupamento.
 
 ## O `sidebar` foi interpretado incorretamente por um ATS
 
-Isso é esperado: `sidebar` é explicitamente não ATS-safe. Gere `clean`, `classic`,
-`modern` ou `compact` para análise automatizada.
+Isso é esperado: a família `sidebar` é explicitamente não ATS-safe. Gere `clean`,
+`classic`, `modern`, `compact` ou uma de suas variantes `-alt` para análise
+automatizada.

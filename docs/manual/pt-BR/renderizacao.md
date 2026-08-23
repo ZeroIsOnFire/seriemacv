@@ -22,6 +22,11 @@ seriemacv resume styles
 O DOCX `sidebar` usa uma tabela sem bordas e seu HTML/PDF usa uma grade visual. Prefira
 um dos quatro estilos lineares quando o documento for analisado por um sistema ATS.
 
+Cada família também oferece `clean-alt`, `classic-alt`, `modern-alt`, `compact-alt`
+e `sidebar-alt`. Os IDs padrão exibem divisores nos títulos das seções; os IDs `-alt`
+os removem sem alterar tipografia, espaçamento, layout, formatos ou situação ATS. O
+cabeçalho centralizado do `classic` nunca possui divisor inferior em nenhuma variante.
+
 ## Gerar um artefato
 
 ```powershell
