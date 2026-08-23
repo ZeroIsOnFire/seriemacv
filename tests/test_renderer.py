@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import tempfile
 import unittest
-from contextlib import redirect_stderr
+from contextlib import redirect_stderr, redirect_stdout
 from io import BytesIO, StringIO
 from pathlib import Path
 from unittest.mock import patch
@@ -20,9 +20,59 @@ from seriemacv.renderer import (
     write_markdown_resume,
     write_resume,
 )
+from seriemacv.styles import STYLE_IDS
 
 
 class MarkdownRendererTests(unittest.TestCase):
+    def test_all_styles_render_markdown_html_and_docx_in_both_locales(self) -> None:
+        for style_id in STYLE_IDS:
+            for locale in ("pt-BR", "en"):
+                with self.subTest(style=style_id, locale=locale):
+                    markdown = render_markdown(self._career(), locale, style_id)
+                    html = render_html(self._career(), locale, style_id)
+                    document = Document(BytesIO(render_docx(self._career(), locale, style_id)))
+
+                    self.assertIn("Avery Example", markdown)
+                    self.assertIn(f'data-style="{style_id}"', html)
+                    self.assertNotIn("{{", html)
+                    self.assertIn("Avery Example", "\n".join(p.text for p in document.paragraphs))
+                    self.assertEqual(len(document.inline_shapes), 0)
+                    if style_id == "sidebar":
+                        self.assertIn('<aside class="sidebar">', html)
+                        self.assertEqual(len(document.tables), 1)
+                        table_text = "\n".join(
+                            paragraph.text
+                            for row in document.tables[0].rows
+                            for cell in row.cells
+                            for paragraph in cell.paragraphs
+                        )
+                        expected_heading = (
+                            "Experiência profissional"
+                            if locale == "pt-BR"
+                            else "Professional Experience"
+                        )
+                        self.assertIn(expected_heading, table_text)
+                        self.assertIn("Portfolio: https://example.invalid/avery", table_text)
+                        self.assertIn('w:val="nil"', document.tables[0]._tbl.xml)
+                    else:
+                        self.assertNotIn('<aside class="sidebar">', html)
+                        self.assertEqual(document.tables, [])
+                        self.assertNotIn(
+                            "List Bullet",
+                            [paragraph.style.name for paragraph in document.paragraphs],
+                        )
+
+    def test_markdown_styles_have_distinct_structures(self) -> None:
+        rendered = {
+            style_id: render_markdown(self._career(), "en", style_id)
+            for style_id in STYLE_IDS
+        }
+
+        self.assertEqual(len(set(rendered.values())), len(STYLE_IDS))
+        self.assertIn("=============", rendered["classic"])
+        self.assertIn("# Avery Example | Software Engineer", rendered["compact"])
+        self.assertIn("> Remote | avery@example.invalid", rendered["sidebar"])
+
     def test_docx_matches_clean_layout_and_resume_content(self) -> None:
         career_data = self._career().model_dump()
         career_data["skills"] = [
@@ -108,6 +158,25 @@ class MarkdownRendererTests(unittest.TestCase):
             self.assertEqual(output_path.read_bytes(), b"%PDF-fake")
             self.assertIn("Professional Experience", fake.html)
             self.assertFalse((project_path / "exports/resume.html").exists())
+
+    def test_style_failure_does_not_overwrite_an_existing_artifact(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            project_path = Path(temporary_directory)
+            exports_path = project_path / "exports"
+            exports_path.mkdir()
+            output_path = exports_path / "resume.md"
+            output_path.write_text("previous artifact", encoding="utf-8")
+
+            with self.assertRaisesRegex(ValueError, "Unknown resume style"):
+                write_resume(
+                    project_path,
+                    self._career(),
+                    "en",
+                    "markdown",
+                    style_id="unknown",
+                )
+
+            self.assertEqual(output_path.read_text(encoding="utf-8"), "previous artifact")
 
     def test_renders_localized_headings_and_preserves_user_content(self) -> None:
         career = self._career()
@@ -262,6 +331,37 @@ class MarkdownRendererTests(unittest.TestCase):
 
 
 class ResumeRenderCliTests(unittest.TestCase):
+    def test_cli_uses_configured_style_and_allows_a_one_off_override(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            project_path = Path(temporary_directory) / "career-project"
+            create_project(
+                project_path,
+                project_name="Career Project",
+                resume_language="en",
+                resume_style="modern",
+            )
+            self._write_complete_career(project_path)
+
+            with redirect_stdout(StringIO()):
+                result = main([
+                    "resume", "render", str(project_path), "--format", "html",
+                ])
+            self.assertEqual(result, 0)
+            output_path = project_path / "exports/resume.html"
+            self.assertIn('data-style="modern"', output_path.read_text(encoding="utf-8"))
+
+            with redirect_stdout(StringIO()):
+                result = main([
+                    "resume", "render", str(project_path), "--format", "html",
+                    "--style", "compact",
+                ])
+            self.assertEqual(result, 0)
+            self.assertIn('data-style="compact"', output_path.read_text(encoding="utf-8"))
+            self.assertIn(
+                "resume_style: modern",
+                (project_path / "seriemacv.yml").read_text(encoding="utf-8"),
+            )
+
     def test_cli_uses_project_resume_language_and_writes_single_artifact(self) -> None:
         with tempfile.TemporaryDirectory() as temporary_directory:
             project_path = Path(temporary_directory) / "career-project"
@@ -395,3 +495,22 @@ stories: []
             self.assertEqual(result, 1)
             self.assertIn(str(configuration_path), stderr.getvalue())
             self.assertFalse((project_path / "exports/resume.md").exists())
+
+    @staticmethod
+    def _write_complete_career(project_path: Path) -> None:
+        (project_path / "career.yml").write_text(
+            """schema_version: 1
+profile:
+  name: Avery Example
+  title: Engineer
+  email: avery@example.invalid
+summary: Canonical content.
+experience: []
+education: []
+skills: []
+evidence: []
+answers: []
+stories: []
+""",
+            encoding="utf-8",
+        )

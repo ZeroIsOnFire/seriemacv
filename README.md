@@ -4,12 +4,13 @@
 
 ![seriemaCV mascot](mascot.png)
 
-Local-first workspace for maintaining canonical career data in YAML.
+Local-first workspace for maintaining canonical career data in YAML and rendering
+editable or publication-ready resumes.
 
 ## Career Builder
 
 ```powershell
-seriemacv init .\my-career --name "My career" --language en
+seriemacv init .\my-career --name "My career" --language en --style modern
 seriemacv career set-profile .\my-career --name "Your Name" --title "Your role" --email you@example.com
 seriemacv career add-experience .\my-career --id current-company --company "Company" --title "Role" --start-date 2024-01
 seriemacv career validate .\my-career
@@ -17,71 +18,57 @@ seriemacv career validate .\my-career
 
 Each project includes an empty `career.yml` plus fictional `career.yml.example`
 and `seriemacv.yml.example` files. `career.yml` is always the canonical source.
+`resume_language` localizes fixed labels; canonical user content is never translated.
 
-## Local jobs
-
-```powershell
-seriemacv jobs add .\my-career --id platform-engineer --title "Platform Engineer" --description "Build reliable systems." --requirement python="Professional Python experience"
-seriemacv jobs import .\my-career .\role.yml
-seriemacv jobs validate .\my-career
-seriemacv jobs list .\my-career
-```
-
-Jobs are stored atomically in `jobs/<id>.yml`. Import accepts only strict structured
-JSON or YAML proposals, which can be produced by an AI or another local tool; the
-original proposal is retained verbatim as source metadata.
-Uppercase letters in record and requirement IDs are normalized to lowercase during
-import; other characters outside kebab-case are rejected.
-
-```yaml
-schema_version: 1
-id: platform-engineer
-title: Platform Engineer
-description: Build and operate reliable cloud-platform services.
-requirements:
-  - id: python
-    statement: Professional Python experience
-    priority: required
-salary_range: USD 120,000-150,000 annually
-```
-
-The same fields may be supplied as JSON.
-
-## Templates for AI tools
-
-An external AI or local script can request the exact current contracts without
-reading project files directly:
-
-```powershell
-seriemacv template show .\my-career career
-seriemacv template show .\my-career job
-```
-
-The command prints the fictitious YAML examples created by `init`. The job template
-is the input shape for `seriemacv jobs import`; the importer adds its own `source`
-metadata to the stored canonical document.
-Tracked copies are also available in [`examples/`](examples/).
+The jobs workspace is temporarily paused. Existing job files and the underlying
+validated domain remain intact, but job commands are not exposed by the CLI.
 
 ## Render a resume
 
 ```powershell
+seriemacv resume styles
 seriemacv resume render .\my-career --format markdown
-seriemacv resume render .\my-career --format html
-seriemacv resume render .\my-career --format pdf
-seriemacv resume render .\my-career --format docx
+seriemacv resume render .\my-career --format html --style classic
+seriemacv resume render .\my-career --format pdf --style modern
+seriemacv resume render .\my-career --format docx --style compact
 ```
 
-The command validates `career.yml` before writing `exports/resume.md`,
-`exports/resume.html`, or `exports/resume.pdf`. PDF requires local Chromium:
+`resume_style` in `seriemacv.yml` defines the default. `--style` overrides it for one
+render without changing the project. Every format atomically replaces its fixed
+`exports/resume.*` artifact. PDF requires local Chromium:
 `python -m playwright install chromium`.
 
-The DOCX export writes `exports/resume.docx`: an editable, one-column A4 document
-using the built-in `clean` layout. Legacy `.doc` export is not available yet.
+Markdown styles vary hierarchy, separators, and density; Markdown cannot represent
+fonts, colors, or columns. DOCX remains editable. `clean`, `classic`, `modern`, and
+`compact` preserve a linear ATS-safe structure. `sidebar` is a two-column visual
+layout and is explicitly experimental and not ATS-safe.
 
-`resume_language`, set during `init`, localizes fixed labels only; canonical user
-content is never translated or rewritten.
+## Built-in style gallery
 
-## Skills and links
+All previews and PDFs below use the fictitious [gallery career](examples/style-career.yml).
+
+| Style | Preview | Characteristics | Example |
+| --- | --- | --- | --- |
+| `clean` | <img src="examples/styles/clean/preview.png" width="180" alt="Clean resume preview"> | Neutral, single-column, ATS-safe | [PDF](examples/styles/clean/resume.pdf) |
+| `classic` | <img src="examples/styles/classic/preview.png" width="180" alt="Classic resume preview"> | Traditional serif, centered header, ATS-safe | [PDF](examples/styles/classic/resume.pdf) |
+| `modern` | <img src="examples/styles/modern/preview.png" width="180" alt="Modern resume preview"> | Contemporary navy accents, ATS-safe | [PDF](examples/styles/modern/resume.pdf) |
+| `compact` | <img src="examples/styles/compact/preview.png" width="180" alt="Compact resume preview"> | Dense layout for longer careers, ATS-safe | [PDF](examples/styles/compact/resume.pdf) |
+| `sidebar` | <img src="examples/styles/sidebar/preview.png" width="180" alt="Sidebar resume preview"> | Two-column, human-first, not ATS-safe | [PDF](examples/styles/sidebar/resume.pdf) |
+
+Regenerate the gallery with:
+
+```powershell
+$env:PYTHONPATH = 'src'
+python .\scripts\generate_style_examples.py
+```
+
+## Templates and structured skills
+
+External tools can read the current fictional career contract with:
+
+```powershell
+seriemacv template show .\my-career career
+```
 
 ```yaml
 skills:
@@ -93,15 +80,15 @@ skills:
 ```
 
 Skills are grouped by category and `core` skills are emphasized. Stable level codes
-in YAML are localized during rendering. The profile also accepts explicit HTTP(S)
-URLs in `linkedin` and `portfolio`.
+are localized during rendering. The profile also accepts explicit HTTP(S) URLs in
+`linkedin` and `portfolio`.
 
 ## Local verification
 
 ```powershell
 $env:PYTHONPATH = 'src'
 python -m unittest discover -s tests -v
-python -m ruff check src tests
+python -m ruff check src tests scripts
 ```
 
 Install development tools with `python -m pip install -e ".[dev]"`.

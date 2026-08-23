@@ -136,13 +136,11 @@ Example commands:
 seriemacv init
 seriemacv resume validate
 seriemacv resume render --style clean --format pdf
-seriemacv jobs add https://example.com/job/123
-seriemacv match job-123
-seriemacv tailor job-123 --output resumes/company-role.md
-seriemacv cover-letter job-123
-seriemacv apply job-123 --interactive
-seriemacv serve --mcp
+seriemacv resume styles
 ```
+
+Job, match, tailoring, application, and MCP commands remain roadmap examples. The
+public jobs interface is paused while the product focuses on resume rendering.
 
 The GUI should call the same application/core layer used by the CLI whenever possible.
 

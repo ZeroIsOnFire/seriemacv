@@ -38,6 +38,7 @@ from seriemacv.project import (
     validate_project,
 )
 from seriemacv.renderer import ResumeRenderError, write_resume
+from seriemacv.styles import STYLE_IDS, list_styles
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -48,6 +49,7 @@ def build_parser() -> argparse.ArgumentParser:
     init_parser.add_argument("path", type=Path)
     init_parser.add_argument("--name", required=True, help="Human-readable project name")
     init_parser.add_argument("--language", choices=("pt-BR", "en"), default="pt-BR")
+    init_parser.add_argument("--style", choices=STYLE_IDS, default="clean")
 
     validate_parser = subparsers.add_parser(
         "validate", help="Validate a local career project"
@@ -103,24 +105,10 @@ def build_parser() -> argparse.ArgumentParser:
     render_parser.add_argument(
         "--format", choices=("markdown", "html", "pdf", "docx"), required=True
     )
-
-    jobs_parser = subparsers.add_parser("jobs", help="Manage local job documents")
-    jobs_subparsers = jobs_parser.add_subparsers(dest="jobs_command", required=True)
-    _add_job_parser(jobs_subparsers)
-    _add_job_import_parser(jobs_subparsers)
-
-    jobs_validate = jobs_subparsers.add_parser(
-        "validate", help="Validate one or all job documents"
+    render_parser.add_argument("--style", choices=STYLE_IDS)
+    resume_subparsers.add_parser(
+        "styles", help="List built-in resume styles and their capabilities"
     )
-    jobs_validate.add_argument("path", type=Path)
-    jobs_validate.add_argument("id", nargs="?")
-
-    jobs_list = jobs_subparsers.add_parser("list", help="List validated job documents")
-    jobs_list.add_argument("path", type=Path)
-
-    jobs_show = jobs_subparsers.add_parser("show", help="Print a validated job document")
-    jobs_show.add_argument("path", type=Path)
-    jobs_show.add_argument("id")
 
     template_parser = subparsers.add_parser(
         "template", help="Read built-in structured-data templates"
@@ -129,10 +117,10 @@ def build_parser() -> argparse.ArgumentParser:
         dest="template_command", required=True
     )
     template_show = template_subparsers.add_parser(
-        "show", help="Print a career or job template for an external tool"
+        "show", help="Print a career template for an external tool"
     )
     template_show.add_argument("path", type=Path)
-    template_show.add_argument("name", choices=("career", "job"))
+    template_show.add_argument("name", choices=("career",))
     return parser
 
 
@@ -220,7 +208,10 @@ def main(arguments: list[str] | None = None) -> int:
     if args.command == "init":
         try:
             project_path = create_project(
-                args.path, project_name=args.name, resume_language=args.language
+                args.path,
+                project_name=args.name,
+                resume_language=args.language,
+                resume_style=args.style,
             )
         except (OSError, ValueError, ProjectAlreadyExistsError) as error:
             parser.error(str(error))
@@ -232,9 +223,6 @@ def main(arguments: list[str] | None = None) -> int:
 
     if args.command == "resume":
         return _run_resume_command(args)
-
-    if args.command == "jobs":
-        return _run_jobs_command(args)
 
     if args.command == "template":
         try:
@@ -317,6 +305,13 @@ def _run_career_command(args: argparse.Namespace) -> int:
 
 
 def _run_resume_command(args: argparse.Namespace) -> int:
+    if args.resume_command == "styles":
+        for style in list_styles():
+            ats = "ATS-safe" if style.ats_safe else "experimental, not ATS-safe"
+            formats = ",".join(style.supported_formats)
+            print(f"{style.id}\t{style.name}\t{style.layout}\t{ats}\t{formats}")
+        return 0
+
     project_path = args.path.expanduser().resolve()
     career_path = project_path / CAREER_FILE
     configuration_path = project_path / "seriemacv.yml"
@@ -333,13 +328,18 @@ def _run_resume_command(args: argparse.Namespace) -> int:
     try:
         from seriemacv.career import load_career
 
+        style_id = args.style or configuration.resume_style
         output_path = write_resume(
-            project_path, load_career(career_path), configuration.resume_language, args.format
+            project_path,
+            load_career(career_path),
+            configuration.resume_language,
+            args.format,
+            style_id=style_id,
         )
     except (OSError, ResumeRenderError, ValueError, ValidationError, YAMLError) as error:
         print(f"{career_path}: {error}", file=sys.stderr)
         return 1
-    print(f"Rendered {args.format.upper()} resume: {output_path}")
+    print(f"Rendered {args.format.upper()} resume using {style_id}: {output_path}")
     return 0
 
 

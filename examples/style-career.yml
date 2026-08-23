@@ -1,0 +1,57 @@
+# Fictitious data used only to generate the built-in style gallery.
+schema_version: 1
+profile:
+  name: Seriema Example
+  title: Senior Software Engineer
+  location: Example City, Brazil
+  email: seriema@example.invalid
+  phone: '+55 11 5555-0100'
+  linkedin: https://www.linkedin.com/in/seriema-example
+  portfolio: https://seriema.example.invalid
+  languages: [Portuguese, English]
+summary: Builds reliable products, improves engineering systems, and helps teams deliver maintainable software.
+experience:
+  - id: example-senior
+    company: Example Systems
+    title: Senior Software Engineer
+    location: Remote
+    employment_type: Full-time
+    start_date: 2022-03
+    highlights:
+      - Led delivery of a documented service used by multiple internal teams.
+      - Improved deployment reliability through automated checks and observability.
+      - Mentored engineers through design reviews and collaborative development.
+  - id: example-developer
+    company: Sample Technology
+    title: Software Developer
+    location: Example City, Brazil
+    employment_type: Full-time
+    start_date: 2018-01
+    end_date: 2022-02
+    highlights:
+      - Developed web applications and integrations with external services.
+      - Expanded automated test coverage and maintained delivery pipelines.
+education:
+  - id: example-degree
+    institution: Example University
+    degree: Bachelor of Technology
+    field_of_study: Software Development
+    location: Example City, Brazil
+    start_date: 2014-01
+    end_date: 2017-12
+skills:
+  - {id: python, name: Python, category: Programming, level: advanced, core: true}
+  - {id: javascript, name: JavaScript, category: Programming, level: advanced, core: true}
+  - {id: sql, name: SQL, category: Programming, level: intermediate}
+  - {id: api-design, name: API design, category: Architecture, core: true}
+  - {id: distributed-systems, name: Distributed systems, category: Architecture}
+  - {id: postgresql, name: PostgreSQL, category: Data, level: advanced}
+  - {id: redis, name: Redis, category: Data, level: intermediate}
+  - {id: docker, name: Docker, category: Infrastructure, level: advanced}
+  - {id: ci-cd, name: CI/CD, category: Infrastructure}
+  - {id: automated-testing, name: Automated testing, category: Practices, core: true}
+  - {id: mentoring, name: Mentoring, category: Practices}
+  - {id: technical-writing, name: Technical writing, category: Practices}
+evidence: []
+answers: []
+stories: []

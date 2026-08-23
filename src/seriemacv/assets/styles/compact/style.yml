@@ -1,0 +1,24 @@
+schema_version: 1
+id: compact
+name: Compact
+description: Dense single-column resume designed for longer career histories.
+layout: single-column
+page_size: A4
+ats_safe: true
+supported_sections: [summary, experience, education, skills, languages]
+supported_formats: [markdown, html, pdf, docx]
+markdown_variant: compact
+tokens:
+  font_family: Arial
+  body_size_pt: 9.0
+  name_size_pt: 20.0
+  section_size_pt: 12.0
+  record_size_pt: 10.0
+  margins_mm: 12.0
+  line_spacing: 1.15
+  section_spacing_pt: 10.0
+  primary_color: '000000'
+  accent_color: '666666'
+  header_alignment: left
+  section_divider: line
+  sidebar_width_mm:

@@ -113,7 +113,8 @@ PDF, DOCX ou DOC, sem modificar o YAML de origem.
   `exports/resume.md` e sem alterar `career.yml`.
 - Contrato de pacote de estilo: `style.yml`, template HTML, CSS de impressão e
   preview.
-- 2–3 estilos ATS-safe de uma coluna.
+- Registro interno com os estilos `clean`, `classic`, `modern`, `compact` e
+  `sidebar`.
 - Geração de Markdown e preview HTML.
 - Exportação PDF determinística.
 - Exportação DOCX por renderer próprio e conversão para DOC quando o formato
@@ -124,15 +125,17 @@ PDF, DOCX ou DOC, sem modificar o YAML de origem.
 DOCX ou DOC e metadados do artefato. DOCX será outro renderer, não uma conversão
 de PDF; DOC é um formato legado e não deve orientar o modelo interno.
 
-O primeiro renderer distribui internamente o estilo único `clean`: um layout A4,
-de uma coluna e ATS-safe. `resume render --format markdown|html|pdf|docx` exige um
-`career.yml` completo e escreve em caminhos fixos dentro de `exports/`. A configuração
-`resume_language` de `seriemacv.yml`, definida no `init`, seleciona apenas os títulos
-fixos; o sistema não traduz conteúdo do usuário.
+Os cinco estilos internos usam manifests estritos e tokens compartilhados por HTML,
+PDF e DOCX. `clean`, `classic`, `modern` e `compact` mantêm fluxo linear ATS-safe;
+`sidebar` é visual, experimental e não ATS-safe, com duas colunas no HTML/PDF e
+tabela sem bordas no DOCX. Markdown oferece variações estruturais, mas não reproduz
+fontes, cores ou colunas.
 
-O renderer DOCX próprio produz `exports/resume.docx` editável com a mesma hierarquia,
-tipografia e margens do `clean`, dentro das limitações do Word. O formato `.doc`
-continua pendente de uma estratégia local de conversão.
+`resume_style` de `seriemacv.yml` define o estilo padrão e `--style` permite override
+sem persistência. Projetos antigos assumem `clean`. Todos os estilos escrevem
+atomicamente nos caminhos fixos `exports/resume.*`; renderizar outro estilo substitui
+o artefato anterior do formato. `resume_language` seleciona apenas títulos fixos e
+nunca traduz conteúdo do usuário. O formato `.doc` continua pendente.
 
 **Decisões tecnológicas**
 
@@ -151,13 +154,15 @@ continua pendente de uma estratégia local de conversão.
 **Responsabilidade:** importar uma vaga a partir de texto, URL, captura de navegador
 ou JSON e convertê-la no modelo interno `Job`.
 
-**Primeiro corte implementado:** cada vaga é um `jobs/<id>.yml` estrito e
+**Implementação preservada, interface temporariamente pausada:** cada vaga é um
+`jobs/<id>.yml` estrito e
 versionado, com metadados, requisitos explícitos e a origem bruta preservada no
 mesmo documento por escrita atômica. A CLI aceita cadastro por flags e importação
 local de propostas JSON ou YAML estruturadas, inclusive quando criadas por IA
 externa. Não há inferência de requisitos, acesso a URL, scraping ou IA no núcleo.
-`template show <projeto> career|job` expõe exemplos fictícios para ferramentas
-externas consumirem os contratos atuais sem acesso direto aos arquivos do projeto.
+O domínio, arquivos e contratos permanecem no repositório para retomada, mas os
+comandos `jobs` e a exposição pública do template de vaga estão ocultos da CLI
+enquanto o foco ativo é a geração de currículos.
 
 **Entregas independentes**
 
@@ -282,6 +287,9 @@ confirmação de uma revisão aprovada pelo usuário.
 **Depende de:** Perfil, Tailor, Vagas e Interfaces. É pós-MVP.
 
 ## Ordem de implementação proposta
+
+O foco ativo permanece no MVP 0 e na biblioteca de estilos. O trabalho do MVP 2
+está pausado sem remoção dos dados ou contratos já implementados.
 
 | Marco | Módulos | Resultado verificável |
 | --- | --- | --- |

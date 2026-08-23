@@ -26,7 +26,11 @@ seriemacv = "seriemacv.cli:main"
 where = ["src"]
 
 [tool.setuptools.package-data]
-seriemacv = ["assets/clean/*.yml", "assets/clean/*.html", "assets/clean/*.css"]
+seriemacv = [
+    "assets/styles/*/*.yml",
+    "assets/styles/*/*.html",
+    "assets/styles/*/*.css",
+]
 
 [tool.ruff]
 target-version = "py311"

@@ -76,21 +76,18 @@ provider-agnostic integration and never owns the user's data or workflow.
   career content, references, and completeness.
 - Preserve compatibility with legacy projects. Conversions must be explicit and must
   not delete the legacy canonical file.
-- `resume render --format markdown|html|pdf|docx` validates a complete career document
-  and atomically writes fixed `exports/resume.*` artifacts. PDF requires Playwright
-  Chromium.
-- DOCX uses a dedicated `python-docx` renderer with the `clean` A4 layout. Keep it
-  ATS-safe: linear text flow, plain-text bullets, no tables, images, text boxes, or
-  automatic list XML. `.doc` remains deferred until a local conversion strategy exists.
+- `resume render --format markdown|html|pdf|docx [--style ID]` validates a complete
+  career and atomically writes fixed `exports/resume.*` artifacts. Project config
+  supplies the default style; PDF requires Playwright Chromium.
+- Built-in ATS-safe styles use linear DOCX text with plain bullets and no tables,
+  images, text boxes, or automatic lists. A manifest marked `ats_safe: false` may use
+  non-linear structures; `sidebar` uses a borderless table and stays experimental.
 - Canonical `skills.level` values are English codes. `i18n.py` localizes fixed labels,
   months, and levels; `core` is an explicit editorial priority, while categories keep
   the complete skills list readable.
-- Job documents live in `jobs/<id>.yml`. Import only strict structured JSON or YAML
-  proposals, preserve their raw local source in the document, and never infer
-  requirements or their `required`/`preferred` priority. Import may lowercase IDs;
-  all other kebab-case violations remain errors.
-- `template show <project> career|job` is the read-only interface for external tools
-  to retrieve the current fictitious career and job contracts.
+- Job documents and their strict domain remain preserved, but the public jobs CLI is
+  paused. Do not delete existing job data or contracts when working on resume styles.
+- `template show <project> career` is the active read-only template interface.
 - Tracked `examples/career.yml` and `examples/job.yml` must exactly match the
   templates written by `init`; keep their synchronization test updated.
 - Explicitly close every SQLite connection, including reads: a connection context
@@ -106,9 +103,8 @@ provider-agnostic integration and never owns the user's data or workflow.
   affected validation.
 - Do not add dependencies, external services, or platform automation without explicit
   authorization.
-- The first vertical slice is `career.yml` + evidence + job → explainable match →
-  tailoring proposal/diff → generated Markdown, DOCX, and PDF variants. Do not
-  prematurely add auto-apply, fragile scrapers, or complex infrastructure.
+- The active slice is canonical career data and multi-style Markdown, DOCX, and PDF
+  generation. Job matching remains paused; do not add scrapers or application flows.
 
 ## Git and delivery
 

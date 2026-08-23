@@ -4,12 +4,13 @@
 
 ![Mascote do seriemaCV](mascot.png)
 
-Workspace local-first para manter dados canônicos de carreira em YAML.
+Workspace local-first para manter dados canônicos de carreira em YAML e gerar
+currículos editáveis ou prontos para publicação.
 
 ## Career Builder
 
 ```powershell
-seriemacv init .\minha-carreira --name "Minha carreira" --language pt-BR
+seriemacv init .\minha-carreira --name "Minha carreira" --language pt-BR --style modern
 seriemacv career set-profile .\minha-carreira --name "Seu Nome" --title "Seu cargo" --email voce@example.com
 seriemacv career add-experience .\minha-carreira --id empresa-atual --company "Empresa" --title "Cargo" --start-date 2024-01
 seriemacv career validate .\minha-carreira
@@ -17,72 +18,58 @@ seriemacv career validate .\minha-carreira
 
 Cada projeto inclui `career.yml` vazio e exemplos fictícios em
 `career.yml.example` e `seriemacv.yml.example`. `career.yml` é sempre a fonte
-canônica.
+canônica. `resume_language` localiza apenas rótulos fixos; o conteúdo informado pelo
+usuário nunca é traduzido.
 
-## Vagas locais
-
-```powershell
-seriemacv jobs add .\minha-carreira --id engenheiro-plataforma --title "Engenheiro de Plataforma" --description "Construa sistemas confiáveis." --requirement python="Experiência profissional com Python"
-seriemacv jobs import .\minha-carreira .\vaga.yml
-seriemacv jobs validate .\minha-carreira
-seriemacv jobs list .\minha-carreira
-```
-
-As vagas ficam em `jobs/<id>.yml` por escrita atômica. A importação aceita somente
-propostas estruturadas JSON ou YAML, que podem ser produzidas por IA ou outra
-ferramenta local; a proposta original é preservada literalmente como metadado de origem.
-Letras maiúsculas nos IDs da vaga e dos requisitos são normalizadas para minúsculas
-na importação; outros caracteres fora de kebab-case são rejeitados.
-
-```yaml
-schema_version: 1
-id: engenheiro-plataforma
-title: Engenheiro de Plataforma
-description: Construir e operar serviços confiáveis de plataforma em nuvem.
-requirements:
-  - id: python
-    statement: Experiência profissional com Python
-    priority: required
-salary_range: USD 120,000-150,000 por ano
-```
-
-Os mesmos campos também podem ser informados em JSON.
-
-## Templates para ferramentas de IA
-
-Uma IA externa ou script local pode consultar os contratos atuais sem ler arquivos
-do projeto diretamente:
-
-```powershell
-seriemacv template show .\minha-carreira career
-seriemacv template show .\minha-carreira job
-```
-
-O comando imprime os exemplos YAML fictícios criados pelo `init`. O template de vaga
-é o formato de entrada de `seriemacv jobs import`; o importador adiciona os metadados
-`source` ao documento canônico armazenado.
-Cópias rastreadas também estão disponíveis em [`examples/`](examples/).
+A área de vagas está temporariamente pausada. Arquivos existentes e o domínio
+validado permanecem intactos, mas os comandos de vagas não são expostos pela CLI.
 
 ## Gerar currículo
 
 ```powershell
+seriemacv resume styles
 seriemacv resume render .\minha-carreira --format markdown
-seriemacv resume render .\minha-carreira --format html
-seriemacv resume render .\minha-carreira --format pdf
-seriemacv resume render .\minha-carreira --format docx
+seriemacv resume render .\minha-carreira --format html --style classic
+seriemacv resume render .\minha-carreira --format pdf --style modern
+seriemacv resume render .\minha-carreira --format docx --style compact
 ```
 
-O comando valida `career.yml` antes de escrever `exports/resume.md`,
-`exports/resume.html` ou `exports/resume.pdf`. Para PDF, instale o Chromium local:
+`resume_style` em `seriemacv.yml` define o padrão. `--style` o substitui em uma
+renderização sem alterar o projeto. Cada formato substitui atomicamente seu artefato
+fixo em `exports/resume.*`. PDF requer Chromium local:
 `python -m playwright install chromium`.
 
-A exportação DOCX escreve `exports/resume.docx`: um documento A4 editável, de uma
-coluna, com o layout interno `clean`. A exportação legada `.doc` ainda não está disponível.
+Os estilos Markdown variam hierarquia, separadores e densidade; Markdown não
+representa fontes, cores ou colunas. DOCX permanece editável. `clean`, `classic`,
+`modern` e `compact` preservam estrutura linear ATS-safe. `sidebar` usa duas colunas,
+é visual/experimental e não é ATS-safe.
 
-`resume_language`, definido no `init`, localiza apenas rótulos fixos; o conteúdo
-canônico nunca é traduzido ou reescrito.
+## Galeria de estilos internos
 
-## Competências e links
+Todos os previews e PDFs usam o [currículo fictício da galeria](examples/style-career.yml).
+
+| Estilo | Preview | Características | Exemplo |
+| --- | --- | --- | --- |
+| `clean` | <img src="examples/styles/clean/preview.png" width="180" alt="Preview do currículo Clean"> | Neutro, uma coluna, ATS-safe | [PDF](examples/styles/clean/resume.pdf) |
+| `classic` | <img src="examples/styles/classic/preview.png" width="180" alt="Preview do currículo Classic"> | Serifado tradicional, cabeçalho centralizado, ATS-safe | [PDF](examples/styles/classic/resume.pdf) |
+| `modern` | <img src="examples/styles/modern/preview.png" width="180" alt="Preview do currículo Modern"> | Contemporâneo com detalhes azul-marinho, ATS-safe | [PDF](examples/styles/modern/resume.pdf) |
+| `compact` | <img src="examples/styles/compact/preview.png" width="180" alt="Preview do currículo Compact"> | Denso para carreiras extensas, ATS-safe | [PDF](examples/styles/compact/resume.pdf) |
+| `sidebar` | <img src="examples/styles/sidebar/preview.png" width="180" alt="Preview do currículo Sidebar"> | Duas colunas, foco visual, não ATS-safe | [PDF](examples/styles/sidebar/resume.pdf) |
+
+Para regenerar a galeria:
+
+```powershell
+$env:PYTHONPATH = 'src'
+python .\scripts\generate_style_examples.py
+```
+
+## Templates e competências estruturadas
+
+Ferramentas externas podem consultar o contrato fictício de carreira atual com:
+
+```powershell
+seriemacv template show .\minha-carreira career
+```
 
 ```yaml
 skills:
@@ -93,16 +80,16 @@ skills:
     core: true
 ```
 
-As competências são agrupadas por categoria e as `core` recebem destaque. Os níveis
-usam códigos estáveis no YAML e são localizados na renderização. O perfil também
-aceita URLs HTTP(S) explícitas em `linkedin` e `portfolio`.
+Competências são agrupadas por categoria e as `core` recebem destaque. Códigos de
+nível estáveis são localizados durante a renderização. O perfil também aceita URLs
+HTTP(S) explícitas em `linkedin` e `portfolio`.
 
 ## Verificação local
 
 ```powershell
 $env:PYTHONPATH = 'src'
 python -m unittest discover -s tests -v
-python -m ruff check src tests
+python -m ruff check src tests scripts
 ```
 
 Instale as ferramentas de desenvolvimento com `python -m pip install -e ".[dev]"`.

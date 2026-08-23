@@ -19,6 +19,9 @@ registrada.
 
 ## MVP 0 — Career builder
 
+**Foco ativo:** ampliar a biblioteca de estilos e a qualidade dos artefatos de
+currículo. Vagas, match e tailoring permanecem pausados nesta fase.
+
 - [x] Definir o schema versionado e o modelo intermediário de `career.yml`.
 - [x] Criar o builder estruturado para perfil, experiência, educação, habilidades e
   evidências.
@@ -29,6 +32,11 @@ registrada.
   `career.yml`.
 - [x] Definir o contrato de pacote de estilo (`style.yml`, HTML e CSS).
 - [x] Implementar primeiro estilo ATS-safe de uma coluna.
+- [x] Criar registro estrito de estilos internos e seleção por configuração/CLI.
+- [x] Entregar `classic`, `modern` e `compact` como estilos ATS-safe de uma coluna.
+- [x] Entregar `sidebar` como estilo visual experimental de duas colunas.
+- [x] Gerar variações estruturais de Markdown para todos os estilos.
+- [x] Versionar galeria fictícia com previews e PDFs reproduzíveis.
 - [x] Gerar currículo Markdown a partir do YAML.
 - [x] Renderizar currículo em HTML.
 - [x] Exportar PDF por renderizador local de navegador.
@@ -53,6 +61,9 @@ registrada.
 - [ ] Cobrir falhas de IA, ausência de evidência e propostas inválidas.
 
 ## MVP 2 — Vagas, Match e interfaces
+
+**Pausado:** a interface pública de vagas está temporariamente oculta. Domínio,
+arquivos e compatibilidade existentes permanecem preservados para retomada.
 
 - [x] Definir schemas de vaga e requisito.
 - [ ] Definir schema de relatório de match.

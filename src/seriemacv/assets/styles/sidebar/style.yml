@@ -1,0 +1,24 @@
+schema_version: 1
+id: sidebar
+name: Sidebar
+description: Experimental two-column visual resume for human-first presentation.
+layout: two-column
+page_size: A4
+ats_safe: false
+supported_sections: [summary, experience, education, skills, languages]
+supported_formats: [markdown, html, pdf, docx]
+markdown_variant: sidebar
+tokens:
+  font_family: Calibri
+  body_size_pt: 9.5
+  name_size_pt: 22.0
+  section_size_pt: 13.0
+  record_size_pt: 10.5
+  margins_mm: 12.0
+  line_spacing: 1.25
+  section_spacing_pt: 12.0
+  primary_color: '17324D'
+  accent_color: '2F6B8A'
+  header_alignment: left
+  section_divider: accent
+  sidebar_width_mm: 55.0

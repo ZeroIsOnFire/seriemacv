@@ -31,6 +31,10 @@ class CreateProjectTests(unittest.TestCase):
             self.assertTrue((project_path / "seriemacv.yml.example").is_file())
             self.assertTrue((project_path / "career.yml.example").is_file())
             self.assertTrue((project_path / "job.yml.example").is_file())
+            self.assertIn(
+                "resume_style: clean",
+                (project_path / "seriemacv.yml.example").read_text(encoding="utf-8"),
+            )
             job_template = (project_path / "job.yml.example").read_text(encoding="utf-8")
             job = load_yaml_payload(job_template)
             self.assertEqual(job.id, "example-platform-engineer")
@@ -62,16 +66,34 @@ class CreateProjectTests(unittest.TestCase):
             with self.assertRaises(ProjectAlreadyExistsError):
                 create_project(project_path, project_name="Other Career")
 
-    def test_stores_resume_language_in_project_configuration(self) -> None:
+    def test_stores_resume_language_and_style_in_project_configuration(self) -> None:
         with tempfile.TemporaryDirectory() as temporary_directory:
             project_path = Path(temporary_directory) / "my-career"
 
             create_project(
-                project_path, project_name="My Career", resume_language="en"
+                project_path,
+                project_name="My Career",
+                resume_language="en",
+                resume_style="modern",
             )
 
             config = (project_path / "seriemacv.yml").read_text(encoding="utf-8")
             self.assertIn("resume_language: en", config)
+            self.assertIn("resume_style: modern", config)
+
+    def test_legacy_configuration_defaults_to_clean_style(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            project_path = Path(temporary_directory) / "my-career"
+            create_project(project_path, project_name="My Career")
+            config_path = project_path / "seriemacv.yml"
+            config_path.write_text(
+                "schema_version: 1\nproject_name: My Career\nresume_language: en\n",
+                encoding="utf-8",
+            )
+
+            project = open_project(project_path)
+
+            self.assertEqual(project.resume_style, "clean")
 
 
 class ValidateProjectTests(unittest.TestCase):

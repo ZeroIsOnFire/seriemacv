@@ -18,13 +18,17 @@ class CliTests(unittest.TestCase):
             with redirect_stdout(stdout):
                 result = main([
                     "init", str(project_path), "--name", "My Career",
-                    "--language", "en",
+                    "--language", "en", "--style", "classic",
                 ])
 
             self.assertEqual(result, 0)
             self.assertIn("Created seriemaCV project", stdout.getvalue())
             self.assertIn(
                 "resume_language: en",
+                (project_path / "seriemacv.yml").read_text(encoding="utf-8"),
+            )
+            self.assertIn(
+                "resume_style: classic",
                 (project_path / "seriemacv.yml").read_text(encoding="utf-8"),
             )
 
@@ -43,7 +47,7 @@ class CliTests(unittest.TestCase):
             self.assertEqual(result, 1)
             self.assertIn("seriemacv.yml", stderr.getvalue())
 
-    def test_template_show_prints_career_and_job_examples(self) -> None:
+    def test_template_show_prints_only_the_career_example(self) -> None:
         with tempfile.TemporaryDirectory() as temporary_directory:
             project_path = Path(temporary_directory) / "my-career"
             with redirect_stdout(StringIO()):
@@ -54,7 +58,18 @@ class CliTests(unittest.TestCase):
             self.assertEqual(result, 0)
             self.assertIn("Avery Example", output.getvalue())
 
-            with redirect_stdout(StringIO()) as output:
-                result = main(["template", "show", str(project_path), "job"])
-            self.assertEqual(result, 0)
-            self.assertIn("example-platform-engineer", output.getvalue())
+            with redirect_stderr(StringIO()):
+                with self.assertRaises(SystemExit):
+                    main(["template", "show", str(project_path), "job"])
+
+    def test_jobs_are_hidden_and_resume_styles_are_discoverable(self) -> None:
+        with redirect_stderr(StringIO()):
+            with self.assertRaises(SystemExit):
+                main(["jobs", "list", "."])
+
+        with redirect_stdout(StringIO()) as output:
+            result = main(["resume", "styles"])
+
+        self.assertEqual(result, 0)
+        self.assertIn("clean\tClean\tsingle-column\tATS-safe", output.getvalue())
+        self.assertIn("sidebar\tSidebar\ttwo-column\texperimental", output.getvalue())
