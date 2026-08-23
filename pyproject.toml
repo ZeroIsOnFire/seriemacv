@@ -31,6 +31,9 @@ seriemacv = [
     "assets/styles/*/*.html",
     "assets/styles/*/*.css",
 ]
+import = [
+    "PyMuPDF>=1.24,<2",
+]
 
 [tool.ruff]
 target-version = "py311"

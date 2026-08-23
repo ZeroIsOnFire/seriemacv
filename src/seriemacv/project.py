@@ -14,9 +14,11 @@ from ruamel.yaml import YAML
 from ruamel.yaml.error import YAMLError
 
 from seriemacv.styles import ResumeStyleId
+from seriemacv.importer import NuExtractSettings
 
 CONFIG_FILE = "seriemacv.yml"
 PROJECT_DIRECTORIES = (
+    "proposals",
     "career.locales",
     "resume",
     "resume/variants",
@@ -192,6 +194,7 @@ class ProjectConfiguration(BaseModel):
     project_name: str = Field(min_length=1, max_length=120)
     resume_language: str = "pt-BR"
     resume_style: ResumeStyleId = "clean"
+    nuextract: NuExtractSettings | None = None
 
     @field_validator("project_name")
     @classmethod
