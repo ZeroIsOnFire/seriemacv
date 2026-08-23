@@ -30,6 +30,23 @@ currículo. Vagas, match e tailoring permanecem pausados nesta fase.
 - [ ] Criar e validar variantes estruturadas em `resume/variants/`.
 - [ ] Importar currículo Markdown, DOCX ou PDF como proposta revisável de
   `career.yml`.
+- [ ] Definir o schema versionado de proposta para extração local, com trechos de
+  origem, pendências, confiança e versões do modelo/runtime.
+- [ ] Implementar adaptador opcional de NuExtract via endpoint local de
+  `llama-server`, sem escrita direta em `career.yml`.
+- [ ] Validar a saída do NuExtract com JSON restrito e Pydantic antes de disponibilizar
+  a proposta para revisão.
+- [ ] Selecionar modelo e quantização NuExtract padrão por benchmark de currículos em
+  português e inglês, documentando tamanho, RAM/VRAM, licença e desempenho em CPU.
+- [ ] Disponibilizar instalação local opcional, explícita e removível, sem incluir
+  NuExtract ou llama.cpp nas dependências obrigatórias.
+- [ ] Criar guia de instalação e uso nativo de llama.cpp com NuExtract para Windows.
+- [ ] Criar guia de instalação e uso nativo de llama.cpp com NuExtract para Linux.
+- [ ] Criar guia Docker de NuExtract com llama.cpp, recomendado para iniciantes, com
+  Docker Desktop no Windows e Docker Engine no Linux, volume de modelo, endpoint
+  local, verificação e remoção.
+- [ ] Cobrir ausência do runtime, modelo incompatível, JSON inválido, timeout e falha
+  de extração sem modificar o documento canônico.
 - [x] Definir o contrato de pacote de estilo (`style.yml`, HTML e CSS).
 - [x] Implementar primeiro estilo ATS-safe de uma coluna.
 - [x] Criar registro estrito de estilos internos e seleção por configuração/CLI.

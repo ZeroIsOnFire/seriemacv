@@ -189,9 +189,15 @@ Initial adapters can include:
 - OpenAI-compatible HTTP API.
 - Anthropic-compatible API.
 - Local OpenAI-compatible endpoints such as llama.cpp or LM Studio.
+- A local structured-extraction adapter backed by NuExtract through llama.cpp.
 - External agent through MCP, where seriemaCV itself does not call an LLM.
 
 The user can therefore choose between **built-in AI**, **CLI-only workflows**, or **bring-your-own-agent**.
+
+NuExtract is still model-based AI; it is not part of the deterministic parser. In
+product language it is the specialized local extraction option for users who do not
+want a general-purpose or hosted LLM. Its output remains untrusted external input and
+must pass the same strict proposal validation as any other AI result.
 
 ### 5.5 Job connectors
 
@@ -384,6 +390,55 @@ career.yml; the user reviews the extracted facts before saving. Conditional
 selection of content belongs to the structured variant model, not to a proprietary
 markup extension.
 
+### 8.1 Optional local extraction with NuExtract
+
+The importer should offer [NuExtract](https://github.com/numindai/nuextract) as an
+opt-in, local structured-extraction backend when deterministic parsing is
+insufficient and the user does not choose an external or general-purpose LLM.
+NuExtract receives document text and/or images plus a JSON extraction template; the
+seriemaCV adapter should derive that template from a versioned import-proposal schema.
+
+```text
+Markdown / DOCX / PDF
+        ↓
+deterministic text or page-image preparation
+        ↓
+NuExtract + versioned JSON extraction template
+        ↓
+strict import proposal + source excerpts + pending fields
+        ↓
+human review and explicit apply
+        ↓
+career.yml
+```
+
+The model must never write `career.yml` directly. Missing information stays absent
+or pending; extracted claims retain source excerpts, page/section location when
+available, model/runtime versions and confidence. The adapter uses constrained JSON,
+a temperature at or close to zero, output-size limits and strict schema validation.
+
+Local AI installation is optional and must never be pulled silently. The product
+documentation should provide two supported setup paths:
+
+1. **Docker, recommended for beginners.** A step-by-step guide uses the official
+   [`llama.cpp` server image](https://github.com/ggml-org/llama.cpp/blob/master/docs/docker.md),
+   a dedicated model volume, a loopback-only HTTP endpoint, health verification and
+   CPU-first defaults. It covers Docker Desktop on Windows and Docker Engine on
+   Linux; GPU acceleration is an explicit advanced option.
+2. **Standard/native installation.** A guide installs or uses official `llama.cpp`
+   binaries and runs `llama-server` with a compatible NuExtract GGUF model. It has
+   separate Windows and Linux instructions, including
+   [official releases](https://github.com/ggml-org/llama.cpp/releases) or package
+   options first and the official
+   [CMake build guide](https://github.com/ggml-org/llama.cpp/blob/master/docs/build.md)
+   as the fallback.
+
+Both guides must disclose download size, RAM/VRAM expectations, model and runtime
+licenses, local ports, storage location and removal steps before installation. The
+default NuExtract model/quantization remains configurable and should be selected only
+after representative Portuguese and English resume benchmarks. Models, llama.cpp and
+Docker remain replaceable adapters rather than required core dependencies.
+
 ---
 
 ## 9. Resume style system
@@ -524,6 +579,8 @@ Every AI result that may change career artifacts should return structured output
 ```
 
 The application can reject a suggestion if it references nonexistent evidence.
+Local extraction proposals follow the same contract: runtime locality does not make
+model output trusted or authorize persistence.
 
 ### Context strategy
 
@@ -877,6 +934,8 @@ To keep the project achievable, v1 should avoid:
 - Fully autonomous mass application.
 - A large collection of brittle website-specific scrapers.
 - An internal LLM runtime.
+- Bundling llama.cpp or NuExtract into the mandatory core installation; they remain
+  explicit, optional local adapters.
 - Complex vector infrastructure before retrieval quality demands it.
 - Cloud accounts/sync as a requirement.
 
