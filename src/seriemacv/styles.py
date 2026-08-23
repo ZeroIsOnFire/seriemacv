@@ -18,12 +18,34 @@ ResumeStyleId = Literal[
     "modern-alt",
     "compact",
     "compact-alt",
+    "clean-executive",
+    "clean-executive-alt",
+    "timeline",
+    "timeline-alt",
     "sidebar",
     "sidebar-alt",
 ]
-ResumeLayout = Literal["single-column", "two-column"]
-MarkdownVariant = Literal["standard", "classic", "modern", "compact", "sidebar"]
+ResumeLayout = Literal["single-column", "two-column", "timeline"]
+MarkdownVariant = Literal[
+    "standard",
+    "classic",
+    "modern",
+    "compact",
+    "clean-executive",
+    "timeline",
+    "sidebar",
+]
 SupportedFormat = Literal["markdown", "html", "pdf", "docx"]
+
+STYLE_FAMILIES: tuple[str, ...] = (
+    "clean",
+    "classic",
+    "modern",
+    "compact",
+    "clean-executive",
+    "timeline",
+    "sidebar",
+)
 
 STYLE_IDS: tuple[ResumeStyleId, ...] = (
     "clean",
@@ -34,6 +56,10 @@ STYLE_IDS: tuple[ResumeStyleId, ...] = (
     "modern-alt",
     "compact",
     "compact-alt",
+    "clean-executive",
+    "clean-executive-alt",
+    "timeline",
+    "timeline-alt",
     "sidebar",
     "sidebar-alt",
 )
@@ -80,11 +106,11 @@ class StyleManifest(StrictStyleModel):
             raise ValueError("supported_sections must not contain duplicates")
         if len(self.supported_formats) != len(set(self.supported_formats)):
             raise ValueError("supported_formats must not contain duplicates")
-        if self.layout == "two-column":
+        if self.layout in {"two-column", "timeline"}:
             if self.ats_safe:
-                raise ValueError("two-column styles must be marked as not ATS-safe")
+                raise ValueError("non-linear styles must be marked as not ATS-safe")
             if self.tokens.sidebar_width_mm is None:
-                raise ValueError("two-column styles require sidebar_width_mm")
+                raise ValueError("non-linear styles require sidebar_width_mm")
         elif self.tokens.sidebar_width_mm is not None:
             raise ValueError("single-column styles must not define sidebar_width_mm")
         return self

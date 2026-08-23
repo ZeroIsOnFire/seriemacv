@@ -58,8 +58,8 @@ Markdown não representa de forma confiável geometria de página, fontes, cores
 barras laterais. Ele preserva o conteúdo e varia apenas elementos estruturais como
 títulos, separadores, densidade e agrupamento.
 
-## O `sidebar` foi interpretado incorretamente por um ATS
+## O `sidebar` ou `timeline` foi interpretado incorretamente por um ATS
 
-Isso é esperado: a família `sidebar` é explicitamente não ATS-safe. Gere `clean`,
-`classic`, `modern`, `compact` ou uma de suas variantes `-alt` para análise
-automatizada.
+Isso é esperado: ambas as famílias são explicitamente não ATS-safe. Gere `clean`,
+`classic`, `modern`, `compact`, `clean-executive` ou uma de suas variantes `-alt`
+para análise automatizada.

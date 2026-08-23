@@ -1,0 +1,24 @@
+schema_version: 1
+id: timeline
+name: Timeline
+description: Visual resume with dates aligned in a mascot-green side rail and no photo.
+layout: timeline
+page_size: A4
+ats_safe: false
+supported_sections: [summary, experience, education, skills, languages]
+supported_formats: [markdown, html, pdf, docx]
+markdown_variant: timeline
+tokens:
+  font_family: Arial
+  body_size_pt: 9.5
+  name_size_pt: 22.0
+  section_size_pt: 13.0
+  record_size_pt: 10.5
+  margins_mm: 8.0
+  line_spacing: 1.3
+  section_spacing_pt: 13.0
+  primary_color: '647D74'
+  accent_color: '4F6C63'
+  header_alignment: left
+  section_divider: accent
+  sidebar_width_mm: 36.0

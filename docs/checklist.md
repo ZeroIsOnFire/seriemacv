@@ -56,6 +56,11 @@ currículo. Vagas, match e tailoring permanecem pausados nesta fase.
   padrão com divisores de seção e o cabeçalho do `classic` sempre sem linha inferior.
 - [x] Gerar variações estruturais de Markdown para todos os estilos.
 - [x] Versionar galeria fictícia com previews e PDFs reproduzíveis.
+- [x] Separar a galeria bilíngue dos READMEs e adicionar `clean-executive` ATS-safe
+  e `timeline` visual/sem foto, incluindo variantes `-alt`.
+- [ ] Parametrizar cores de fundo/destaque dos estilos dependentes de cor via código
+  hexadecimal em `seriemacv.yml`; usar o verde do mascote como padrão em `modern` e
+  permitir override em templates como `modern` e `timeline`.
 - [x] Gerar currículo Markdown a partir do YAML.
 - [x] Renderizar currículo em HTML.
 - [x] Exportar PDF por renderizador local de navegador.

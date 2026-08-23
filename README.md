@@ -2,10 +2,16 @@
 
 [Leia em português](README.pt-BR.md)
 
-![seriemaCV mascot](mascot.png)
+<img src="mascot.png" width="140" alt="seriemaCV mascot">
 
 Local-first workspace for maintaining canonical career data in YAML and rendering
 editable or publication-ready resumes.
+
+seriemacv is currently a command-line interface designed first for AI agents and
+local automation. Its initial goal is to help agents turn verified career experience
+into structured YAML and generate consistent resumes without owning the user's data
+or decisions. People can also use every command directly. A future standalone GUI
+may provide the same core workflows without depending on an agent.
 
 ## Documentation
 
@@ -45,37 +51,19 @@ render without changing the project. Every format atomically replaces its fixed
 `python -m playwright install chromium`.
 
 Markdown styles vary hierarchy, separators, and density; Markdown cannot represent
-fonts, colors, or columns. DOCX remains editable. `clean`, `classic`, `modern`, and
-`compact` preserve a linear ATS-safe structure. `sidebar` is a two-column visual
-layout and is explicitly experimental and not ATS-safe.
+fonts, colors, or columns. DOCX remains editable. The `sidebar` and `timeline`
+families use non-linear visual layouts and are explicitly experimental and not
+ATS-safe; all other families remain linear.
 
 Every family has a standard style with section divider lines and an `-alt` style
 without them. `classic` and `classic-alt` never draw a line below the centered
 header; only their section-title dividers differ.
 
-## Built-in style gallery
+## Compatible layouts
 
-All previews and PDFs below use the fictitious [gallery career](examples/style-career.yml).
-
-| Style | Preview | Characteristics | Example |
-| --- | --- | --- | --- |
-| `clean` | <img src="examples/styles/clean/preview.png" width="180" alt="Clean resume preview"> | Neutral, single-column, ATS-safe | [PDF](examples/styles/clean/resume.pdf) |
-| `clean-alt` | <img src="examples/styles/clean-alt/preview.png" width="180" alt="Clean Alt resume preview"> | Clean without section dividers, ATS-safe | [PDF](examples/styles/clean-alt/resume.pdf) |
-| `classic` | <img src="examples/styles/classic/preview.png" width="180" alt="Classic resume preview"> | Traditional serif, centered header, ATS-safe | [PDF](examples/styles/classic/resume.pdf) |
-| `classic-alt` | <img src="examples/styles/classic-alt/preview.png" width="180" alt="Classic Alt resume preview"> | Classic without section dividers, ATS-safe | [PDF](examples/styles/classic-alt/resume.pdf) |
-| `modern` | <img src="examples/styles/modern/preview.png" width="180" alt="Modern resume preview"> | Contemporary navy accents, ATS-safe | [PDF](examples/styles/modern/resume.pdf) |
-| `modern-alt` | <img src="examples/styles/modern-alt/preview.png" width="180" alt="Modern Alt resume preview"> | Modern without section dividers, ATS-safe | [PDF](examples/styles/modern-alt/resume.pdf) |
-| `compact` | <img src="examples/styles/compact/preview.png" width="180" alt="Compact resume preview"> | Dense layout for longer careers, ATS-safe | [PDF](examples/styles/compact/resume.pdf) |
-| `compact-alt` | <img src="examples/styles/compact-alt/preview.png" width="180" alt="Compact Alt resume preview"> | Compact without section dividers, ATS-safe | [PDF](examples/styles/compact-alt/resume.pdf) |
-| `sidebar` | <img src="examples/styles/sidebar/preview.png" width="180" alt="Sidebar resume preview"> | Two-column, human-first, not ATS-safe | [PDF](examples/styles/sidebar/resume.pdf) |
-| `sidebar-alt` | <img src="examples/styles/sidebar-alt/preview.png" width="180" alt="Sidebar Alt resume preview"> | Sidebar without section dividers, not ATS-safe | [PDF](examples/styles/sidebar-alt/resume.pdf) |
-
-Regenerate the gallery with:
-
-```powershell
-$env:PYTHONPATH = 'src'
-python .\scripts\generate_style_examples.py
-```
+Browse previews, ATS notes, selection guidance, and downloadable examples in the
+[compatible layout gallery](docs/styles.md). It includes the formal
+`clean-executive` family and the photo-free visual `timeline` family.
 
 ## Templates and structured skills
 

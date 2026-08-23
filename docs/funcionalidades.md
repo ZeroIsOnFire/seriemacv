@@ -8,6 +8,11 @@ Cada módulo define um contrato próprio. A tecnologia deve ser escolhida por m�
 somente depois de validar os critérios listados; a interface gráfica não deve ser
 a dona da regra de negócio.
 
+A primeira interface pública é a CLI, priorizada tanto para uso direto quanto para
+integração com agentes de IA que transformem experiência verificada em propostas
+YAML e artefatos. Uma GUI independente de agentes pode reutilizar os mesmos casos de
+uso no futuro; ela não altera a propriedade local dos dados nem torna IA obrigatória.
+
 ## Mapa de dependências
 
 ```text
@@ -133,8 +138,8 @@ PDF, DOCX ou DOC, sem modificar o YAML de origem.
   `exports/resume.md` e sem alterar `career.yml`.
 - Contrato de pacote de estilo: `style.yml`, template HTML, CSS de impressão e
   preview.
-- Registro interno com as famílias `clean`, `classic`, `modern`, `compact` e
-  `sidebar`, cada uma com uma variante `-alt`.
+- Registro interno com as famílias `clean`, `classic`, `modern`, `compact`,
+  `clean-executive`, `sidebar` e `timeline`, cada uma com uma variante `-alt`.
 - Geração de Markdown e preview HTML.
 - Exportação PDF determinística.
 - Exportação DOCX por renderer próprio e conversão para DOC quando o formato
@@ -145,13 +150,14 @@ PDF, DOCX ou DOC, sem modificar o YAML de origem.
 DOCX ou DOC e metadados do artefato. DOCX será outro renderer, não uma conversão
 de PDF; DOC é um formato legado e não deve orientar o modelo interno.
 
-Os dez IDs internos usam manifests estritos e tokens compartilhados por HTML, PDF e
-DOCX. O ID padrão de cada família possui divisores nos títulos de seção e o sufixo
+Os quatorze IDs internos usam manifests estritos e tokens compartilhados por HTML,
+PDF e DOCX. O ID padrão de cada família possui divisores nos títulos de seção e o sufixo
 `-alt` os remove. Em `classic` e `classic-alt`, o cabeçalho centralizado nunca possui
-divisor inferior. `clean`, `classic`, `modern`, `compact` e suas variantes mantêm
-fluxo linear ATS-safe; `sidebar` e `sidebar-alt` são visuais, experimentais e não
-ATS-safe, com duas colunas no HTML/PDF e tabela sem bordas no DOCX. Markdown oferece
-as mesmas alternativas estruturais, mas não reproduz fontes, cores ou colunas.
+divisor inferior. As famílias `sidebar` e `timeline` são visuais, experimentais e
+não ATS-safe; usam grades no HTML/PDF e tabelas sem bordas no DOCX. `timeline`
+mantém datas em uma faixa lateral verde baseada no mascote e não utiliza foto ou
+ícones. As demais famílias mantêm fluxo linear ATS-safe. Markdown oferece as mesmas
+alternativas de conteúdo, mas não reproduz fontes, cores, colunas ou a faixa de datas.
 
 `resume_style` de `seriemacv.yml` define o estilo padrão e `--style` permite override
 sem persistência. Projetos antigos assumem `clean`. Todos os estilos escrevem

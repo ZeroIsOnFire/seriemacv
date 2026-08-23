@@ -1,0 +1,15 @@
+@page { size: A4; margin: {{margins_mm}}mm; }
+* { box-sizing: border-box; }
+body { margin: 0; color: {{primary_color}}; font: {{body_size_pt}}pt {{font_family}}, Georgia, serif; line-height: {{line_spacing}}; }
+main { max-width: {{content_width_mm}}mm; margin: auto; }
+header { text-align: {{header_alignment}}; padding-bottom: 6pt; }
+h1 { margin: 0 0 2pt; color: {{primary_color}}; font-size: {{name_size_pt}}pt; font-weight: normal; letter-spacing: .6pt; }
+header .title { color: {{accent_color}}; font-size: 12pt; font-weight: bold; }
+header p { margin: 2pt 0; }
+h2 { margin: {{section_spacing_pt}}pt 0 5pt; color: {{primary_color}}; font-size: {{section_size_pt}}pt; letter-spacing: .6pt; text-transform: uppercase; }
+h3 { margin: 8pt 0 1pt; font-size: {{record_size_pt}}pt; }
+p { margin: 0 0 4pt; }
+ul { margin: 2pt 0 5pt; padding-left: 16pt; }
+article { break-inside: avoid; }
+a { color: inherit; }
+.sidebar { display: none; }

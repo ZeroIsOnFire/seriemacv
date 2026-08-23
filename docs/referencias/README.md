@@ -32,6 +32,8 @@ redistribuí-los fora deste repositório ou incluí-los no produto.
 | Europass | Formato europeu padronizado e multilíngue | <https://europass.europa.eu/en/create-europass-cv> |
 | USAJOBS | Currículo federal dos EUA, com requisitos específicos da vaga | <https://help.usajobs.gov/faq/application/documents/resume/what-to-include> |
 | Microsoft Create | Coleção gratuita de modelos, incluindo opções ATS | <https://create.microsoft.com/en-us/templates/resumes-and-cover-letters> |
+| University of Pennsylvania Career Services | Tipografia de 10–12 pt, margens consistentes, espaço em branco e alerta sobre elementos decorativos em ATS | <https://careerservices.upenn.edu/channels/resume/> |
+| UC Berkeley Career Engagement | Formato simples, títulos convencionais e recomendação de evitar tabelas, imagens e caixas de texto para ATS | <https://www.career.berkeley.edu/prepare-for-success/resumes/> |
 
 ## Regras que influenciarão os estilos do seriemaCV
 
@@ -43,6 +45,9 @@ redistribuí-los fora deste repositório ou incluí-los no produto.
   impacto.
 - Currículo por competências e acadêmico são estilos/variações futuros, não
   substitutos do career.yml canônico.
+- `clean-executive` e `timeline` são composições originais baseadas apenas em
+  princípios genéricos de legibilidade; nenhum template externo foi copiado e o
+  layout visual não inclui foto nem ícones.
 - Nunca reutilize nomes, contatos, histórico profissional ou textos dos exemplos
   como dados de demonstração do produto.
 - Trate os exemplos brasileiros como referência de convenções locais, não como

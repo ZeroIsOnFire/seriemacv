@@ -15,9 +15,9 @@ seriemacv init .\minha-carreira --name "Minha carreira" --language pt-BR --style
 | `--language` | Idioma dos rótulos fixos do currículo | `pt-BR` ou `en`; padrão `pt-BR` |
 | `--style` | Estilo padrão do currículo | ID de uma família interna ou sua variante `-alt`; padrão `clean` |
 
-As famílias são `clean`, `classic`, `modern`, `compact` e `sidebar`. Acrescente
-`-alt` para escolher a mesma família sem linhas divisórias nas seções, por exemplo
-`modern-alt`.
+As famílias são `clean`, `classic`, `modern`, `compact`, `clean-executive`, `sidebar`
+e `timeline`. Acrescente `-alt` para escolher a mesma família sem linhas divisórias
+nas seções, por exemplo `modern-alt`.
 
 `init` recusa sobrescrever um projeto existente. Ele cria um `career.yml` vazio e
 pertencente ao usuário, exemplos fictícios, o índice SQLite local, diretórios de

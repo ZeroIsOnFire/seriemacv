@@ -17,15 +17,18 @@ seriemacv resume styles
 | `classic` | Uma coluna, cabeçalho serifado centralizado | ATS-safe | Áreas tradicionais |
 | `modern` | Uma coluna, hierarquia visual azul-marinho | ATS-safe | Apresentação contemporânea |
 | `compact` | Uma coluna, espaçamento reduzido | ATS-safe | Carreiras mais extensas |
+| `clean-executive` | Uma coluna, hierarquia formal | ATS-safe | Perfis seniores e de liderança |
 | `sidebar` | Duas colunas | Experimental, não ATS-safe | Cópia visual para leitura humana |
+| `timeline` | Faixa de datas e coluna principal | Experimental, não ATS-safe | Cronologia visual sem foto |
 
-O DOCX `sidebar` usa uma tabela sem bordas e seu HTML/PDF usa uma grade visual. Prefira
-um dos quatro estilos lineares quando o documento for analisado por um sistema ATS.
+Os DOCX de `sidebar` e `timeline` usam tabelas sem bordas; seus HTML/PDF usam grades
+visuais. Prefira um dos cinco estilos lineares quando o documento for analisado por
+um sistema ATS.
 
-Cada família também oferece `clean-alt`, `classic-alt`, `modern-alt`, `compact-alt`
-e `sidebar-alt`. Os IDs padrão exibem divisores nos títulos das seções; os IDs `-alt`
-os removem sem alterar tipografia, espaçamento, layout, formatos ou situação ATS. O
-cabeçalho centralizado do `classic` nunca possui divisor inferior em nenhuma variante.
+Cada família também oferece um par `-alt`. Os IDs padrão exibem divisores nos títulos
+das seções; os IDs `-alt` os removem sem alterar tipografia, espaçamento, layout,
+formatos ou situação ATS. O cabeçalho centralizado do `classic` nunca possui divisor
+inferior em nenhuma variante.
 
 ## Gerar um artefato
 
@@ -69,5 +72,5 @@ python -m playwright install chromium
 Se o Chromium não estiver disponível, o comando informa essa instalação e não
 sobrescreve um PDF existente.
 
-Consulte a [galeria de estilos internos](../../../README.pt-BR.md#galeria-de-estilos-internos)
+Consulte a [galeria de layouts compatíveis](../../styles.pt-BR.md)
 para previews PNG e PDFs de exemplo.

@@ -39,12 +39,13 @@ def main() -> None:
                         print_background=True,
                         prefer_css_page_size=True,
                     )
-                    page.add_style_tag(
-                        content=(
-                            "body { padding-top: "
-                            f"{style.tokens.margins_mm:g}mm !important; }}"
+                    if style.layout != "timeline":
+                        page.add_style_tag(
+                            content=(
+                                "body { padding-top: "
+                                f"{style.tokens.margins_mm:g}mm !important; }}"
+                            )
                         )
-                    )
                     page.screenshot(
                         path=destination / "preview.png",
                         full_page=True,

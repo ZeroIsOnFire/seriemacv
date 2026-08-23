@@ -20,10 +20,10 @@ from seriemacv.renderer import (
     write_markdown_resume,
     write_resume,
 )
-from seriemacv.styles import STYLE_IDS
+from seriemacv.styles import STYLE_FAMILIES, STYLE_IDS
 
 
-def _docx_resume_headings(document: Document) -> list[object]:
+def _docx_all_paragraphs(document: Document) -> list[object]:
     paragraphs = list(document.paragraphs)
     for table in document.tables:
         paragraphs.extend(
@@ -32,9 +32,13 @@ def _docx_resume_headings(document: Document) -> list[object]:
             for cell in row.cells
             for paragraph in cell.paragraphs
         )
+    return paragraphs
+
+
+def _docx_resume_headings(document: Document) -> list[object]:
     return [
         paragraph
-        for paragraph in paragraphs
+        for paragraph in _docx_all_paragraphs(document)
         if paragraph.style.name == "Resume Heading"
     ]
 
@@ -51,7 +55,10 @@ class MarkdownRendererTests(unittest.TestCase):
                     self.assertIn("Seriema Example", markdown)
                     self.assertIn(f'data-style="{style_id}"', html)
                     self.assertNotIn("{{", html)
-                    self.assertIn("Seriema Example", "\n".join(p.text for p in document.paragraphs))
+                    self.assertIn(
+                        "Seriema Example",
+                        "\n".join(p.text for p in _docx_all_paragraphs(document)),
+                    )
                     self.assertEqual(len(document.inline_shapes), 0)
                     if style_id.startswith("sidebar"):
                         self.assertIn('<aside class="sidebar">', html)
@@ -69,6 +76,13 @@ class MarkdownRendererTests(unittest.TestCase):
                         )
                         self.assertIn(expected_heading, table_text)
                         self.assertIn("Portfolio: https://example.invalid/seriema", table_text)
+                        self.assertIn('w:val="nil"', document.tables[0]._tbl.xml)
+                    elif style_id.startswith("timeline"):
+                        self.assertIn('class="timeline-record"', html)
+                        self.assertIn('class="timeline-date"', html)
+                        self.assertNotIn("<img", html)
+                        self.assertNotIn("<svg", html)
+                        self.assertGreater(len(document.tables), 0)
                         self.assertIn('w:val="nil"', document.tables[0]._tbl.xml)
                     else:
                         self.assertNotIn('<aside class="sidebar">', html)
@@ -88,9 +102,11 @@ class MarkdownRendererTests(unittest.TestCase):
         self.assertIn("=============", rendered["classic"])
         self.assertIn("# Seriema Example | Software Engineer", rendered["compact"])
         self.assertIn("> Remote | seriema@example.invalid", rendered["sidebar"])
+        self.assertIn("### Software Engineer", rendered["clean-executive"])
+        self.assertIn("## Seriema Example", rendered["timeline"])
 
     def test_standard_and_alt_styles_toggle_section_dividers(self) -> None:
-        for family in ("clean", "classic", "modern", "compact", "sidebar"):
+        for family in STYLE_FAMILIES:
             with self.subTest(family=family):
                 standard_html = render_html(self._career(), "en", family)
                 alt_html = render_html(self._career(), "en", f"{family}-alt")
@@ -125,6 +141,26 @@ class MarkdownRendererTests(unittest.TestCase):
                 header_rule = html.split("header {", 1)[1].split("}", 1)[0]
 
                 self.assertNotIn("border", header_rule)
+
+    def test_timeline_is_photo_free_and_places_each_date_in_the_rail(self) -> None:
+        html = render_html(self._career(), "en", "timeline")
+        document = Document(BytesIO(render_docx(self._career(), "en", "timeline")))
+        table_text = "\n".join(
+            paragraph.text
+            for row in document.tables[0].rows
+            for cell in row.cells
+            for paragraph in cell.paragraphs
+        )
+
+        self.assertIn(
+            '<div class="timeline-date">Jan 2024 - Present</div>', html
+        )
+        self.assertEqual(html.count("Jan 2024 - Present"), 1)
+        self.assertNotIn("<img", html)
+        self.assertNotIn("<svg", html)
+        self.assertNotIn("overflow: hidden", html)
+        self.assertIn("Jan 2024 - Present", table_text)
+        self.assertIn("Software Engineer - Current Corp", table_text)
 
     def test_docx_matches_clean_layout_and_resume_content(self) -> None:
         career_data = self._career().model_dump()

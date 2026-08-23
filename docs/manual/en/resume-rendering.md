@@ -17,16 +17,18 @@ seriemacv resume styles
 | `classic` | One column, centered serif header | ATS-safe | Traditional roles |
 | `modern` | One column, navy visual hierarchy | ATS-safe | Contemporary presentation |
 | `compact` | One column, reduced spacing | ATS-safe | Longer careers |
+| `clean-executive` | One column, formal hierarchy | ATS-safe | Senior and leadership profiles |
 | `sidebar` | Two columns | Experimental, not ATS-safe | Human-first visual copy |
+| `timeline` | Date rail plus main column | Experimental, not ATS-safe | Visual chronology without photo |
 
-The `sidebar` DOCX uses a borderless table and its HTML/PDF uses a visual grid.
-Prefer one of the four linear styles when an applicant tracking system will parse the
-document.
+The `sidebar` and `timeline` DOCX files use borderless tables; their HTML/PDF output
+uses visual grids. Prefer one of the five linear styles when an applicant tracking
+system will parse the document.
 
-Each family also provides `clean-alt`, `classic-alt`, `modern-alt`, `compact-alt`,
-and `sidebar-alt`. Standard IDs draw section-title dividers; `-alt` IDs remove them
-while preserving typography, spacing, layout, formats, and ATS status. The centered
-`classic` header never has a bottom divider in either variant.
+Each family also provides an `-alt` pair. Standard IDs draw section-title dividers;
+`-alt` IDs remove them while preserving typography, spacing, layout, formats, and
+ATS status. The centered `classic` header never has a bottom divider in either
+variant.
 
 ## Render an artifact
 
@@ -70,5 +72,5 @@ python -m playwright install chromium
 If Chromium is unavailable, the command reports this installation instruction and
 does not overwrite an existing PDF.
 
-See the [built-in style gallery](../../../README.md#built-in-style-gallery) for PNG
+See the [compatible layout gallery](../../styles.md) for PNG
 previews and downloadable example PDFs.

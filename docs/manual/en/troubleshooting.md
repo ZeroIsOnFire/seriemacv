@@ -60,7 +60,8 @@ Markdown has no reliable representation for page geometry, fonts, colors, or
 sidebars. It preserves content and varies only structural elements such as headings,
 separators, density, and grouping.
 
-## `sidebar` is parsed poorly by an ATS
+## `sidebar` or `timeline` is parsed poorly by an ATS
 
-This is expected: the `sidebar` family is explicitly non-ATS-safe. Render `clean`,
-`classic`, `modern`, `compact`, or one of their `-alt` variants for automated parsing.
+This is expected: both families are explicitly non-ATS-safe. Render `clean`,
+`classic`, `modern`, `compact`, `clean-executive`, or one of their `-alt` variants
+for automated parsing.

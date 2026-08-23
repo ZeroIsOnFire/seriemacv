@@ -76,6 +76,14 @@ class CliTests(unittest.TestCase):
             "classic-alt\tClassic Alt\tsingle-column\tATS-safe",
             output.getvalue(),
         )
+        self.assertIn(
+            "clean-executive-alt\tClean Executive Alt\tsingle-column\tATS-safe",
+            output.getvalue(),
+        )
+        self.assertIn(
+            "timeline\tTimeline\ttimeline\texperimental",
+            output.getvalue(),
+        )
         self.assertIn("sidebar\tSidebar\ttwo-column\texperimental", output.getvalue())
         self.assertIn(
             "sidebar-alt\tSidebar Alt\ttwo-column\texperimental",

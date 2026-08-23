@@ -2,10 +2,17 @@
 
 [Read in English](README.md)
 
-![Mascote do seriemaCV](mascot.png)
+<img src="mascot.png" width="140" alt="Mascote do seriemaCV">
 
 Workspace local-first para manter dados canônicos de carreira em YAML e gerar
 currículos editáveis ou prontos para publicação.
+
+O seriemaCV é atualmente uma interface de linha de comando pensada primeiro para
+agentes de IA e automação local. Seu objetivo inicial é ajudar agentes a transformar
+experiências profissionais verificadas em YAML estruturado e gerar currículos
+consistentes sem controlar os dados ou as decisões do usuário. Pessoas também podem
+usar todos os comandos diretamente. Uma futura GUI independente poderá oferecer os
+mesmos fluxos principais sem depender de um agente.
 
 ## Documentação
 
@@ -46,37 +53,19 @@ fixo em `exports/resume.*`. PDF requer Chromium local:
 `python -m playwright install chromium`.
 
 Os estilos Markdown variam hierarquia, separadores e densidade; Markdown não
-representa fontes, cores ou colunas. DOCX permanece editável. `clean`, `classic`,
-`modern` e `compact` preservam estrutura linear ATS-safe. `sidebar` usa duas colunas,
-é visual/experimental e não é ATS-safe.
+representa fontes, cores ou colunas. DOCX permanece editável. As famílias `sidebar`
+e `timeline` usam layouts visuais não lineares e são explicitamente experimentais e
+não ATS-safe; todas as demais permanecem lineares.
 
 Cada família possui um estilo padrão com linhas divisórias nas seções e um estilo
 `-alt` sem elas. `classic` e `classic-alt` nunca exibem linha abaixo do cabeçalho
 centralizado; apenas os divisores dos títulos de seção variam.
 
-## Galeria de estilos internos
+## Layouts compatíveis
 
-Todos os previews e PDFs usam o [currículo fictício da galeria](examples/style-career.yml).
-
-| Estilo | Preview | Características | Exemplo |
-| --- | --- | --- | --- |
-| `clean` | <img src="examples/styles/clean/preview.png" width="180" alt="Preview do currículo Clean"> | Neutro, uma coluna, ATS-safe | [PDF](examples/styles/clean/resume.pdf) |
-| `clean-alt` | <img src="examples/styles/clean-alt/preview.png" width="180" alt="Preview do currículo Clean Alt"> | Clean sem divisores de seção, ATS-safe | [PDF](examples/styles/clean-alt/resume.pdf) |
-| `classic` | <img src="examples/styles/classic/preview.png" width="180" alt="Preview do currículo Classic"> | Serifado tradicional, cabeçalho centralizado, ATS-safe | [PDF](examples/styles/classic/resume.pdf) |
-| `classic-alt` | <img src="examples/styles/classic-alt/preview.png" width="180" alt="Preview do currículo Classic Alt"> | Classic sem divisores de seção, ATS-safe | [PDF](examples/styles/classic-alt/resume.pdf) |
-| `modern` | <img src="examples/styles/modern/preview.png" width="180" alt="Preview do currículo Modern"> | Contemporâneo com detalhes azul-marinho, ATS-safe | [PDF](examples/styles/modern/resume.pdf) |
-| `modern-alt` | <img src="examples/styles/modern-alt/preview.png" width="180" alt="Preview do currículo Modern Alt"> | Modern sem divisores de seção, ATS-safe | [PDF](examples/styles/modern-alt/resume.pdf) |
-| `compact` | <img src="examples/styles/compact/preview.png" width="180" alt="Preview do currículo Compact"> | Denso para carreiras extensas, ATS-safe | [PDF](examples/styles/compact/resume.pdf) |
-| `compact-alt` | <img src="examples/styles/compact-alt/preview.png" width="180" alt="Preview do currículo Compact Alt"> | Compact sem divisores de seção, ATS-safe | [PDF](examples/styles/compact-alt/resume.pdf) |
-| `sidebar` | <img src="examples/styles/sidebar/preview.png" width="180" alt="Preview do currículo Sidebar"> | Duas colunas, foco visual, não ATS-safe | [PDF](examples/styles/sidebar/resume.pdf) |
-| `sidebar-alt` | <img src="examples/styles/sidebar-alt/preview.png" width="180" alt="Preview do currículo Sidebar Alt"> | Sidebar sem divisores de seção, não ATS-safe | [PDF](examples/styles/sidebar-alt/resume.pdf) |
-
-Para regenerar a galeria:
-
-```powershell
-$env:PYTHONPATH = 'src'
-python .\scripts\generate_style_examples.py
-```
+Veja previews, observações sobre ATS, orientação de escolha e exemplos para download
+na [galeria de layouts compatíveis](docs/styles.pt-BR.md). Ela inclui a família
+formal `clean-executive` e a família visual `timeline`, sem foto.
 
 ## Templates e competências estruturadas
 

@@ -6,7 +6,13 @@ from unittest.mock import patch
 
 from pydantic import ValidationError
 
-from seriemacv.styles import STYLE_IDS, StyleManifest, list_styles, load_style
+from seriemacv.styles import (
+    STYLE_FAMILIES,
+    STYLE_IDS,
+    StyleManifest,
+    list_styles,
+    load_style,
+)
 
 
 class ResumeStyleTests(unittest.TestCase):
@@ -20,7 +26,16 @@ class ResumeStyleTests(unittest.TestCase):
             with self.subTest(style=style_id):
                 preview = root / "examples/styles" / style_id / "preview.png"
                 pdf = root / "examples/styles" / style_id / "resume.pdf"
-                self.assertTrue(preview.read_bytes().startswith(b"\x89PNG\r\n\x1a\n"))
+                preview_bytes = preview.read_bytes()
+                self.assertTrue(preview_bytes.startswith(b"\x89PNG\r\n\x1a\n"))
+                if style_id.startswith("timeline"):
+                    self.assertEqual(
+                        (
+                            int.from_bytes(preview_bytes[16:20]),
+                            int.from_bytes(preview_bytes[20:24]),
+                        ),
+                        (794, 1123),
+                    )
                 self.assertTrue(pdf.read_bytes().startswith(b"%PDF-"))
 
     def test_loads_all_strict_built_in_style_packages(self) -> None:
@@ -38,11 +53,19 @@ class ResumeStyleTests(unittest.TestCase):
                 "modern-alt",
                 "compact",
                 "compact-alt",
+                "clean-executive",
+                "clean-executive-alt",
             },
         )
         self.assertEqual(load_style("sidebar").manifest.layout, "two-column")
         self.assertEqual(load_style("sidebar-alt").manifest.layout, "two-column")
-        for family in ("clean", "classic", "modern", "compact", "sidebar"):
+        self.assertEqual(load_style("timeline").manifest.layout, "timeline")
+        self.assertEqual(load_style("timeline-alt").manifest.layout, "timeline")
+        self.assertEqual(
+            load_style("timeline").manifest.tokens.primary_color,
+            "647D74",
+        )
+        for family in STYLE_FAMILIES:
             standard = load_style(family).manifest
             alternative = load_style(f"{family}-alt").manifest
 
@@ -67,6 +90,30 @@ class ResumeStyleTests(unittest.TestCase):
             package = load_style(style_id)
             self.assertIn("{{main}}", package.template)
             self.assertIn("@page", package.css)
+
+    def test_readmes_link_to_separate_style_galleries_and_use_small_mascot(self) -> None:
+        root = Path(__file__).resolve().parents[1]
+        readme = (root / "README.md").read_text(encoding="utf-8")
+        readme_pt = (root / "README.pt-BR.md").read_text(encoding="utf-8")
+
+        self.assertIn("[compatible layout gallery](docs/styles.md)", readme)
+        self.assertIn("[galeria de layouts compatíveis](docs/styles.pt-BR.md)", readme_pt)
+        self.assertNotIn("examples/styles/clean/preview.png", readme)
+        self.assertNotIn("examples/styles/clean/preview.png", readme_pt)
+        self.assertIn('<img src="mascot.png" width="140"', readme)
+        self.assertIn('<img src="mascot.png" width="140"', readme_pt)
+        self.assertIn("command-line interface designed first for AI agents", readme)
+        self.assertIn("interface de linha de comando", readme_pt)
+        self.assertIn("agentes de IA e automação local", readme_pt)
+        self.assertIn("future standalone GUI", readme)
+        self.assertIn("futura GUI independente", readme_pt)
+
+        gallery = (root / "docs/styles.md").read_text(encoding="utf-8")
+        gallery_pt = (root / "docs/styles.pt-BR.md").read_text(encoding="utf-8")
+        for style_id in STYLE_IDS:
+            with self.subTest(style=style_id):
+                self.assertIn(f"../examples/styles/{style_id}/preview.png", gallery)
+                self.assertIn(f"../examples/styles/{style_id}/preview.png", gallery_pt)
 
     def test_rejects_unknown_styles_and_malformed_manifests(self) -> None:
         with self.assertRaisesRegex(ValueError, "Unknown resume style"):

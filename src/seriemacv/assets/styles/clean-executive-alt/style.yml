@@ -1,0 +1,24 @@
+schema_version: 1
+id: clean-executive-alt
+name: Clean Executive Alt
+description: Clean Executive resume without section dividers.
+layout: single-column
+page_size: A4
+ats_safe: true
+supported_sections: [summary, experience, education, skills, languages]
+supported_formats: [markdown, html, pdf, docx]
+markdown_variant: clean-executive
+tokens:
+  font_family: Cambria
+  body_size_pt: 10.2
+  name_size_pt: 25.0
+  section_size_pt: 13.5
+  record_size_pt: 11.2
+  margins_mm: 17.0
+  line_spacing: 1.38
+  section_spacing_pt: 17.0
+  primary_color: '243238'
+  accent_color: '8A6D3B'
+  header_alignment: left
+  section_divider: none
+  sidebar_width_mm:

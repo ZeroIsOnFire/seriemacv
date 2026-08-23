@@ -15,8 +15,9 @@ seriemacv init .\my-career --name "My career" --language en --style modern
 | `--language` | Language for fixed resume labels | `pt-BR` or `en`; default `pt-BR` |
 | `--style` | Default resume style | A built-in family ID or its `-alt` variant; default `clean` |
 
-The families are `clean`, `classic`, `modern`, `compact`, and `sidebar`. Add `-alt`
-to select the same family without section divider lines, for example `modern-alt`.
+The families are `clean`, `classic`, `modern`, `compact`, `clean-executive`,
+`sidebar`, and `timeline`. Add `-alt` to select the same family without section
+divider lines, for example `modern-alt`.
 
 `init` refuses to overwrite an existing project. It creates a user-owned empty
 `career.yml`, fictional examples, the local SQLite index, export directories, and

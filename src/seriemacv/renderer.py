@@ -173,10 +173,13 @@ def render_docx(
     _ensure_supported(style, "docx")
     document = Document()
     _configure_docx(document, style)
-    _docx_header(document, presentation, style, include_contacts=style.ats_safe)
+    if style.layout == "timeline":
+        _docx_timeline_layout(document, presentation, style)
+    else:
+        _docx_header(document, presentation, style, include_contacts=style.ats_safe)
     if style.layout == "two-column":
         _docx_sidebar_layout(document, presentation, style)
-    else:
+    elif style.layout == "single-column":
         _docx_main_sections(document, presentation, style, include_secondary=True)
     stream = BytesIO()
     document.save(stream)
@@ -288,6 +291,10 @@ def _markdown_header(
             values.append("---")
     elif variant == "compact":
         values = [f"# {profile.name} | {profile.title}"]
+    elif variant == "clean-executive":
+        values = [f"# {profile.name}", f"### {profile.title}"]
+    elif variant == "timeline":
+        values = [f"## {profile.name}", f"*{profile.title}*"]
     elif variant == "sidebar":
         values = [f"# {profile.name}", f"*{profile.title}*"]
         if contact:
@@ -364,6 +371,8 @@ def _markdown_skill(skill: Skill, labels: dict[str, str]) -> str:
 def _html_parts(
     presentation: ResumePresentation, style: StyleManifest
 ) -> tuple[str, str, str]:
+    if style.layout == "timeline":
+        return _html_timeline_parts(presentation)
     profile = presentation.career.profile
     contact = " | ".join(escape(item) for item in presentation.contacts)
     links = " ".join(
@@ -433,6 +442,81 @@ def _html_parts(
             f'{"".join(secondary)}</aside>'
         )
     return "".join(header_parts), "".join(main_sections), sidebar
+
+
+def _html_timeline_parts(
+    presentation: ResumePresentation,
+) -> tuple[str, str, str]:
+    profile = presentation.career.profile
+    contact = " | ".join(escape(item) for item in presentation.contacts)
+    links = " ".join(
+        f'<a href="{escape(url, quote=True)}">{escape(name)}</a>'
+        for name, url in presentation.links
+    )
+    header = (
+        f"<h1>{escape(profile.name)}</h1>"
+        f'<p class="title">{escape(profile.title)}</p>'
+        f"<p>{contact}</p><p>{links}</p>"
+    )
+    sections = []
+    if presentation.career.summary:
+        sections.append(
+            _html_section(
+                presentation.labels["summary"],
+                f"<p>{escape(presentation.career.summary)}</p>",
+            )
+        )
+    if presentation.experience:
+        sections.append(
+            _html_timeline_records(
+                presentation.labels["experience"],
+                presentation.experience,
+                presentation.labels,
+                True,
+            )
+        )
+    if presentation.education:
+        sections.append(
+            _html_timeline_records(
+                presentation.labels["education"],
+                presentation.education,
+                presentation.labels,
+                False,
+            )
+        )
+    if presentation.career.skills:
+        sections.append(
+            _html_section(
+                presentation.labels["skills"],
+                _html_skills(presentation.career.skills, presentation.labels),
+            )
+        )
+    if profile.languages:
+        sections.append(
+            _html_section(
+                presentation.labels["languages"], _html_list(profile.languages)
+            )
+        )
+    return header, "".join(sections), ""
+
+
+def _html_timeline_records(
+    title: str,
+    records: list[Experience] | list[Education],
+    labels: dict[str, str],
+    experience: bool,
+) -> str:
+    rows = []
+    for record in records:
+        rows.append(
+            '<div class="timeline-record">'
+            f'<div class="timeline-date">{escape(_date_range(record, labels))}</div>'
+            f"<article><h3>{escape(_record_heading(record, experience))}</h3>"
+            f"<p>{escape(_details_without_dates(record, experience))}</p>"
+            f"{_html_list(record.highlights) if record.highlights else ''}</article>"
+            "</div>"
+        )
+    return _html_section(title, "".join(rows))
 
 
 def _html_list(values: list[str]) -> str:
@@ -575,20 +659,7 @@ def _docx_secondary_sections(
     career = presentation.career
     if career.skills:
         _docx_section(container, presentation.labels["skills"], style)
-        for category, skills in _skill_groups(career.skills, presentation.labels).items():
-            paragraph = container.add_paragraph()
-            if category:
-                category_run = paragraph.add_run(f"{category}: ")
-                category_run.bold = True
-            for index, skill in enumerate(skills):
-                if index:
-                    paragraph.add_run(", ")
-                skill_run = paragraph.add_run(skill.name)
-                skill_run.bold = skill.core
-                if skill.level:
-                    paragraph.add_run(
-                        f" ({translate(_locale_for(presentation.labels), f'level.{skill.level}')})"
-                    )
+        _docx_skills(container, career.skills, presentation.labels)
     if career.profile.languages:
         _docx_section(container, presentation.labels["languages"], style)
         container.add_paragraph(" | ".join(career.profile.languages))
@@ -624,6 +695,122 @@ def _docx_sidebar_layout(
     for paragraph in sidebar_cell.paragraphs:
         for run in paragraph.runs:
             run.font.color.rgb = white
+
+
+def _docx_timeline_layout(
+    document: Document, presentation: ResumePresentation, style: StyleManifest
+) -> None:
+    table = document.add_table(rows=0, cols=2)
+    table.alignment = WD_TABLE_ALIGNMENT.CENTER
+    table.autofit = False
+    _set_table_borders_none(table)
+
+    _, header_cell = _docx_timeline_row(table, style)
+    _docx_header(header_cell, presentation, style, include_contacts=True)
+    _remove_empty_leading_paragraph(header_cell)
+
+    career = presentation.career
+    if career.summary:
+        _, content = _docx_timeline_row(table, style)
+        _docx_section(content, presentation.labels["summary"], style)
+        content.add_paragraph(career.summary)
+        _remove_empty_leading_paragraph(content)
+    if presentation.experience:
+        _docx_timeline_heading_row(
+            table, presentation.labels["experience"], style
+        )
+        _docx_timeline_records(
+            table,
+            presentation.experience,
+            presentation.labels,
+            True,
+            style,
+        )
+    if presentation.education:
+        _docx_timeline_heading_row(table, presentation.labels["education"], style)
+        _docx_timeline_records(
+            table,
+            presentation.education,
+            presentation.labels,
+            False,
+            style,
+        )
+    if career.skills:
+        _, content = _docx_timeline_row(table, style)
+        _docx_section(content, presentation.labels["skills"], style)
+        _docx_skills(content, career.skills, presentation.labels)
+        _remove_empty_leading_paragraph(content)
+    if career.profile.languages:
+        _, content = _docx_timeline_row(table, style)
+        _docx_section(content, presentation.labels["languages"], style)
+        content.add_paragraph(" | ".join(career.profile.languages))
+        _remove_empty_leading_paragraph(content)
+
+
+def _docx_timeline_heading_row(table: Any, title: str, style: StyleManifest) -> None:
+    _, content = _docx_timeline_row(table, style)
+    _docx_section(content, title, style)
+    _remove_empty_leading_paragraph(content)
+
+
+def _docx_skills(
+    container: Any, skills: list[Skill], labels: dict[str, str]
+) -> None:
+    for category, grouped_skills in _skill_groups(skills, labels).items():
+        paragraph = container.add_paragraph()
+        if category:
+            category_run = paragraph.add_run(f"{category}: ")
+            category_run.bold = True
+        for index, skill in enumerate(grouped_skills):
+            if index:
+                paragraph.add_run(", ")
+            skill_run = paragraph.add_run(skill.name)
+            skill_run.bold = skill.core
+            if skill.level:
+                paragraph.add_run(
+                    f" ({translate(_locale_for(labels), f'level.{skill.level}')})"
+                )
+
+
+def _docx_timeline_records(
+    table: Any,
+    records: list[Experience] | list[Education],
+    labels: dict[str, str],
+    experience: bool,
+    style: StyleManifest,
+) -> None:
+    white = RGBColor(255, 255, 255)
+    for record in records:
+        date_cell, content = _docx_timeline_row(table, style)
+        date = date_cell.paragraphs[0]
+        date.alignment = WD_ALIGN_PARAGRAPH.CENTER
+        date_run = date.add_run(_date_range(record, labels))
+        date_run.font.color.rgb = white
+        name = content.add_paragraph()
+        name_run = name.add_run(_record_heading(record, experience))
+        name_run.bold = True
+        name_run.font.size = Pt(style.tokens.record_size_pt)
+        details = _details_without_dates(record, experience)
+        if details:
+            content.add_paragraph(details)
+        for highlight in record.highlights:
+            _docx_plain_bullet(content, highlight)
+        _remove_empty_leading_paragraph(content)
+
+
+def _docx_timeline_row(table: Any, style: StyleManifest) -> tuple[Any, Any]:
+    date_cell, content_cell = table.add_row().cells
+    available_width = 210 - (2 * style.tokens.margins_mm)
+    rail_width = style.tokens.sidebar_width_mm or 36
+    content_width = available_width - rail_width
+    table.columns[0].width = Mm(rail_width)
+    table.columns[1].width = Mm(content_width)
+    date_cell.width = Mm(rail_width)
+    content_cell.width = Mm(content_width)
+    date_cell.vertical_alignment = WD_CELL_VERTICAL_ALIGNMENT.TOP
+    content_cell.vertical_alignment = WD_CELL_VERTICAL_ALIGNMENT.TOP
+    _set_cell_shading(date_cell, style.tokens.primary_color)
+    return date_cell, content_cell
 
 
 def _docx_section(container: Any, title: str, style: StyleManifest) -> None:
@@ -732,16 +919,29 @@ def _ordered(
 def _details(
     record: Experience | Education, labels: dict[str, str], experience: bool
 ) -> str:
+    values = [_details_without_dates(record, experience)]
+    values.append(_date_range(record, labels))
+    return " | ".join(value for value in values if value)
+
+
+def _details_without_dates(
+    record: Experience | Education, experience: bool
+) -> str:
     values = (
         [record.location] if experience else [record.field_of_study, record.location]
     )
     if experience and record.employment_type:
         values.append(record.employment_type)
+    return " | ".join(value for value in values if value)
+
+
+def _date_range(
+    record: Experience | Education, labels: dict[str, str]
+) -> str:
     end = (
         _format_date(record.end_date, labels) if record.end_date else labels["current"]
     )
-    values.append(" - ".join((_format_date(record.start_date, labels), end)))
-    return " | ".join(value for value in values if value)
+    return " - ".join((_format_date(record.start_date, labels), end))
 
 
 def _skill_groups(
