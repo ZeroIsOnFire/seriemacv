@@ -9,10 +9,11 @@ volume Docker dedicado.
 ## Iniciar
 
 1. Instale Docker Desktop (Windows) ou Docker Engine (Linux).
-2. Copie `docker/nuextract/.env.example` para `docker/nuextract/.env` e defina o
-   nome do arquivo GGUF.
-3. Coloque esse modelo no volume `seriemacv_nuextract_models`. Baixe modelos somente
-   após revisar origem, licença e tamanho.
+2. Copie `docker/nuextract/.env.example` para `docker/nuextract/.env`.
+3. Sem `NUEXTRACT_GGUF_PATH`, o Compose baixa o GGUF oficial NuExtract3 Q4_K_M para
+   `seriemacv_nuextract_models` na primeira inicialização. Para usar um GGUF local,
+   coloque-o em `docker/nuextract/models/` e informe seu caminho no container, por
+   exemplo `NUEXTRACT_GGUF_PATH=/external/meu-modelo.gguf`.
 4. Execute:
 
 ```powershell

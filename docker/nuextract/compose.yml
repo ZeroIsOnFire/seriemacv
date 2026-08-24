@@ -1,4 +1,23 @@
 services:
+  model-download:
+    image: curlimages/curl:8.12.1
+    environment:
+      NUEXTRACT_GGUF_PATH: ${NUEXTRACT_GGUF_PATH:-/models/NuExtract3-Q4_K_M.gguf}
+      NUEXTRACT_GGUF_URL: ${NUEXTRACT_GGUF_URL:-https://huggingface.co/numind/NuExtract3-GGUF/resolve/main/NuExtract3-Q4_K_M.gguf}
+    volumes:
+      - nuextract_models:/models
+      - ./models:/external:ro
+    command:
+      - /bin/sh
+      - -ec
+      - |
+        if [ -s "$$NUEXTRACT_GGUF_PATH" ]; then exit 0; fi
+        if [ "$$NUEXTRACT_GGUF_PATH" != "/models/NuExtract3-Q4_K_M.gguf" ]; then
+          echo "NUEXTRACT_GGUF_PATH does not exist: $$NUEXTRACT_GGUF_PATH" >&2
+          exit 1
+        fi
+        curl --fail --location --retry 3 --output "$$NUEXTRACT_GGUF_PATH.part" "$$NUEXTRACT_GGUF_URL"
+        mv "$$NUEXTRACT_GGUF_PATH.part" "$$NUEXTRACT_GGUF_PATH"
   nuextract:
     build:
       context: .
@@ -7,9 +26,15 @@ services:
       - "127.0.0.1:${NUEXTRACT_PORT:-8080}:8080"
     volumes:
       - nuextract_models:/models:ro
+      - ./models:/external:ro
+    environment:
+      NUEXTRACT_GGUF_PATH: ${NUEXTRACT_GGUF_PATH:-/models/NuExtract3-Q4_K_M.gguf}
+    depends_on:
+      model-download:
+        condition: service_completed_successfully
     command:
       - -m
-      - /models/${NUEXTRACT_MODEL_FILE:-nuextract.gguf}
+      - ${NUEXTRACT_GGUF_PATH:-/models/NuExtract3-Q4_K_M.gguf}
       - --host
       - 0.0.0.0
       - --port
