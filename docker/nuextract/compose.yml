@@ -1,0 +1,25 @@
+services:
+  nuextract:
+    build:
+      context: .
+    image: seriemacv/nuextract-server:local
+    ports:
+      - "127.0.0.1:${NUEXTRACT_PORT:-8080}:8080"
+    volumes:
+      - nuextract_models:/models:ro
+    command:
+      - -m
+      - /models/${NUEXTRACT_MODEL_FILE:-nuextract.gguf}
+      - --host
+      - 0.0.0.0
+      - --port
+      - "8080"
+      - -c
+      - "${NUEXTRACT_CONTEXT_SIZE:-8192}"
+      - -ngl
+      - "${NUEXTRACT_GPU_LAYERS:-0}"
+    restart: unless-stopped
+
+volumes:
+  nuextract_models:
+    name: seriemacv_nuextract_models

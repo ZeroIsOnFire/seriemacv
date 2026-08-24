@@ -15,6 +15,7 @@ remains under the user's control.
 | Career Builder | Maintains profile, experience, education, skills, and evidence | [Career Builder](career-builder.md) |
 | Resume generation | Lists styles and renders Markdown, HTML, PDF, and DOCX | [Resumes and styles](resume-rendering.md) |
 | Templates | Exposes the current YAML contract to people and external tools | [Templates and external tools](templates.md) |
+| NuExtract Docker | Runs the optional local extraction runtime in Docker | [NuExtract with Docker](nuextract-docker.md) |
 | Diagnostics | Explains validation, browser, filesystem, and Python errors | [Troubleshooting](troubleshooting.md) |
 
 ## Recommended first workflow
