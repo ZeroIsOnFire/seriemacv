@@ -41,7 +41,6 @@ from seriemacv.project import (
     validate_project,
 )
 from seriemacv.renderer import ResumeRenderError, write_resume
-from seriemacv.importer import ImportError, apply_proposal, load_proposal, new_proposal, save_proposal
 from seriemacv.styles import STYLE_IDS, list_styles
 
 
@@ -75,21 +74,6 @@ def build_parser() -> argparse.ArgumentParser:
     locale_validate = locale_subparsers.add_parser("validate", help="Validate one locale")
     locale_validate.add_argument("path", type=Path)
     locale_validate.add_argument("--language", required=True)
-
-    import_parser = career_subparsers.add_parser("import", help="Propose career data from a local resume")
-    import_subparsers = import_parser.add_subparsers(dest="import_command", required=True)
-    import_propose = import_subparsers.add_parser("propose")
-    import_propose.add_argument("path", type=Path)
-    import_propose.add_argument("source", type=Path)
-    import_propose.add_argument("--language", required=True)
-    import_list = import_subparsers.add_parser("list")
-    import_list.add_argument("path", type=Path)
-    import_show = import_subparsers.add_parser("show")
-    import_show.add_argument("path", type=Path)
-    import_show.add_argument("id")
-    import_apply = import_subparsers.add_parser("apply")
-    import_apply.add_argument("path", type=Path)
-    import_apply.add_argument("id")
 
     profile_parser = career_subparsers.add_parser(
         "set-profile", help="Set one or more profile fields"
@@ -252,29 +236,6 @@ def main(arguments: list[str] | None = None) -> int:
 
 
 def _run_career_command(args: argparse.Namespace) -> int:
-    if args.career_command == "import":
-        project_path = args.path.expanduser().resolve()
-        try:
-            if args.import_command == "list":
-                for item in sorted((project_path / "proposals").glob("import-*.yml")):
-                    print(item.stem)
-                return 0
-            if args.import_command == "show":
-                print(dump_section(load_proposal(project_path, args.id)), end="")
-                return 0
-            if args.import_command == "apply":
-                career_path, translated_path = apply_proposal(project_path, args.id)
-                print(f"Applied import proposal to: {career_path}, {translated_path}")
-                return 0
-            config = load_project_configuration(project_path)
-            if config.nuextract is None:
-                raise ImportError("configure nuextract in seriemacv.yml before importing")
-            proposal = new_proposal(project_path, args.source, args.language, config.nuextract)
-            print(f"Created import proposal: {save_proposal(project_path, proposal)}")
-            return 0
-        except (OSError, ValueError, ValidationError, YAMLError, ImportError) as error:
-            print(f"{project_path}: {error}", file=sys.stderr)
-            return 1
     if args.career_command == "locale":
         project_path = args.path.expanduser().resolve()
         if args.locale_command == "list":

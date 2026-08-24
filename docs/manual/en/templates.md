@@ -24,33 +24,8 @@ A repository copy is also available at
 5. Run `seriemacv career validate <project>`.
 6. Render a resume only after validation succeeds.
 
-External tools do not receive implicit permission to modify `career.yml`.
-
-## Optional local NuExtract import
-
-Install PDF support only when needed with `pip install .[import]`, run a local
-multimodal `llama-server`, then configure its loopback endpoint in `seriemacv.yml`:
-
-```yaml
-nuextract:
-  endpoint: http://127.0.0.1:8080
-  model: nuextract
-  multimodal: true
-```
-
-Create and inspect a proposal before applying it:
-
-```powershell
-seriemacv career import propose .\my-career .\resume.pdf --language en
-seriemacv career import list .\my-career
-seriemacv career import show .\my-career import-20260101000000
-seriemacv career import apply .\my-career import-20260101000000
-```
-
-Proposals are saved under `proposals/` with source metadata and excerpts. `apply`
-is explicit, atomic, and refuses to overwrite non-empty career data or locale text.
-PDF pages without selectable text require a multimodal local endpoint; no source is
-sent to a hosted service by seriemaCV.
+External tools do not receive implicit permission to modify `career.yml`. seriemaCV
+does not currently provide a resume importer or automatically apply AI proposals.
 
 ## Jobs template status
 

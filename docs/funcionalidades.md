@@ -78,31 +78,6 @@ sabe sobre UI, Markdown, PDF ou provedor de IA.
 - `ruamel.yaml` para preservar o formato do arquivo e Pydantic para schemas
   estritos e versionados.
 - Estratégia de diff estrutural para propostas de tailoring.
-- Importadores separados para converter Markdown, DOCX ou PDF existentes em
-  propostas de `career.yml`, sempre sujeitas à revisão humana.
-
-**Extração local opcional**
-
-- Oferecer NuExtract como extrator estruturado local quando o parser determinístico
-  for insuficiente e o usuário não escolher uma LLM generalista ou hospedada. Embora
-  especializado, NuExtract continua sendo IA baseada em modelo e sua saída não é
-  considerada confiável sem validação.
-- Gerar somente uma proposta versionada com trechos de origem, pendências e metadados
-  do modelo/runtime; nunca alterar `career.yml` sem revisão e aplicação explícitas.
-- Executar o modelo por um adaptador substituível de `llama-server`, usando JSON
-  restrito, temperatura próxima de zero, limites de saída e validação Pydantic estrita.
-- Disponibilizar instalação local opcional, sem download silencioso. A documentação
-  terá um guia nativo de llama.cpp separado para Windows e Linux e um guia Docker
-  recomendado para iniciantes, com endpoint apenas local, volume dedicado e caminho
-  de remoção.
-- Informar antes da instalação tamanho do modelo, requisitos de RAM/VRAM, uso de CPU
-  ou GPU, licenças, porta e diretório de armazenamento. Modelo e quantização padrão
-  serão escolhidos por benchmark de currículos em português e inglês.
-- Manter NuExtract, llama.cpp e Docker fora das dependências obrigatórias do núcleo;
-  falha ou ausência do runtime local não pode impedir o builder manual.
-
-**Depende de:** Fundação.
-
 ## 3. Perfil e Career Library
 
 **Responsabilidade:** armazenar dados determinísticos do perfil e evidências

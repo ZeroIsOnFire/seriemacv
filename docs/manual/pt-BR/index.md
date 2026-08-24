@@ -15,7 +15,6 @@ YAML de origem permanece sempre sob controle do usuário.
 | Career Builder | Mantém perfil, experiências, formação, competências e evidências | [Career Builder](career-builder.md) |
 | Geração de currículo | Lista estilos e gera Markdown, HTML, PDF e DOCX | [Currículos e estilos](renderizacao.md) |
 | Templates | Expõe o contrato YAML atual para pessoas e ferramentas externas | [Templates e ferramentas externas](templates.md) |
-| NuExtract Docker | Executa o runtime opcional de extração local no Docker | [NuExtract com Docker](nuextract-docker.md) |
 | Diagnósticos | Explica erros de validação, navegador, arquivos e Python | [Solução de problemas](solucao-de-problemas.md) |
 
 ## Primeiro fluxo recomendado

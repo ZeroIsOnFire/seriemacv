@@ -25,34 +25,9 @@ Uma cópia versionada também está disponível em
 5. Rode `seriemacv career validate <projeto>`.
 6. Gere um currículo somente depois que a validação passar.
 
-Ferramentas externas não recebem autorização implícita para alterar `career.yml`.
-
-## Importação local opcional com NuExtract
-
-Instale o suporte a PDF somente quando necessário com `pip install .[import]`, rode
-um `llama-server` multimodal local e configure seu endpoint de loopback em
-`seriemacv.yml`:
-
-```yaml
-nuextract:
-  endpoint: http://127.0.0.1:8080
-  model: nuextract
-  multimodal: true
-```
-
-Crie e revise a proposta antes de aplicá-la:
-
-```powershell
-seriemacv career import propose .\minha-carreira .\curriculo.pdf --language pt-BR
-seriemacv career import list .\minha-carreira
-seriemacv career import show .\minha-carreira import-20260101000000
-seriemacv career import apply .\minha-carreira import-20260101000000
-```
-
-As propostas ficam em `proposals/`, com metadados e excertos da origem. `apply` é
-explícito, atômico e recusa sobrescrever dados ou textos de locale existentes. Páginas
-PDF sem texto selecionável exigem endpoint multimodal local; o seriemaCV não envia a
-origem a serviços hospedados.
+Ferramentas externas não recebem autorização implícita para alterar `career.yml`. O
+seriemaCV não oferece atualmente um importador de currículos nem aplica propostas de
+IA automaticamente.
 
 ## Situação do template de vagas
 
