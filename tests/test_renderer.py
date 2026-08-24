@@ -8,7 +8,7 @@ from pathlib import Path
 from unittest.mock import patch
 
 from docx import Document
-from docx.shared import Pt
+from docx.shared import Pt, RGBColor
 
 from seriemacv.career import CareerDocument
 from seriemacv.cli import main
@@ -152,6 +152,37 @@ class MarkdownRendererTests(unittest.TestCase):
 
                 self.assertIn("#aa12bc", html)
                 self.assertIn('AA12BC', document.element.xml)
+
+    def test_modern_and_clean_executive_keep_body_text_neutral(self) -> None:
+        for style_id, body_color in (
+            ("modern", "17324D"),
+            ("modern-alt", "17324D"),
+            ("clean-executive", "243238"),
+            ("clean-executive-alt", "243238"),
+            ("sidebar", "17324D"),
+            ("sidebar-alt", "17324D"),
+        ):
+            with self.subTest(style=style_id):
+                html = render_html(self._career(), "en", style_id, "AA12BC")
+                document = Document(
+                    BytesIO(render_docx(self._career(), "en", style_id, "AA12BC"))
+                )
+
+                self.assertIn(f"body {{ margin: 0; color: #{body_color.lower()}", html)
+                self.assertEqual(
+                    document.styles["Normal"].font.color.rgb,
+                    RGBColor.from_string(body_color),
+                )
+                self.assertIn("AA12BC", document.element.xml)
+
+    def test_sidebar_uses_project_color_for_headings_not_body_text(self) -> None:
+        html = render_html(self._career(), "en", "sidebar", "AA12BC")
+
+        self.assertIn("body { margin: 0; color: #17324d", html)
+        self.assertIn("h1 { margin: 0 0 2pt; color: #aa12bc", html)
+        self.assertIn("h2 { margin:", html)
+        self.assertIn("color: #aa12bc", html)
+        self.assertIn(".sidebar h2 { border-color: #fff; color: #fff; }", html)
 
     def test_visual_detail_styles_render_contact_values_without_titles(self) -> None:
         for style_id in ("left-rail", "detail-sidebar", "sidebar", "split-header"):

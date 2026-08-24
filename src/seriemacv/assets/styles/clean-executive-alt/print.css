@@ -1,6 +1,6 @@
 @page { size: A4; margin: {{margins_mm}}mm; }
 * { box-sizing: border-box; }
-body { margin: 0; color: {{primary_color}}; font: {{body_size_pt}}pt {{font_family}}, Georgia, serif; line-height: {{line_spacing}}; }
+body { margin: 0; color: #243238; font: {{body_size_pt}}pt {{font_family}}, Georgia, serif; line-height: {{line_spacing}}; }
 main { max-width: {{content_width_mm}}mm; margin: auto; }
 header { text-align: {{header_alignment}}; padding-bottom: 6pt; }
 h1 { margin: 0 0 2pt; color: {{primary_color}}; font-size: {{name_size_pt}}pt; font-weight: normal; letter-spacing: .6pt; }

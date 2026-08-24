@@ -1,6 +1,6 @@
 @page { size: A4; margin: {{margins_mm}}mm; }
 * { box-sizing: border-box; }
-body { margin: 0; color: {{primary_color}}; font: {{body_size_pt}}pt {{font_family}}, Calibri, Arial, sans-serif; line-height: {{line_spacing}}; }
+body { margin: 0; color: #17324d; font: {{body_size_pt}}pt {{font_family}}, Calibri, Arial, sans-serif; line-height: {{line_spacing}}; }
 main { max-width: {{content_width_mm}}mm; margin: auto; }
 header { text-align: {{header_alignment}}; border-left: 5px solid {{accent_color}}; padding-left: 10pt; }
 h1 { margin: 0 0 2pt; font-size: {{name_size_pt}}pt; color: {{primary_color}}; }

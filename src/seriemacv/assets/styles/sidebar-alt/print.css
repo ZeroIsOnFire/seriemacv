@@ -1,16 +1,16 @@
 @page { size: A4; margin: {{margins_mm}}mm; }
 * { box-sizing: border-box; }
-body { margin: 0; color: {{primary_color}}; font: {{body_size_pt}}pt {{font_family}}, Arial, sans-serif; line-height: {{line_spacing}}; }
+body { margin: 0; color: #17324d; font: {{body_size_pt}}pt {{font_family}}, Arial, sans-serif; line-height: {{line_spacing}}; }
 main { max-width: {{content_width_mm}}mm; margin: auto; }
 header { text-align: {{header_alignment}}; padding: 0 0 9pt {{sidebar_offset_mm}}mm; }
-h1 { margin: 0 0 2pt; font-size: {{name_size_pt}}pt; }
+h1 { margin: 0 0 2pt; color: {{primary_color}}; font-size: {{name_size_pt}}pt; }
 header p { margin: 1pt 0; }
 .resume-layout { display: grid; grid-template-columns: minmax(0, 1fr) {{sidebar_width_mm}}mm; gap: 7mm; }
 .main-content { grid-column: 1; }
 .sidebar { grid-column: 2; grid-row: 1; background: {{primary_color}}; color: #fff; padding: 10pt; }
 .sidebar a { color: #fff; overflow-wrap: anywhere; }
 .sidebar h2 { color: #fff; }
-h2 { margin: {{section_spacing_pt}}pt 0 4pt; font-size: {{section_size_pt}}pt; }
+h2 { margin: {{section_spacing_pt}}pt 0 4pt; color: {{primary_color}}; font-size: {{section_size_pt}}pt; }
 h3 { margin: 7pt 0 1pt; font-size: {{record_size_pt}}pt; }
 p { margin: 0 0 3pt; }
 ul { margin: 2pt 0 4pt; padding-left: 14pt; }

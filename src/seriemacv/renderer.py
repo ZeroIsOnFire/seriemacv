@@ -177,10 +177,16 @@ def render_docx(
     resume_color: str | None = None,
 ) -> bytes:
     presentation = _presentation(career, locale)
+    base_style = load_style(style_id).manifest
     style = resolve_resume_color(load_style(style_id), resume_color).manifest
     _ensure_supported(style, "docx")
     document = Document()
-    _configure_docx(document, style)
+    body_color = (
+        base_style.tokens.primary_color
+        if resume_color and style.id.startswith(("modern", "clean-executive", "sidebar"))
+        else None
+    )
+    _configure_docx(document, style, body_color=body_color)
     if style.layout == "timeline":
         _docx_timeline_layout(document, presentation, style)
     elif style.id.startswith("left-rail"):
@@ -607,7 +613,9 @@ def _html_skills(skills: list[Skill], labels: dict[str, str]) -> str:
     return "".join(groups)
 
 
-def _configure_docx(document: Document, style: StyleManifest) -> None:
+def _configure_docx(
+    document: Document, style: StyleManifest, *, body_color: str | None = None
+) -> None:
     tokens = style.tokens
     section = document.sections[0]
     section.page_width = Mm(210)
@@ -619,7 +627,7 @@ def _configure_docx(document: Document, style: StyleManifest) -> None:
     normal = document.styles["Normal"]
     normal.font.name = tokens.font_family
     normal.font.size = Pt(tokens.body_size_pt)
-    normal.font.color.rgb = RGBColor.from_string(tokens.primary_color)
+    normal.font.color.rgb = RGBColor.from_string(body_color or tokens.primary_color)
     normal.paragraph_format.line_spacing = tokens.line_spacing
     normal.paragraph_format.space_after = Pt(0)
     heading = document.styles.add_style("Resume Heading", WD_STYLE_TYPE.PARAGRAPH)
