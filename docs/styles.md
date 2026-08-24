@@ -16,6 +16,8 @@ fictitious [gallery career](../examples/style-career.yml).
 - `sidebar`: human-first two-column presentation; experimental and not ATS-safe.
 - `timeline`: dates in a mascot-green side rail and content in a main column,
   without a photo; experimental and not ATS-safe.
+- `split-header`, `contact-band`, `left-rail`, and `detail-sidebar`:
+  original visual compositions with columns; experimental and not ATS-safe.
 
 All other families are single-column and ATS-safe. A standard ID draws section
 dividers; its `-alt` pair removes them. Neither Classic variant draws a divider below
@@ -40,6 +42,14 @@ colors, columns, or the Timeline date rail.
 | `sidebar-alt` | <img src="../examples/styles/sidebar-alt/preview.png" width="180" alt="Sidebar Alt resume preview"> | Sidebar without section dividers, not ATS-safe | [PDF](../examples/styles/sidebar-alt/resume.pdf) |
 | `timeline` | <img src="../examples/styles/timeline/preview.png" width="180" alt="Timeline resume preview"> | Mascot-green date rail, no photo, not ATS-safe | [PDF](../examples/styles/timeline/resume.pdf) |
 | `timeline-alt` | <img src="../examples/styles/timeline-alt/preview.png" width="180" alt="Timeline Alt resume preview"> | Timeline without section dividers, not ATS-safe | [PDF](../examples/styles/timeline-alt/resume.pdf) |
+| `split-header` | <img src="../examples/styles/split-header/preview.png" width="180" alt="Split header resume preview"> | Colored header with detail column, not ATS-safe | [PDF](../examples/styles/split-header/resume.pdf) |
+| `split-header-alt` | <img src="../examples/styles/split-header-alt/preview.png" width="180" alt="Split header Alt resume preview"> | Split header without dividers, not ATS-safe | [PDF](../examples/styles/split-header-alt/resume.pdf) |
+| `contact-band` | <img src="../examples/styles/contact-band/preview.png" width="180" alt="Contact band resume preview"> | Profile and contact band with columns, not ATS-safe | [PDF](../examples/styles/contact-band/resume.pdf) |
+| `contact-band-alt` | <img src="../examples/styles/contact-band-alt/preview.png" width="180" alt="Contact band Alt resume preview"> | Contact band without dividers, not ATS-safe | [PDF](../examples/styles/contact-band-alt/resume.pdf) |
+| `left-rail` | <img src="../examples/styles/left-rail/preview.png" width="180" alt="Left rail resume preview"> | Colored left profile rail, not ATS-safe | [PDF](../examples/styles/left-rail/resume.pdf) |
+| `left-rail-alt` | <img src="../examples/styles/left-rail-alt/preview.png" width="180" alt="Left rail Alt resume preview"> | Left rail without dividers, not ATS-safe | [PDF](../examples/styles/left-rail-alt/resume.pdf) |
+| `detail-sidebar` | <img src="../examples/styles/detail-sidebar/preview.png" width="180" alt="Detail sidebar resume preview"> | Wide header and details sidebar, not ATS-safe | [PDF](../examples/styles/detail-sidebar/resume.pdf) |
+| `detail-sidebar-alt` | <img src="../examples/styles/detail-sidebar-alt/preview.png" width="180" alt="Detail sidebar Alt resume preview"> | Detail sidebar without dividers, not ATS-safe | [PDF](../examples/styles/detail-sidebar-alt/resume.pdf) |
 
 ## Design basis
 
@@ -51,6 +61,9 @@ skills-first layout remains deferred until skills can reference supporting evide
 
 `timeline` is an original, photo-free adaptation of a common date-rail pattern. Its
 visual grid is intentionally excluded from the ATS-safe group.
+The new visual families are likewise original interpretations of general hierarchy
+patterns. They do not reproduce the reference templates and omit data not represented
+by the canonical career schema.
 
 Research references and provenance are recorded in
 [resume layout references](referencias/README.md).

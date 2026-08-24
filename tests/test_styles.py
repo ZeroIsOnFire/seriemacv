@@ -61,6 +61,7 @@ class ResumeStyleTests(unittest.TestCase):
         self.assertEqual(load_style("sidebar-alt").manifest.layout, "two-column")
         self.assertEqual(load_style("timeline").manifest.layout, "timeline")
         self.assertEqual(load_style("timeline-alt").manifest.layout, "timeline")
+        self.assertEqual(load_style("left-rail").manifest.layout, "two-column")
         self.assertEqual(
             load_style("timeline").manifest.tokens.primary_color,
             "647D74",
@@ -90,6 +91,16 @@ class ResumeStyleTests(unittest.TestCase):
             package = load_style(style_id)
             self.assertIn("{{main}}", package.template)
             self.assertIn("@page", package.css)
+
+        for family in (
+            "split-header",
+            "contact-band",
+            "left-rail",
+            "detail-sidebar",
+        ):
+            self.assertTrue(load_style(family).manifest.color_customizable)
+        for family in ("clean-executive", "modern", "sidebar"):
+            self.assertTrue(load_style(family).manifest.color_customizable)
 
     def test_readmes_link_to_separate_style_galleries_and_use_small_mascot(self) -> None:
         root = Path(__file__).resolve().parents[1]

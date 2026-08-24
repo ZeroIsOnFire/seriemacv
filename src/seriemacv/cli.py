@@ -11,8 +11,8 @@ from seriemacv.career import (
     CAREER_FILE,
     add_record,
     dump_section,
-    list_section,
     list_locales,
+    list_section,
     load_localized_career,
     set_profile,
     validate_career,
@@ -326,7 +326,17 @@ def _run_resume_command(args: argparse.Namespace) -> int:
         style_id = args.style or configuration.resume_style
         locale = args.language or configuration.resume_language
         career = load_localized_career(project_path, locale)
-        output_paths = [write_resume(project_path, career, locale, output_format, style_id=style_id) for output_format in args.format]
+        output_paths = [
+            write_resume(
+                project_path,
+                career,
+                locale,
+                output_format,
+                style_id=style_id,
+                resume_color=configuration.resume_color,
+            )
+            for output_format in args.format
+        ]
     except (OSError, ResumeRenderError, ValueError, ValidationError, YAMLError) as error:
         print(f"{career_path}: {error}", file=sys.stderr)
         return 1

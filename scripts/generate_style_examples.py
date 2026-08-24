@@ -5,18 +5,25 @@ from __future__ import annotations
 from pathlib import Path
 
 from playwright.sync_api import sync_playwright
+from ruamel.yaml import YAML
 
-from seriemacv.career import load_career
+from seriemacv.career import CareerDocument
+from seriemacv.project import ProjectConfiguration
 from seriemacv.renderer import render_html
 from seriemacv.styles import STYLE_IDS, load_style
 
 ROOT = Path(__file__).resolve().parents[1]
 SOURCE = ROOT / "examples" / "style-career.yml"
 OUTPUT = ROOT / "examples" / "styles"
+GALLERY_RESUME_COLOR = ProjectConfiguration(
+    schema_version=2, project_name="Style gallery"
+).resume_color
 
 
 def main() -> None:
-    career = load_career(SOURCE)
+    career = CareerDocument.model_validate(
+        YAML(typ="safe").load(SOURCE.read_text(encoding="utf-8"))
+    )
     with sync_playwright() as playwright:
         browser = playwright.chromium.launch()
         try:
@@ -31,7 +38,13 @@ def main() -> None:
                 try:
                     page.emulate_media(media="print")
                     page.set_content(
-                        render_html(career, "en", style_id), wait_until="load"
+                        render_html(
+                            career,
+                            "en",
+                            style_id,
+                            resume_color=GALLERY_RESUME_COLOR,
+                        ),
+                        wait_until="load",
                     )
                     page.pdf(
                         path=destination / "resume.pdf",
@@ -39,7 +52,9 @@ def main() -> None:
                         print_background=True,
                         prefer_css_page_size=True,
                     )
-                    if style.layout != "timeline":
+                    if not style.id.startswith(
+                        ("timeline", "contact-band", "detail-sidebar", "left-rail")
+                    ):
                         page.add_style_tag(
                             content=(
                                 "body { padding-top: "

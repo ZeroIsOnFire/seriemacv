@@ -20,7 +20,7 @@ from seriemacv.renderer import (
     write_markdown_resume,
     write_resume,
 )
-from seriemacv.styles import STYLE_FAMILIES, STYLE_IDS
+from seriemacv.styles import STYLE_FAMILIES, STYLE_IDS, load_style
 
 
 def _docx_all_paragraphs(document: Document) -> list[object]:
@@ -60,7 +60,8 @@ class MarkdownRendererTests(unittest.TestCase):
                         "\n".join(p.text for p in _docx_all_paragraphs(document)),
                     )
                     self.assertEqual(len(document.inline_shapes), 0)
-                    if style_id.startswith("sidebar"):
+                    manifest = load_style(style_id).manifest
+                    if manifest.layout == "two-column":
                         self.assertIn('<aside class="sidebar">', html)
                         self.assertEqual(len(document.tables), 1)
                         table_text = "\n".join(
@@ -75,9 +76,17 @@ class MarkdownRendererTests(unittest.TestCase):
                             else "Professional Experience"
                         )
                         self.assertIn(expected_heading, table_text)
-                        self.assertIn("Portfolio: https://example.invalid/seriema", table_text)
+                        if style_id.startswith(
+                            ("left-rail", "detail-sidebar", "sidebar", "split-header")
+                        ):
+                            self.assertIn("Portfolio", table_text)
+                            self.assertNotIn("https://example.invalid/seriema", table_text)
+                        else:
+                            self.assertIn(
+                                "Portfolio: https://example.invalid/seriema", table_text
+                            )
                         self.assertIn('w:val="nil"', document.tables[0]._tbl.xml)
-                    elif style_id.startswith("timeline"):
+                    elif manifest.layout == "timeline":
                         self.assertIn('class="timeline-record"', html)
                         self.assertIn('class="timeline-date"', html)
                         self.assertNotIn("<img", html)
@@ -98,7 +107,6 @@ class MarkdownRendererTests(unittest.TestCase):
             for style_id in STYLE_IDS
         }
 
-        self.assertEqual(len(set(rendered.values())), len(STYLE_IDS))
         self.assertIn("=============", rendered["classic"])
         self.assertIn("# Seriema Example | Software Engineer", rendered["compact"])
         self.assertIn("> Remote | seriema@example.invalid", rendered["sidebar"])
@@ -133,6 +141,94 @@ class MarkdownRendererTests(unittest.TestCase):
                 self.assertNotIn(
                     "\n---", render_markdown(self._career(), "en", f"{family}-alt")
                 )
+
+    def test_configurable_styles_apply_one_color_to_html_and_docx(self) -> None:
+        for style_id in STYLE_IDS:
+            if not load_style(style_id).manifest.color_customizable:
+                continue
+            with self.subTest(style=style_id):
+                html = render_html(self._career(), "en", style_id, "Aa12Bc")
+                document = Document(BytesIO(render_docx(self._career(), "en", style_id, "AA12BC")))
+
+                self.assertIn("#aa12bc", html)
+                self.assertIn('AA12BC', document.element.xml)
+
+    def test_visual_detail_styles_render_contact_values_without_titles(self) -> None:
+        for style_id in ("left-rail", "detail-sidebar", "sidebar", "split-header"):
+            with self.subTest(style=style_id):
+                html = render_html(self._career(), "en", style_id)
+                document = Document(
+                    BytesIO(render_docx(self._career(), "en", style_id))
+                )
+
+                self.assertNotIn("Location: ", html)
+                self.assertNotIn("Email: ", html)
+                self.assertNotIn("Phone: ", html)
+                self.assertIn("Remote", html)
+                self.assertIn("seriema@example.invalid", html)
+                self.assertIn("+1 555 0100", html)
+                document_text = "\n".join(
+                    paragraph.text for paragraph in _docx_all_paragraphs(document)
+                )
+                self.assertNotIn("Location: Remote", document_text)
+                self.assertNotIn("Email: seriema@example.invalid", document_text)
+                self.assertNotIn("Phone: +1 555 0100", document_text)
+                self.assertIn("Remote", document_text)
+                self.assertIn("seriema@example.invalid", document_text)
+                self.assertIn("+1 555 0100", document_text)
+
+    def test_visual_detail_styles_show_labeled_clickable_links(self) -> None:
+        for style_id in ("left-rail", "detail-sidebar", "sidebar", "split-header"):
+            with self.subTest(style=style_id):
+                html = render_html(self._career(), "en", style_id)
+                document = Document(
+                    BytesIO(render_docx(self._career(), "en", style_id))
+                )
+
+                self.assertIn(
+                    '<a href="https://example.invalid/seriema">Portfolio</a>', html
+                )
+                self.assertNotIn("Portfolio: https://example.invalid/seriema", html)
+                self.assertIn("Portfolio", document.element.xml)
+                self.assertNotIn(
+                    "Portfolio: https://example.invalid/seriema", document.element.xml
+                )
+                self.assertIn(
+                    "https://example.invalid/seriema",
+                    "\n".join(
+                        relationship.target_ref
+                        for relationship in document.part.rels.values()
+                        if relationship.is_external
+                    ),
+                )
+
+    def test_full_bleed_headers_do_not_use_negative_page_margins(self) -> None:
+        for style_id in ("contact-band", "contact-band-alt", "detail-sidebar", "detail-sidebar-alt"):
+            with self.subTest(style=style_id):
+                html = render_html(self._career(), "en", style_id)
+
+                self.assertIn("@page { size: A4; margin: 0; }", html)
+                self.assertNotIn("margin: -", html)
+        contact_band = render_html(self._career(), "en", "contact-band")
+        self.assertIn("header { background:", contact_band)
+
+    def test_non_configurable_styles_and_markdown_ignore_resume_color(self) -> None:
+        html = render_html(self._career(), "en", "clean", "AA12BC")
+
+        self.assertNotIn("#aa12bc", html)
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            output_path = write_resume(
+                Path(temporary_directory),
+                self._career(),
+                "en",
+                "markdown",
+                style_id="modern",
+                resume_color="AA12BC",
+            )
+            self.assertEqual(
+                output_path.read_text(encoding="utf-8"),
+                render_markdown(self._career(), "en", "modern"),
+            )
 
     def test_classic_never_draws_a_header_divider(self) -> None:
         for style_id in ("classic", "classic-alt"):
@@ -438,6 +534,7 @@ class ResumeRenderCliTests(unittest.TestCase):
             self.assertEqual(result, 0)
             output_path = project_path / "exports/resume.en.html"
             self.assertIn('data-style="modern"', output_path.read_text(encoding="utf-8"))
+            self.assertIn("#647d74", output_path.read_text(encoding="utf-8"))
 
             with redirect_stdout(StringIO()):
                 result = main([
@@ -567,6 +664,24 @@ stories: []
             self.assertEqual(result, 1)
             self.assertIn(str(configuration_path), stderr.getvalue())
             self.assertFalse((project_path / "exports/resume.pt-BR.md").exists())
+
+    def test_cli_does_not_overwrite_artifact_for_invalid_resume_color(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            project_path = Path(temporary_directory) / "career-project"
+            create_project(project_path, project_name="Career Project", resume_language="en")
+            self._write_complete_career(project_path)
+            output_path = project_path / "exports/resume.en.html"
+            output_path.write_text("previous artifact", encoding="utf-8")
+            (project_path / "seriemacv.yml").write_text(
+                "schema_version: 2\nproject_name: Career Project\nresume_language: en\nresume_color: invalid\n",
+                encoding="utf-8",
+            )
+
+            with redirect_stderr(StringIO()):
+                result = main(["resume", "render", str(project_path), "--format", "html"])
+
+            self.assertEqual(result, 1)
+            self.assertEqual(output_path.read_text(encoding="utf-8"), "previous artifact")
 
     @staticmethod
     def _write_complete_career(project_path: Path) -> None:

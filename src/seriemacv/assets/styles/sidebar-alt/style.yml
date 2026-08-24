@@ -8,6 +8,7 @@ ats_safe: false
 supported_sections: [summary, experience, education, skills, languages]
 supported_formats: [markdown, html, pdf, docx]
 markdown_variant: sidebar
+color_customizable: true
 tokens:
   font_family: Calibri
   body_size_pt: 9.5

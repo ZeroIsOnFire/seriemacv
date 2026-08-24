@@ -53,6 +53,9 @@ renderização sem alterar o projeto. Cada formato substitui atomicamente seu ar
 fixo em `exports/resume.*`. PDF requer Chromium local:
 `python -m playwright install chromium`.
 
+`resume_color` define a cor RGB dos estilos configuráveis `modern`, `timeline` e
+`sidebar` (incluindo `-alt`); o padrão é o verde do mascote `#647D74`.
+
 Os estilos Markdown variam hierarquia, separadores e densidade; Markdown não
 representa fontes, cores ou colunas. DOCX permanece editável. As famílias `sidebar`
 e `timeline` usam layouts visuais não lineares e são explicitamente experimentais e
@@ -63,6 +66,10 @@ Cada família possui um estilo padrão com linhas divisórias nas seções e um 
 centralizado; apenas os divisores dos títulos de seção variam.
 
 ## Layouts compatíveis
+
+As famílias `right-rail`, `centered`, `split-header`, `contact-band`, `left-rail` e
+`detail-sidebar` são interpretações visuais originais. Elas usam somente os dados
+canônicos disponíveis e não criam foto, certificados, prêmios ou interesses.
 
 Veja previews, observações sobre ATS, orientação de escolha e exemplos para download
 na [galeria de layouts compatíveis](docs/styles.pt-BR.md). Ela inclui a família

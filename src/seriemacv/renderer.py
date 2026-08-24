@@ -20,7 +20,13 @@ from docx.shared import Mm, Pt, RGBColor
 
 from seriemacv.career import CareerDocument, Education, Experience, Skill
 from seriemacv.i18n import translate
-from seriemacv.styles import ResumeStyleId, StyleManifest, StylePackage, load_style
+from seriemacv.styles import (
+    ResumeStyleId,
+    StyleManifest,
+    StylePackage,
+    load_style,
+    resolve_resume_color,
+)
 
 ResumeLocale = str
 ResumeFormat = Literal["markdown", "html", "pdf", "docx"]
@@ -146,9 +152,10 @@ def render_html(
     career: CareerDocument,
     locale: ResumeLocale,
     style_id: ResumeStyleId = "clean",
+    resume_color: str | None = None,
 ) -> str:
     presentation = _presentation(career, locale)
-    style = load_style(style_id)
+    style = resolve_resume_color(load_style(style_id), resume_color)
     _ensure_supported(style.manifest, "html")
     header, main, sidebar = _html_parts(presentation, style.manifest)
     return (
@@ -167,17 +174,25 @@ def render_docx(
     career: CareerDocument,
     locale: ResumeLocale,
     style_id: ResumeStyleId = "clean",
+    resume_color: str | None = None,
 ) -> bytes:
     presentation = _presentation(career, locale)
-    style = load_style(style_id).manifest
+    style = resolve_resume_color(load_style(style_id), resume_color).manifest
     _ensure_supported(style, "docx")
     document = Document()
     _configure_docx(document, style)
     if style.layout == "timeline":
         _docx_timeline_layout(document, presentation, style)
+    elif style.id.startswith("left-rail"):
+        _docx_left_rail_layout(document, presentation, style)
     else:
-        _docx_header(document, presentation, style, include_contacts=style.ats_safe)
-    if style.layout == "two-column":
+        _docx_header(
+            document,
+            presentation,
+            style,
+            include_contacts=style.ats_safe or style.id.startswith("contact-band"),
+        )
+    if style.layout == "two-column" and not style.id.startswith("left-rail"):
         _docx_sidebar_layout(document, presentation, style)
     elif style.layout == "single-column":
         _docx_main_sections(document, presentation, style, include_secondary=True)
@@ -193,6 +208,7 @@ def write_resume(
     output_format: ResumeFormat,
     pdf_renderer: PdfRenderer | None = None,
     style_id: ResumeStyleId = "clean",
+    resume_color: str | None = None,
 ) -> Path:
     path = project_path / "exports" / f"resume.{locale}.{_FILENAMES[output_format]}"
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -202,13 +218,13 @@ def write_resume(
     if output_format == "markdown":
         content = render_markdown(career, locale, style_id).encode()
     elif output_format == "html":
-        content = render_html(career, locale, style_id).encode()
+        content = render_html(career, locale, style_id, resume_color).encode()
     elif output_format == "pdf":
         content = (pdf_renderer or PlaywrightPdfRenderer()).render(
-            render_html(career, locale, style_id)
+            render_html(career, locale, style_id, resume_color)
         )
     else:
-        content = render_docx(career, locale, style_id)
+        content = render_docx(career, locale, style_id, resume_color)
     _atomic_write(path, content)
     return path
 
@@ -389,6 +405,10 @@ def _html_parts(
     ]
     if style.layout == "single-column":
         header_parts.extend((f"<p>{contact}</p>", f"<p>{links}</p>"))
+    elif style.id.startswith("contact-band"):
+        header_parts.append(
+            f'<div class="contact-band"><p>{contact}</p><p>{links}</p></div>'
+        )
 
     main_sections = []
     if presentation.career.summary:
@@ -435,17 +455,36 @@ def _html_parts(
         main_sections.extend(secondary)
         sidebar = ""
     else:
+        compact_link_labels = _uses_compact_link_labels(style)
         sidebar_contact = "".join(
             f"<p>{escape(item)}</p>" for item in presentation.contacts
         ) + "".join(
-            f'<p><a href="{escape(url, quote=True)}">{escape(name)}: {escape(url)}</a></p>'
+            f'<p><a href="{escape(url, quote=True)}">'
+            f"{escape(name) if compact_link_labels else f'{escape(name)}: {escape(url)}'}</a></p>"
             for name, url in presentation.links
         )
-        sidebar = (
-            f'<aside class="sidebar"><div class="contact">{sidebar_contact}</div>'
-            f'{"".join(secondary)}</aside>'
-        )
+        if style.id.startswith("left-rail"):
+            rail_profile = (
+                f'<div class="rail-profile"><p class="rail-name">{escape(profile.name)}</p>'
+                f'<p class="title">{escape(profile.title)}</p></div>'
+            )
+            header_parts = []
+            sidebar = (
+                f'<aside class="sidebar">{rail_profile}'
+                f'<div class="contact">{sidebar_contact}</div>{"".join(secondary)}</aside>'
+            )
+        else:
+            sidebar = (
+                f'<aside class="sidebar"><div class="contact">{sidebar_contact}</div>'
+                f'{"".join(secondary)}</aside>'
+            )
     return "".join(header_parts), "".join(main_sections), sidebar
+
+
+def _uses_compact_link_labels(style: StyleManifest) -> bool:
+    return style.id.startswith(
+        ("left-rail", "detail-sidebar", "sidebar", "split-header")
+    )
 
 
 def _html_timeline_parts(
@@ -598,6 +637,7 @@ def _docx_header(
     style: StyleManifest,
     *,
     include_contacts: bool,
+    compact_link_labels: bool = False,
 ) -> None:
     profile = presentation.career.profile
     alignment = (
@@ -620,7 +660,11 @@ def _docx_header(
         paragraph.alignment = alignment
     if include_contacts:
         for label, url in presentation.links:
-            paragraph = document.add_paragraph(f"{label}: {url}")
+            paragraph = document.add_paragraph()
+            if compact_link_labels:
+                _docx_hyperlink(paragraph, label, url)
+            else:
+                paragraph.add_run(f"{label}: {url}")
             paragraph.alignment = alignment
 
 
@@ -669,6 +713,29 @@ def _docx_secondary_sections(
         container.add_paragraph(" | ".join(career.profile.languages))
 
 
+def _docx_hyperlink(paragraph: Any, label: str, url: str) -> None:
+    """Append a visible external hyperlink without exposing its URL as text."""
+    relationship_id = paragraph.part.relate_to(
+        url,
+        "http://schemas.openxmlformats.org/officeDocument/2006/relationships/hyperlink",
+        is_external=True,
+    )
+    hyperlink = OxmlElement("w:hyperlink")
+    hyperlink.set(qn("r:id"), relationship_id)
+    run = OxmlElement("w:r")
+    properties = OxmlElement("w:rPr")
+    color = OxmlElement("w:color")
+    color.set(qn("w:val"), "0563C1")
+    underline = OxmlElement("w:u")
+    underline.set(qn("w:val"), "single")
+    properties.extend((color, underline))
+    text = OxmlElement("w:t")
+    text.text = label
+    run.extend((properties, text))
+    hyperlink.append(run)
+    paragraph._p.append(hyperlink)
+
+
 def _docx_sidebar_layout(
     document: Document, presentation: ResumePresentation, style: StyleManifest
 ) -> None:
@@ -686,17 +753,52 @@ def _docx_sidebar_layout(
     sidebar_cell.width = Mm(sidebar_width)
     main_cell.vertical_alignment = WD_CELL_VERTICAL_ALIGNMENT.TOP
     sidebar_cell.vertical_alignment = WD_CELL_VERTICAL_ALIGNMENT.TOP
-    _set_cell_shading(sidebar_cell, style.tokens.primary_color)
     _docx_main_sections(main_cell, presentation, style, include_secondary=False)
     for item in presentation.contacts:
         sidebar_cell.add_paragraph(item)
     for label, url in presentation.links:
-        sidebar_cell.add_paragraph(f"{label}: {url}")
+        paragraph = sidebar_cell.add_paragraph()
+        if _uses_compact_link_labels(style):
+            _docx_hyperlink(paragraph, label, url)
+        else:
+            paragraph.add_run(f"{label}: {url}")
     _docx_secondary_sections(sidebar_cell, presentation, style)
     _remove_empty_leading_paragraph(main_cell)
     _remove_empty_leading_paragraph(sidebar_cell)
+
+
+def _docx_left_rail_layout(
+    document: Document, presentation: ResumePresentation, style: StyleManifest
+) -> None:
+    """Render the non-ATS left rail with the profile in the colored cell."""
+    table = document.add_table(rows=1, cols=2)
+    table.alignment = WD_TABLE_ALIGNMENT.CENTER
+    table.autofit = False
+    _set_table_borders_none(table)
+    rail_cell, main_cell = table.rows[0].cells
+    available_width = 210 - (2 * style.tokens.margins_mm)
+    rail_width = style.tokens.sidebar_width_mm or 52
+    main_width = available_width - rail_width
+    table.columns[0].width = Mm(rail_width)
+    table.columns[1].width = Mm(main_width)
+    rail_cell.width = Mm(rail_width)
+    main_cell.width = Mm(main_width)
+    rail_cell.vertical_alignment = WD_CELL_VERTICAL_ALIGNMENT.TOP
+    main_cell.vertical_alignment = WD_CELL_VERTICAL_ALIGNMENT.TOP
+    _set_cell_shading(rail_cell, style.tokens.primary_color)
+    _docx_header(
+        rail_cell,
+        presentation,
+        style,
+        include_contacts=True,
+        compact_link_labels=True,
+    )
+    _docx_secondary_sections(rail_cell, presentation, style)
+    _docx_main_sections(main_cell, presentation, style, include_secondary=False)
+    _remove_empty_leading_paragraph(rail_cell)
+    _remove_empty_leading_paragraph(main_cell)
     white = RGBColor(255, 255, 255)
-    for paragraph in sidebar_cell.paragraphs:
+    for paragraph in rail_cell.paragraphs:
         for run in paragraph.runs:
             run.font.color.rgb = white
 

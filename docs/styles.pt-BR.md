@@ -16,6 +16,8 @@ o [currículo fictício da galeria](../examples/style-career.yml).
 - `sidebar`: apresentação visual em duas colunas; experimental e não ATS-safe.
 - `timeline`: datas em uma faixa lateral verde do mascote e conteúdo na coluna
   principal, sem foto; experimental e não ATS-safe.
+- `split-header`, `contact-band`, `left-rail` e `detail-sidebar`:
+  composições visuais originais com colunas, experimentais e não ATS-safe.
 
 As demais famílias usam uma coluna e são ATS-safe. O ID padrão possui divisores nas
 seções; seu par `-alt` os remove. Nenhuma variante Classic desenha divisor abaixo do
@@ -40,6 +42,14 @@ cores, colunas ou a faixa de datas do Timeline.
 | `sidebar-alt` | <img src="../examples/styles/sidebar-alt/preview.png" width="180" alt="Preview do currículo Sidebar Alt"> | Sidebar sem divisores, não ATS-safe | [PDF](../examples/styles/sidebar-alt/resume.pdf) |
 | `timeline` | <img src="../examples/styles/timeline/preview.png" width="180" alt="Preview do currículo Timeline"> | Faixa verde de datas, sem foto, não ATS-safe | [PDF](../examples/styles/timeline/resume.pdf) |
 | `timeline-alt` | <img src="../examples/styles/timeline-alt/preview.png" width="180" alt="Preview do currículo Timeline Alt"> | Timeline sem divisores, não ATS-safe | [PDF](../examples/styles/timeline-alt/resume.pdf) |
+| `split-header` | <img src="../examples/styles/split-header/preview.png" width="180" alt="Preview do currículo Split header"> | Cabeçalho colorido e coluna de detalhes, não ATS-safe | [PDF](../examples/styles/split-header/resume.pdf) |
+| `split-header-alt` | <img src="../examples/styles/split-header-alt/preview.png" width="180" alt="Preview do currículo Split header Alt"> | Split header sem divisores, não ATS-safe | [PDF](../examples/styles/split-header-alt/resume.pdf) |
+| `contact-band` | <img src="../examples/styles/contact-band/preview.png" width="180" alt="Preview do currículo Contact band"> | Perfil e faixa de contatos com colunas, não ATS-safe | [PDF](../examples/styles/contact-band/resume.pdf) |
+| `contact-band-alt` | <img src="../examples/styles/contact-band-alt/preview.png" width="180" alt="Preview do currículo Contact band Alt"> | Contact band sem divisores, não ATS-safe | [PDF](../examples/styles/contact-band-alt/resume.pdf) |
+| `left-rail` | <img src="../examples/styles/left-rail/preview.png" width="180" alt="Preview do currículo Left rail"> | Trilho esquerdo colorido para o perfil, não ATS-safe | [PDF](../examples/styles/left-rail/resume.pdf) |
+| `left-rail-alt` | <img src="../examples/styles/left-rail-alt/preview.png" width="180" alt="Preview do currículo Left rail Alt"> | Left rail sem divisores, não ATS-safe | [PDF](../examples/styles/left-rail-alt/resume.pdf) |
+| `detail-sidebar` | <img src="../examples/styles/detail-sidebar/preview.png" width="180" alt="Preview do currículo Detail sidebar"> | Cabeçalho largo e painel de detalhes, não ATS-safe | [PDF](../examples/styles/detail-sidebar/resume.pdf) |
+| `detail-sidebar-alt` | <img src="../examples/styles/detail-sidebar-alt/preview.png" width="180" alt="Preview do currículo Detail sidebar Alt"> | Detail sidebar sem divisores, não ATS-safe | [PDF](../examples/styles/detail-sidebar-alt/resume.pdf) |
 
 ## Base de design
 

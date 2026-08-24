@@ -24,6 +24,14 @@ ResumeStyleId = Literal[
     "timeline-alt",
     "sidebar",
     "sidebar-alt",
+    "split-header",
+    "split-header-alt",
+    "contact-band",
+    "contact-band-alt",
+    "left-rail",
+    "left-rail-alt",
+    "detail-sidebar",
+    "detail-sidebar-alt",
 ]
 ResumeLayout = Literal["single-column", "two-column", "timeline"]
 MarkdownVariant = Literal[
@@ -45,6 +53,10 @@ STYLE_FAMILIES: tuple[str, ...] = (
     "clean-executive",
     "timeline",
     "sidebar",
+    "split-header",
+    "contact-band",
+    "left-rail",
+    "detail-sidebar",
 )
 
 STYLE_IDS: tuple[ResumeStyleId, ...] = (
@@ -62,6 +74,14 @@ STYLE_IDS: tuple[ResumeStyleId, ...] = (
     "timeline-alt",
     "sidebar",
     "sidebar-alt",
+    "split-header",
+    "split-header-alt",
+    "contact-band",
+    "contact-band-alt",
+    "left-rail",
+    "left-rail-alt",
+    "detail-sidebar",
+    "detail-sidebar-alt",
 )
 
 
@@ -98,6 +118,7 @@ class StyleManifest(StrictStyleModel):
     ] = Field(min_length=1)
     supported_formats: list[SupportedFormat] = Field(min_length=1)
     markdown_variant: MarkdownVariant
+    color_customizable: bool = False
     tokens: StyleTokens
 
     @model_validator(mode="after")
@@ -121,6 +142,20 @@ class StylePackage:
     manifest: StyleManifest
     template: str
     css: str
+
+
+def resolve_resume_color(style: StylePackage, resume_color: str | None) -> StylePackage:
+    """Return a presentation-only style copy with the project color applied."""
+    if not resume_color or not style.manifest.color_customizable:
+        return style
+    tokens = style.manifest.tokens.model_copy(
+        update={"primary_color": resume_color, "accent_color": resume_color}
+    )
+    return StylePackage(
+        manifest=style.manifest.model_copy(update={"tokens": tokens}),
+        template=style.template,
+        css=style.css,
+    )
 
 
 def load_style(style_id: str) -> StylePackage:

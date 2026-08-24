@@ -1,13 +1,14 @@
 schema_version: 1
 id: modern-alt
 name: Modern Alt
-description: Modern navy resume without section divider lines.
+description: Modern resume with configurable color accents and no section divider lines.
 layout: single-column
 page_size: A4
 ats_safe: true
 supported_sections: [summary, experience, education, skills, languages]
 supported_formats: [markdown, html, pdf, docx]
 markdown_variant: modern
+color_customizable: true
 tokens:
   font_family: Aptos
   body_size_pt: 10.0

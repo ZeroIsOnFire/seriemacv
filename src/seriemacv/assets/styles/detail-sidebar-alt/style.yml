@@ -1,0 +1,25 @@
+schema_version: 1
+id: detail-sidebar-alt
+name: Detail sidebar alt
+description: Detail sidebar presentation without section dividers.
+layout: two-column
+page_size: A4
+ats_safe: false
+supported_sections: [summary, experience, education, skills, languages]
+supported_formats: [markdown, html, pdf, docx]
+markdown_variant: standard
+color_customizable: true
+tokens:
+  font_family: Arial
+  body_size_pt: 10
+  name_size_pt: 24
+  section_size_pt: 13
+  record_size_pt: 10.5
+  margins_mm: 12
+  line_spacing: 1.2
+  section_spacing_pt: 11
+  primary_color: "174A78"
+  accent_color: "174A78"
+  header_alignment: left
+  section_divider: none
+  sidebar_width_mm: 59

@@ -38,16 +38,18 @@ reserved directories for future capabilities.
 ## Configuration
 
 ```yaml
-schema_version: 1
+schema_version: 2
 project_name: My career
 resume_language: en
 resume_style: modern
+resume_color: "#647D74"
 ```
 
 `resume_language` translates only labels maintained by seriemaCV, such as section
 titles, months, skill levels, and “Present”. It never translates user content.
 
-Projects created before `resume_style` existed remain compatible and use `clean`.
+Projects created before `resume_style` or `resume_color` existed remain compatible and
+use `clean` and mascot green `#647D74`.
 Unknown configuration fields are rejected to expose spelling mistakes early.
 
 ## Validate the project structure

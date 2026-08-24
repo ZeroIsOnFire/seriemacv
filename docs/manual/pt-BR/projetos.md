@@ -38,18 +38,20 @@ exportação e diretórios reservados para funcionalidades futuras.
 ## Configuração
 
 ```yaml
-schema_version: 1
+schema_version: 2
 project_name: Minha carreira
 resume_language: pt-BR
 resume_style: modern
+resume_color: "#647D74"
 ```
 
 `resume_language` traduz somente os rótulos mantidos pelo seriemaCV, como títulos de
 seção, meses, níveis de competência e “Atual”. O conteúdo do usuário nunca é
 traduzido.
 
-Projetos criados antes de `resume_style` continuam compatíveis e usam `clean`. Campos
-desconhecidos na configuração são rejeitados para revelar erros de digitação cedo.
+Projetos criados antes de `resume_style` ou `resume_color` continuam compatíveis e usam
+`clean` e o verde do mascote `#647D74`. Campos desconhecidos na configuração são
+rejeitados para revelar erros de digitação cedo.
 
 ## Validar a estrutura do projeto
 

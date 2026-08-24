@@ -14,6 +14,7 @@ from seriemacv.project import (
     InvalidProjectError,
     ProjectAlreadyExistsError,
     create_project,
+    load_project_configuration,
     open_project,
     validate_project,
 )
@@ -80,6 +81,25 @@ class CreateProjectTests(unittest.TestCase):
             config = (project_path / "seriemacv.yml").read_text(encoding="utf-8")
             self.assertIn("resume_language: en", config)
             self.assertIn("resume_style: modern", config)
+            self.assertIn('resume_color: "#647D74"', config)
+
+    def test_normalizes_resume_color_and_rejects_invalid_hexadecimal_value(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            project_path = Path(temporary_directory) / "my-career"
+            create_project(project_path, project_name="My Career")
+            config_path = project_path / "seriemacv.yml"
+            config_path.write_text(
+                "schema_version: 2\nproject_name: My Career\nresume_color: '#ab12cd'\n",
+                encoding="utf-8",
+            )
+
+            self.assertEqual(load_project_configuration(project_path).resume_color, "AB12CD")
+
+            config_path.write_text(
+                "schema_version: 2\nproject_name: My Career\nresume_color: blue\n",
+                encoding="utf-8",
+            )
+            self.assertTrue(any("hexadecimal" in error for error in validate_project(project_path)))
 
     def test_legacy_configuration_defaults_to_clean_style(self) -> None:
         with tempfile.TemporaryDirectory() as temporary_directory:

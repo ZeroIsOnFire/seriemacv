@@ -21,6 +21,8 @@ seriemacv resume styles
 | `clean-executive` | Uma coluna, hierarquia formal | ATS-safe | Perfis seniores e de liderança |
 | `sidebar` | Duas colunas | Experimental, não ATS-safe | Cópia visual para leitura humana |
 | `timeline` | Faixa de datas e coluna principal | Experimental, não ATS-safe | Cronologia visual sem foto |
+| `centered` | Uma coluna centralizada | ATS-safe | Leitura linear compacta |
+| `right-rail`, `split-header`, `contact-band`, `left-rail`, `detail-sidebar` | Colunas visuais originais | Experimental, não ATS-safe | Cópias visuais para leitura humana |
 
 Os DOCX de `sidebar` e `timeline` usam tabelas sem bordas; seus HTML/PDF usam grades
 visuais. Prefira um dos cinco estilos lineares quando o documento for analisado por
@@ -42,6 +44,13 @@ seriemacv resume render .\minha-carreira --format docx --style compact
 
 `--format` é obrigatório. `--style` é opcional e substitui `resume_style` somente
 naquela execução.
+
+## Cor
+
+`resume_color` em `seriemacv.yml` define uma cor RGB hexadecimal. O padrão é
+`#647D74`, o verde do mascote usado em `timeline`. Ela altera as cores principal e de
+destaque de `modern`, `timeline`, `sidebar` e suas variantes `-alt`; os demais estilos
+mantêm as cores próprias. `#647D74` e `647D74` são aceitos.
 
 | Formato | Saída | Observações |
 | --- | --- | --- |

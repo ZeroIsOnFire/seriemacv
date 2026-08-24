@@ -1,0 +1,25 @@
+schema_version: 1
+id: split-header-alt
+name: Split header alt
+description: Split header presentation without section dividers.
+layout: two-column
+page_size: A4
+ats_safe: false
+supported_sections: [summary, experience, education, skills, languages]
+supported_formats: [markdown, html, pdf, docx]
+markdown_variant: standard
+color_customizable: true
+tokens:
+  font_family: Arial
+  body_size_pt: 9.5
+  name_size_pt: 22
+  section_size_pt: 12
+  record_size_pt: 10
+  margins_mm: 12
+  line_spacing: 1.18
+  section_spacing_pt: 9
+  primary_color: "A78628"
+  accent_color: "A78628"
+  header_alignment: left
+  section_divider: none
+  sidebar_width_mm: 55

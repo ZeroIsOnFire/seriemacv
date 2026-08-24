@@ -1,0 +1,25 @@
+schema_version: 1
+id: left-rail
+name: Left rail
+description: Colored left rail for profile details and a main work history column.
+layout: two-column
+page_size: A4
+ats_safe: false
+supported_sections: [summary, experience, education, skills, languages]
+supported_formats: [markdown, html, pdf, docx]
+markdown_variant: standard
+color_customizable: true
+tokens:
+  font_family: Arial
+  body_size_pt: 9.5
+  name_size_pt: 22
+  section_size_pt: 12
+  record_size_pt: 10
+  margins_mm: 0.1
+  line_spacing: 1.18
+  section_spacing_pt: 10
+  primary_color: "15732D"
+  accent_color: "15732D"
+  header_alignment: left
+  section_divider: line
+  sidebar_width_mm: 52

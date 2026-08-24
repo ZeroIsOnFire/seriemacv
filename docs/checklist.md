@@ -29,6 +29,8 @@ currículo. Vagas, match e tailoring permanecem pausados nesta fase.
 - [x] Emitir diagnósticos com arquivo, posição e orientação acionável.
 - [ ] Criar e validar variantes estruturadas em `resume/variants/`.
 - [x] Definir o contrato de pacote de estilo (`style.yml`, HTML e CSS).
+- [x] Adicionar seis famílias visuais estruturais, originais e sem foto, com variantes
+  `-alt`: `split-header`, `contact-band`, `left-rail` e `detail-sidebar`.
 - [x] Implementar primeiro estilo ATS-safe de uma coluna.
 - [x] Criar registro estrito de estilos internos e seleção por configuração/CLI.
 - [x] Entregar `classic`, `modern` e `compact` como estilos ATS-safe de uma coluna.
@@ -39,7 +41,7 @@ currículo. Vagas, match e tailoring permanecem pausados nesta fase.
 - [x] Versionar galeria fictícia com previews e PDFs reproduzíveis.
 - [x] Separar a galeria bilíngue dos READMEs e adicionar `clean-executive` ATS-safe
   e `timeline` visual/sem foto, incluindo variantes `-alt`.
-- [ ] Parametrizar cores de fundo/destaque dos estilos dependentes de cor via código
+- [x] Parametrizar cores de fundo/destaque dos estilos dependentes de cor via código
   hexadecimal em `seriemacv.yml`; usar o verde do mascote como padrão em `modern` e
   permitir override em templates como `modern` e `timeline`.
 - [x] Gerar currículo Markdown a partir do YAML.
