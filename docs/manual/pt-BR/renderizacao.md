@@ -56,8 +56,8 @@ seriemacv resume styles
 | `clean-executive` | Uma coluna, hierarquia formal | ATS-safe | Perfis seniores e de liderança |
 | `sidebar` | Duas colunas | Experimental, não ATS-safe | Cópia visual para leitura humana |
 | `timeline` | Faixa de datas e coluna principal | Experimental, não ATS-safe | Cronologia visual sem foto |
-| `centered` | Uma coluna centralizada | ATS-safe | Leitura linear compacta |
-| `right-rail`, `split-header`, `contact-band`, `left-rail`, `detail-sidebar` | Colunas visuais originais | Experimental, não ATS-safe | Cópias visuais para leitura humana |
+| `split-header`, `contact-band` | Layouts de duas colunas guiados pelo cabeçalho | Experimental, não ATS-safe | Cópias visuais para leitura humana |
+| `left-rail`, `detail-sidebar` | Layouts com faixa lateral colorida | Experimental, não ATS-safe | Cópias visuais para leitura humana |
 
 Os DOCX de `sidebar` e `timeline` usam tabelas sem bordas; seus HTML/PDF usam grades
 visuais. Prefira um dos cinco estilos lineares quando o documento for analisado por
@@ -84,8 +84,9 @@ naquela execução.
 
 `resume_color` em `seriemacv.yml` define uma cor RGB hexadecimal. O padrão é
 `#647D74`, o verde do mascote usado em `timeline`. Ela altera as cores principal e de
-destaque de `modern`, `timeline`, `sidebar` e suas variantes `-alt`; os demais estilos
-mantêm as cores próprias. `#647D74` e `647D74` são aceitos.
+destaque de `modern`, `clean-executive`, `timeline`, `sidebar`, `split-header`,
+`contact-band`, `left-rail`, `detail-sidebar` e suas variantes `-alt`; os demais
+estilos mantêm as cores próprias. `#647D74` e `647D74` são aceitos.
 
 | Formato | Saída | Observações |
 | --- | --- | --- |

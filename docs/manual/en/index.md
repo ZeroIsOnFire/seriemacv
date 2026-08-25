@@ -12,7 +12,7 @@ remains under the user's control.
 | --- | --- | --- |
 | Installation | Installs the CLI and the optional Chromium runtime for PDF | [Installation](installation.md) |
 | Career projects | Creates, configures, and validates the local workspace | [Projects and configuration](projects.md) |
-| Career Builder | Maintains profile, experience, education, skills, and evidence | [Career Builder](career-builder.md) |
+| Career Builder | Maintains canonical facts and localized career wording | [Career Builder](career-builder.md) |
 | Resume generation | Lists styles and renders Markdown, HTML, PDF, and DOCX | [Resumes and styles](resume-rendering.md) |
 | Templates | Exposes the current YAML contract to people and external tools | [Templates and external tools](templates.md) |
 | Diagnostics | Explains validation, browser, filesystem, and Python errors | [Troubleshooting](troubleshooting.md) |
@@ -22,15 +22,18 @@ remains under the user's control.
 ```powershell
 python -m pip install -e .
 seriemacv init .\my-career --name "My career" --language en --style clean
-seriemacv career set-profile .\my-career --name "Your Name" --title "Your Role" --email you@example.com
-seriemacv career add-experience .\my-career --id current-role --company "Company" --title "Role" --start-date 2024-01
+seriemacv career set-profile .\my-career --name "Your Name" --email you@example.com
+seriemacv career add-experience .\my-career --id current-role --company "Company" --start-date 2024-01
+# Add the profile title and current-role wording to career.locales/en.yml.
 seriemacv career validate .\my-career
+seriemacv career locale validate .\my-career --language en
 seriemacv resume render .\my-career --format docx
 ```
 
 Use `seriemacv validate .\my-career` when you need to check the project structure.
 Use `seriemacv career validate .\my-career` when you need to check the actual career
-content and its completeness.
+facts. Use `career locale validate` to check the selected career wording together
+with its application i18n catalog before rendering.
 
 ## Current scope
 

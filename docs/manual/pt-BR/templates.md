@@ -15,6 +15,12 @@ que uma pessoa, script ou ferramenta de IA consulte o contrato YAML público exa
 Uma cópia versionada também está disponível em
 [`examples/career.yml`](../../../examples/career.yml).
 
+Projetos localizados possuem dois contratos estritos adicionais. Consulte
+`career.locales/<locale>.yml.example` para os textos profissionais e
+`i18n/<locale>.yml.example` para rótulos da aplicação, meses, níveis e formato de
+data. Há cópias versionadas em `examples/career.locales.*.yml` e
+`examples/i18n.*.yml`.
+
 ## Consultar os contratos de variante
 
 ```powershell
@@ -30,21 +36,26 @@ cópias versionadas ficam em `examples/variant.yml` e
 
 ## Fluxo seguro com uma ferramenta externa
 
-1. Forneça à ferramenta a saída de `template show` e as informações de origem que
-   você escolheu.
-2. Peça um YAML compatível com o template e sem fatos inventados.
+1. Forneça à ferramenta os templates relevantes e somente as informações de origem
+   que você escolheu.
+2. Indique qual destino ela pode editar: fatos canônicos, texto de carreira, i18n da
+   aplicação ou uma variante identificada. Peça que não mova campos entre essas
+   camadas nem invente fatos.
 3. Salve a proposta separadamente e revise todos os campos.
-4. Copie explicitamente apenas as informações aceitas para `career.yml`.
-5. Rode `seriemacv career validate <projeto>`.
-6. Gere um currículo somente depois que a validação passar.
+4. Aplique fatos aceitos em `career.yml`, textos reutilizáveis em
+   `career.locales/<locale>.yml` e traduções fixas em `i18n/<locale>.yml`.
+5. Execute `seriemacv validate <projeto>`, `seriemacv career validate <projeto>` e
+   `seriemacv career locale validate <projeto> --language <locale>`.
+6. Gere um currículo somente depois que todas as validações aplicáveis passarem.
 
 Para uma variante, salve os arquivos aceitos em `resume/variants/<id>/`, execute
 `seriemacv resume variants validate <projeto> --id <id>` e renderize com
 `resume render --variant <id>`. Isso não altera nenhum fato canônico de carreira.
 
-Ferramentas externas não recebem autorização implícita para alterar `career.yml`. O
-seriemaCV não oferece atualmente um importador de currículos nem aplica propostas de
-IA automaticamente.
+Uma ferramenta de IA pode editar esses YAMLs diretamente quando o usuário autorizar
+explicitamente a alteração do projeto, mas o seriemaCV ainda não oferece um importador
+nem aplica propostas de IA automaticamente. O usuário deve revisar o diff e o
+resultado das validações.
 
 ## Situação do template de vagas
 

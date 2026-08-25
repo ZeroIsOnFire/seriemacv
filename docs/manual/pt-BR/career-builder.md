@@ -2,20 +2,24 @@
 
 [Voltar ao guia completo](index.md) · [English](../en/career-builder.md)
 
-`career.yml` é a fonte canônica para perfil, resumo, experiências, formação,
-competências, evidências, respostas salvas e histórias. Currículos gerados nunca
-escrevem alterações de volta nele.
+Os dados de carreira são separados por responsabilidade. `career.yml` contém fatos
+canônicos e independentes de idioma. `career.locales/<locale>.yml` contém o texto
+reutilizável do currículo, como cargos, resumo, destaques e nomes localizados de
+competências. Currículos gerados nunca escrevem alterações nesses arquivos.
 
-| Seção | Finalidade | Impressa nos currículos |
+| Seção canônica | Fatos em `career.yml` | Texto em `career.locales/<locale>.yml` |
 | --- | --- | --- |
-| `profile` | Identidade, contato, links, idiomas e preferências de trabalho | Campos de contato e idiomas |
-| `summary` | Resumo profissional escrito pelo usuário | Sim |
-| `experience` | Histórico profissional e destaques factuais | Sim |
-| `education` | Formação e seus destaques | Sim |
-| `skills` | Competências categorizadas, nível, tags e prioridade editorial | Sim, exceto tags |
-| `evidence` | Suporte rastreável para declarações profissionais | Não |
-| `answers` | Respostas reutilizáveis para fluxos futuros | Não |
-| `stories` | Histórias estruturadas em situação, ação e resultado | Não |
+| `profile` | Nome, contato e links | Cargo, localização, idiomas e textos de trabalho |
+| `experience` | ID, empresa e datas | Cargo, localização, tipo de vínculo e destaques |
+| `education` | ID, instituição e datas | Formação, área, localização e destaques |
+| `skills` | ID, nível, tags e prioridade editorial | Nome de exibição e categoria |
+| `evidence` | Suporte rastreável para declarações profissionais | Não é localizado nem impresso |
+| `answers` | Respostas reutilizáveis para fluxos futuros | Não é localizado nem impresso |
+| `stories` | Histórias estruturadas em situação, ação e resultado | Não é localizado nem impresso |
+
+O documento de locale também contém o `summary` profissional. Rótulos fixos de seção,
+meses, nomes traduzidos dos níveis, “Atual” e `date_format` ficam em
+`i18n/<locale>.yml`.
 
 Todos os IDs de registros usam kebab-case minúsculo, como
 `empresa-exemplo-senior`, e devem ser únicos dentro da seção. Datas usam `YYYY-MM`;
@@ -28,11 +32,19 @@ aceitam URLs HTTP(S) explícitas. O schema estrito rejeita campos desconhecidos.
 seriemacv career validate .\minha-carreira
 ```
 
-Um documento renderizável exige pelo menos `profile.name`, `profile.title` e
-`profile.email`. A validação também encontra YAML inválido, campos desconhecidos, IDs
-duplicados, datas fora de `YYYY-MM`, seções malformadas e evidências que apontam para
-experiências inexistentes. Quando possível, o diagnóstico inclui caminho do campo,
-linha e coluna.
+Esse comando valida os fatos canônicos, incluindo nome e e-mail obrigatórios, sintaxe
+YAML, campos desconhecidos, IDs duplicados, datas e referências de evidência. Valide
+a projeção renderizável completa separadamente:
+
+```powershell
+seriemacv career locale list .\minha-carreira
+seriemacv career locale validate .\minha-carreira --language pt-BR
+```
+
+A validação do locale exige os arquivos correspondentes
+`career.locales/pt-BR.yml` e `i18n/pt-BR.yml`, verifica as referências de todos os
+registros canônicos e confirma que o perfil composto possui um cargo localizado.
+Quando possível, o diagnóstico inclui caminho do campo, linha e coluna.
 
 ## Preencher o perfil
 
@@ -41,23 +53,16 @@ linha e coluna.
 ```powershell
 seriemacv career set-profile .\minha-carreira `
   --name "Seu Nome" `
-  --title "Engenheiro de Software Sênior" `
-  --location "Cidade, País" `
   --email voce@example.com `
   --phone "+55 11 5555-0100" `
   --linkedin https://www.linkedin.com/in/exemplo `
   --portfolio https://example.invalid `
-  --work-preference "Remoto" `
-  --work-authorization "Autorizado" `
-  --notice-period "30 dias" `
-  --language Português `
-  --language Inglês `
   --link GitHub=https://github.com/exemplo
 ```
 
-`--language` e `--link` são repetíveis. Informar idiomas substitui a lista atual. Links
-nomeados são mesclados com `profile.links`. LinkedIn e portfólio também possuem campos
-dedicados.
+`--link` é repetível, e links nomeados são mesclados com `profile.links`. LinkedIn e
+portfólio também possuem campos dedicados. Edite cargo, localização, idiomas e outros
+textos localizados do perfil em `career.locales/<locale>.yml`.
 
 ## Adicionar experiência
 
@@ -65,17 +70,13 @@ dedicados.
 seriemacv career add-experience .\minha-carreira `
   --id empresa-exemplo-senior `
   --company "Empresa Exemplo" `
-  --title "Engenheiro Sênior" `
   --start-date 2022-03 `
-  --location "Remoto" `
-  --employment-type "Tempo integral" `
-  --highlight "Melhorou a confiabilidade das entregas." `
-  --highlight "Orientou outros engenheiros."
+  --end-date 2025-08
 ```
 
-`--id`, `--company`, `--title` e `--start-date` são obrigatórios. Use `--end-date
-YYYY-MM` em um vínculo encerrado. Omita-o para o vínculo atual. `--highlight` é
-repetível e deve conter somente informações factuais.
+`--id`, `--company` e `--start-date` são obrigatórios. Omita `--end-date` para o
+vínculo atual. Depois adicione o mesmo ID em `experience` em cada locale de carreira
+necessário, com o cargo e os destaques factuais.
 
 ## Adicionar formação
 
@@ -83,24 +84,18 @@ repetível e deve conter somente informações factuais.
 seriemacv career add-education .\minha-carreira `
   --id universidade-exemplo `
   --institution "Universidade Exemplo" `
-  --degree "Tecnólogo" `
-  --field-of-study "Desenvolvimento de Software" `
-  --location "Cidade, País" `
   --start-date 2014-01 `
-  --end-date 2017-12 `
-  --highlight "Concluiu um projeto final de software."
+  --end-date 2017-12
 ```
 
-Instituição, formação, ID e data inicial são obrigatórios. Destaques da formação também
-são repetíveis.
+Instituição, ID e data inicial são obrigatórios. Adicione formação, área,
+localização e destaques sob o ID correspondente em cada locale de carreira.
 
 ## Adicionar competências
 
 ```powershell
 seriemacv career add-skill .\minha-carreira `
   --id python `
-  --name Python `
-  --category Programação `
   --level advanced `
   --core `
   --tag backend
@@ -108,8 +103,9 @@ seriemacv career add-skill .\minha-carreira `
 
 Os níveis são códigos estáveis em inglês: `beginner`, `intermediate`, `advanced` e
 `expert`. A renderização traduz esses códigos. `--core` marca prioridade editorial e
-faz a competência receber destaque. Categorias organizam a lista completa; uma
-competência sem categoria só aparece no grupo traduzido “Outras” quando também
+faz a competência receber destaque. Adicione o nome de exibição e a categoria sob o
+ID correspondente em cada locale de carreira. Categorias organizam a lista completa;
+uma competência sem categoria só aparece no grupo traduzido “Outras” quando também
 existirem competências categorizadas.
 
 ## Adicionar evidências
@@ -136,15 +132,17 @@ seriemacv career list .\minha-carreira experience
 seriemacv career list .\minha-carreira skills
 ```
 
-As seções válidas são `profile`, `summary`, `experience`, `education`, `skills`,
+As seções canônicas válidas são `profile`, `experience`, `education`, `skills`,
 `evidence`, `answers` e `stories`. A saída é YAML validado, adequado para inspeção ou
-consumo por outra ferramenta local.
+consumo por outra ferramenta local. Os documentos de locale continuam sendo YAML
+diretamente inspecionável.
 
 ## Campos sem comandos de edição
 
-A CLI ainda não edita o resumo, respostas salvas, histórias ou registros existentes.
-Edite essas seções diretamente no `career.yml`, seguindo `career.yml.example`, e rode
-`career validate`. Campos desconhecidos são rejeitados, e uma escrita inválida pela
-CLI não modifica o arquivo.
+A CLI ainda não edita textos localizados, respostas salvas, histórias ou registros
+existentes. Edite fatos canônicos em `career.yml` e textos profissionais em
+`career.locales/<locale>.yml`, seguindo seus arquivos `.example`. Depois execute
+`career validate` e `career locale validate`. Campos desconhecidos são rejeitados, e
+uma escrita inválida pela CLI não modifica o arquivo canônico.
 
 Continue em [Currículos e estilos](renderizacao.md).

@@ -2,20 +2,24 @@
 
 [Back to the complete guide](index.md) · [Português](../pt-BR/career-builder.md)
 
-`career.yml` is the canonical source for profile data, summary, experience,
-education, skills, evidence, saved answers, and stories. Generated resumes never
-write changes back to it.
+Career data is split by responsibility. `career.yml` owns canonical,
+language-independent facts. `career.locales/<locale>.yml` owns reusable resume
+wording such as titles, summaries, highlights, and localized skill names. Generated
+resumes never write changes back to either file.
 
-| Section | Purpose | Printed in resumes |
+| Canonical section | Facts in `career.yml` | Wording in `career.locales/<locale>.yml` |
 | --- | --- | --- |
-| `profile` | Identity, contact, links, languages, and work preferences | Contact fields and languages |
-| `summary` | Professional summary written by the user | Yes |
-| `experience` | Employment history and factual highlights | Yes |
-| `education` | Formal education and highlights | Yes |
-| `skills` | Categorized competencies, level, tags, and editorial priority | Yes, except tags |
-| `evidence` | Traceable support for professional statements | No |
-| `answers` | Reusable answers for future workflows | No |
-| `stories` | Structured situation/action/result stories | No |
+| `profile` | Name, contact, links | Title, location, languages, work wording |
+| `experience` | ID, employer, dates | Role, location, employment type, highlights |
+| `education` | ID, institution, dates | Degree, field, location, highlights |
+| `skills` | ID, level, tags, editorial priority | Display name, category |
+| `evidence` | Traceable support for professional statements | Not localized or printed |
+| `answers` | Reusable answers for future workflows | Not localized or printed |
+| `stories` | Structured situation/action/result stories | Not localized or printed |
+
+The locale document also owns the professional `summary`. Fixed section labels,
+months, translated level names, “Present”, and `date_format` belong in
+`i18n/<locale>.yml`.
 
 All record IDs use lowercase kebab-case, such as `example-company-senior`, and must
 be unique inside their section. Dates use `YYYY-MM`; an end date cannot precede its
@@ -28,10 +32,19 @@ strict schema rejects unknown fields.
 seriemacv career validate .\my-career
 ```
 
-A renderable document requires at least `profile.name`, `profile.title`, and
-`profile.email`. Validation also detects invalid YAML, unknown fields, duplicate IDs,
-invalid `YYYY-MM` dates, malformed sections, and evidence references to unknown
-experiences. Diagnostics include a field path and line/column when available.
+This validates canonical facts, including required name and email, YAML syntax,
+unknown fields, duplicate IDs, dates, and evidence references. Validate the complete
+renderable projection separately:
+
+```powershell
+seriemacv career locale list .\my-career
+seriemacv career locale validate .\my-career --language en
+```
+
+Locale validation requires matching `career.locales/en.yml` and `i18n/en.yml` files,
+checks every canonical record reference, and confirms that the composed resume has a
+localized profile title. Diagnostics include a field path and line/column when
+available.
 
 ## Set profile fields
 
@@ -40,23 +53,17 @@ experiences. Diagnostics include a field path and line/column when available.
 ```powershell
 seriemacv career set-profile .\my-career `
   --name "Your Name" `
-  --title "Senior Software Engineer" `
-  --location "City, Country" `
   --email you@example.com `
   --phone "+1 555 0100" `
   --linkedin https://www.linkedin.com/in/example `
   --portfolio https://example.invalid `
-  --work-preference "Remote" `
-  --work-authorization "Authorized" `
-  --notice-period "30 days" `
-  --language English `
-  --language Portuguese `
   --link GitHub=https://github.com/example
 ```
 
-`--language` and `--link` are repeatable. Supplying languages replaces the current
-language list. Named links are merged into existing `profile.links`. LinkedIn and
-portfolio also have dedicated fields.
+`--link` is repeatable and named links are merged into existing `profile.links`.
+LinkedIn and portfolio also have dedicated fields. Edit the title, location,
+languages, and other locale-specific profile wording in
+`career.locales/<locale>.yml`.
 
 ## Add experience
 
@@ -64,17 +71,13 @@ portfolio also have dedicated fields.
 seriemacv career add-experience .\my-career `
   --id example-company-senior `
   --company "Example Company" `
-  --title "Senior Engineer" `
   --start-date 2022-03 `
-  --location "Remote" `
-  --employment-type "Full-time" `
-  --highlight "Improved delivery reliability." `
-  --highlight "Mentored engineers."
+  --end-date 2025-08
 ```
 
-`--id`, `--company`, `--title`, and `--start-date` are required. Use `--end-date
-YYYY-MM` for a finished role. Omit it for the current role. `--highlight` is
-repeatable and should contain factual statements only.
+`--id`, `--company`, and `--start-date` are required. Omit `--end-date` for the
+current role. Then add the same ID under `experience` in each required career locale
+with its role title and factual highlights.
 
 ## Add education
 
@@ -82,24 +85,18 @@ repeatable and should contain factual statements only.
 seriemacv career add-education .\my-career `
   --id example-university `
   --institution "Example University" `
-  --degree "Bachelor of Technology" `
-  --field-of-study "Software Development" `
-  --location "City, Country" `
   --start-date 2014-01 `
-  --end-date 2017-12 `
-  --highlight "Completed a final software project."
+  --end-date 2017-12
 ```
 
-Institution, degree, ID, and start date are required. Education highlights are also
-repeatable.
+Institution, ID, and start date are required. Add the degree, field, location, and
+highlights under the matching ID in each career locale.
 
 ## Add skills
 
 ```powershell
 seriemacv career add-skill .\my-career `
   --id python `
-  --name Python `
-  --category Programming `
   --level advanced `
   --core `
   --tag backend
@@ -107,7 +104,8 @@ seriemacv career add-skill .\my-career `
 
 Skill levels are stable English codes: `beginner`, `intermediate`, `advanced`, and
 `expert`. Rendering localizes these codes. `--core` marks editorial priority and
-renders the skill with emphasis. Categories group the complete skill list; an
+renders the skill with emphasis. Add the display name and category under the matching
+skill ID in each career locale. Categories group the complete skill list; an
 uncategorized skill is placed under the localized “Other” group only when categorized
 skills also exist.
 
@@ -135,15 +133,16 @@ seriemacv career list .\my-career experience
 seriemacv career list .\my-career skills
 ```
 
-Valid sections are `profile`, `summary`, `experience`, `education`, `skills`,
+Valid canonical sections are `profile`, `experience`, `education`, `skills`,
 `evidence`, `answers`, and `stories`. Output is validated YAML suitable for inspection
-or use by another local tool.
+or use by another local tool. Locale documents remain directly inspectable YAML.
 
 ## Fields without editing commands
 
-The CLI does not yet edit the summary, saved answers, stories, or existing records.
-Edit those sections directly in `career.yml`, following `career.yml.example`, then
-run `career validate`. Unknown fields are rejected, and failed CLI writes do not
-modify the file.
+The CLI does not yet edit localized wording, saved answers, stories, or existing
+records. Edit canonical facts in `career.yml` and professional wording in
+`career.locales/<locale>.yml`, following their `.example` files. Then run both
+`career validate` and `career locale validate`. Unknown fields are rejected, and a
+failed CLI write does not modify the canonical file.
 
 Continue with [Resumes and styles](resume-rendering.md).

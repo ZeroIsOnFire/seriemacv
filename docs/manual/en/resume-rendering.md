@@ -55,8 +55,8 @@ seriemacv resume styles
 | `clean-executive` | One column, formal hierarchy | ATS-safe | Senior and leadership profiles |
 | `sidebar` | Two columns | Experimental, not ATS-safe | Human-first visual copy |
 | `timeline` | Date rail plus main column | Experimental, not ATS-safe | Visual chronology without photo |
-| `centered` | Centered single column | ATS-safe | Compact linear reading |
-| `right-rail`, `split-header`, `contact-band`, `left-rail`, `detail-sidebar` | Original visual columns | Experimental, not ATS-safe | Human-first visual copies |
+| `split-header`, `contact-band` | Header-led two-column layouts | Experimental, not ATS-safe | Human-first visual copies |
+| `left-rail`, `detail-sidebar` | Colored side-rail layouts | Experimental, not ATS-safe | Human-first visual copies |
 
 The `sidebar` and `timeline` DOCX files use borderless tables; their HTML/PDF output
 uses visual grids. Prefer one of the five linear styles when an applicant tracking
@@ -84,8 +84,8 @@ execution only.
 `resume_color` in `seriemacv.yml` sets one RGB hexadecimal color. The default is
 `#647D74`, the mascot green used by `timeline`. It changes both the primary and accent
 color of the configurable visual families (`modern`, `timeline`, `sidebar`,
-`right-rail`, `centered`, `split-header`, `contact-band`, `left-rail`, and
-`detail-sidebar`) and their `-alt` variants; other styles keep their built-in colors.
+`clean-executive`, `split-header`, `contact-band`, `left-rail`, and `detail-sidebar`)
+and their `-alt` variants; other styles keep their built-in colors.
 Both `#647D74` and `647D74` are accepted.
 
 | Format | Output | Notes |

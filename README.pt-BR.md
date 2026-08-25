@@ -36,7 +36,7 @@ canônica dos fatos. O texto profissional por idioma fica em
 do seriemaCV ficam em `i18n/<locale>.yml`.
 Textos específicos de vaga ficam separados em
 `resume/variants/<id>/locales/<locale>.yml` e herdam o conteúdo omitido do locale
-estático de carreira.
+base de carreira.
 
 A área de vagas está temporariamente pausada. Arquivos existentes e o domínio
 validado permanecem intactos, mas os comandos de vagas não são expostos pela CLI.
@@ -60,13 +60,15 @@ renderização sem alterar o projeto. Cada formato substitui atomicamente seu ar
 fixo em `exports/resume.*`. PDF requer Chromium local:
 `python -m playwright install chromium`.
 
-`resume_color` define a cor RGB dos estilos configuráveis `modern`, `timeline` e
-`sidebar` (incluindo `-alt`); o padrão é o verde do mascote `#647D74`.
+`resume_color` define a cor RGB dos estilos configuráveis `modern`,
+`clean-executive`, `timeline`, `sidebar`, `split-header`, `contact-band`, `left-rail`
+e `detail-sidebar` (incluindo `-alt`); o padrão é o verde do mascote `#647D74`.
 
 Os estilos Markdown variam hierarquia, separadores e densidade; Markdown não
-representa fontes, cores ou colunas. DOCX permanece editável. As famílias `sidebar`
-e `timeline` usam layouts visuais não lineares e são explicitamente experimentais e
-não ATS-safe; todas as demais permanecem lineares.
+representa fontes, cores ou colunas. DOCX permanece editável. As famílias `sidebar`,
+`timeline`, `split-header`, `contact-band`, `left-rail` e `detail-sidebar` usam layouts
+visuais não lineares e são explicitamente experimentais e não ATS-safe; as cinco
+famílias restantes permanecem lineares.
 
 Cada família possui um estilo padrão com linhas divisórias nas seções e um estilo
 `-alt` sem elas. `classic` e `classic-alt` nunca exibem linha abaixo do cabeçalho
@@ -74,8 +76,8 @@ centralizado; apenas os divisores dos títulos de seção variam.
 
 ## Layouts compatíveis
 
-As famílias `right-rail`, `centered`, `split-header`, `contact-band`, `left-rail` e
-`detail-sidebar` são interpretações visuais originais. Elas usam somente os dados
+As famílias `split-header`, `contact-band`, `left-rail` e `detail-sidebar` são
+interpretações visuais originais. Elas usam somente os dados
 canônicos disponíveis e não criam foto, certificados, prêmios ou interesses.
 
 Veja previews, observações sobre ATS, orientação de escolha e exemplos para download

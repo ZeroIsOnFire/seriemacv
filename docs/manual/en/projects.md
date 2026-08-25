@@ -12,12 +12,13 @@ seriemacv init .\my-career --name "My career" --language en --style modern
 | --- | --- | --- |
 | `path` | Directory that will own the project | Required |
 | `--name` | Human-readable project name | Required |
-| `--language` | Language for fixed resume labels | `pt-BR` or `en`; default `pt-BR` |
+| `--language` | Default BCP 47 resume locale | Bundled locales are `pt-BR` and `en`; default `pt-BR` |
 | `--style` | Default resume style | A built-in family ID or its `-alt` variant; default `clean` |
 
 The families are `clean`, `classic`, `modern`, `compact`, `clean-executive`,
-`sidebar`, and `timeline`. Add `-alt` to select the same family without section
-divider lines, for example `modern-alt`.
+`timeline`, `sidebar`, `split-header`, `contact-band`, `left-rail`, and
+`detail-sidebar`. Add `-alt` to select the same family without section divider
+lines, for example `modern-alt`.
 
 `init` refuses to overwrite an existing project. It creates a user-owned empty
 `career.yml`, fictional examples, the local SQLite index, export directories, and
@@ -28,8 +29,13 @@ reserved directories for future capabilities.
 | Path | Role |
 | --- | --- |
 | `seriemacv.yml` | Versioned project settings |
-| `career.yml` | Canonical career information owned by the user |
+| `career.yml` | Language-independent canonical career facts |
+| `career.locales/<locale>.yml` | Reusable resume wording in one language |
+| `i18n/<locale>.yml` | Fixed labels, months, skill levels, and date formatting |
+| `resume/variants/<id>/` | Optional selection and job-specific editorial overrides |
 | `career.yml.example` | Complete fictional career contract |
+| `career.locales/<locale>.yml.example` | Fictional localized career wording |
+| `i18n/<locale>.yml.example` | Fictional application translation catalog |
 | `seriemacv.yml.example` | Fictional configuration example |
 | `exports/resume.*` | Generated artifacts; never canonical data |
 | `.seriemacv/index/` | Internal local SQLite state |
@@ -50,6 +56,8 @@ user's resume wording, and `i18n/<locale>.yml`, which contains seriemaCV section
 titles, months, skill levels, “Present”, and `date_format`. To add a language such as
 `es`, create both `career.locales/es.yml` and `i18n/es.yml`; no code change is needed.
 Run `seriemacv career locale validate <project> --language es` before rendering.
+The two schemas are strict: application translations cannot be embedded under
+`catalog` in a career locale.
 
 Projects created before `resume_style` or `resume_color` existed remain compatible and
 use `clean` and mascot green `#647D74`.

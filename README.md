@@ -35,7 +35,7 @@ and `seriemacv.yml.example` files. `career.yml` is the canonical source for fact
 formatting.
 Job-specific wording stays separate under
 `resume/variants/<id>/locales/<locale>.yml` and inherits omitted content from the
-static career locale.
+base career locale.
 
 The jobs workspace is temporarily paused. Existing job files and the underlying
 validated domain remain intact, but job commands are not exposed by the CLI.
@@ -60,13 +60,12 @@ render without changing the project. Every format atomically replaces its fixed
 `python -m playwright install chromium`.
 
 `resume_color` sets the RGB color for configurable visual styles, including `modern`,
-`timeline`, `sidebar`, `right-rail`, `centered`, `split-header`, `contact-band`,
-`left-rail`, and `detail-sidebar` (including `-alt`); its default is mascot green
-`#647D74`.
+`clean-executive`, `timeline`, `sidebar`, `split-header`, `contact-band`, `left-rail`,
+and `detail-sidebar` (including `-alt`); its default is mascot green `#647D74`.
 
 Markdown styles vary hierarchy, separators, and density; Markdown cannot represent
 fonts, colors, or columns. DOCX remains editable. The `sidebar` and `timeline`
-families, plus the new rail, band, split-header, and detail-sidebar families, use
+families, plus the rail, band, split-header, and detail-sidebar families, use
 non-linear visual layouts and are explicitly experimental and not ATS-safe; the
 remaining families remain linear.
 

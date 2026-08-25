@@ -15,6 +15,12 @@ person, script, or AI tool inspect the exact public YAML contract.
 A repository copy is also available at
 [`examples/career.yml`](../../../examples/career.yml).
 
+Localized projects have two additional strict contracts. Inspect
+`career.locales/<locale>.yml.example` for professional wording and
+`i18n/<locale>.yml.example` for application labels, months, levels, and date format.
+Repository copies are available under `examples/career.locales.*.yml` and
+`examples/i18n.*.yml`.
+
 ## Read the resume variant contracts
 
 ```powershell
@@ -29,19 +35,24 @@ Repository copies live in `examples/variant.yml` and `examples/variant-locale.ym
 
 ## Safe workflow with an external tool
 
-1. Give the tool the output of `template show` and the source information you chose.
-2. Ask it to produce YAML matching the template without inventing facts.
+1. Give the tool the relevant templates and only the source information you chose.
+2. State which target it may edit: canonical facts, career wording, app i18n, or a
+   named variant. Ask it not to move fields between those layers or invent facts.
 3. Save the proposal separately and review every field.
-4. Copy accepted information into `career.yml` explicitly.
-5. Run `seriemacv career validate <project>`.
-6. Render a resume only after validation succeeds.
+4. Apply accepted facts to `career.yml`, reusable wording to
+   `career.locales/<locale>.yml`, and fixed translations to `i18n/<locale>.yml`.
+5. Run `seriemacv validate <project>`, `seriemacv career validate <project>`, and
+   `seriemacv career locale validate <project> --language <locale>`.
+6. Render a resume only after every applicable validation succeeds.
 
 For a variant, save the accepted files under `resume/variants/<id>/`, run
 `seriemacv resume variants validate <project> --id <id>`, and render with
 `resume render --variant <id>`. This changes no canonical career facts.
 
-External tools do not receive implicit permission to modify `career.yml`. seriemaCV
-does not currently provide a resume importer or automatically apply AI proposals.
+An AI tool may edit these YAML files directly when the user explicitly authorizes
+that project change, but seriemaCV does not currently provide an importer or
+automatically apply AI proposals. The user must still review the diff and validation
+result.
 
 ## Jobs template status
 
