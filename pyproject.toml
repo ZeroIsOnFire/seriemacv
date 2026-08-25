@@ -6,7 +6,12 @@ build-backend = "setuptools.build_meta"
 name = "seriemacv"
 version = "0.1.0"
 description = "Local-first career workspace"
+authors = [{ name = "Eli Fachin Junior" }]
+license = { file = "LICENSE" }
 requires-python = ">=3.11"
+classifiers = [
+    "License :: OSI Approved :: GNU Affero General Public License v3",
+]
 dependencies = [
     "playwright>=1.50,<2",
     "pydantic>=2.12,<3",

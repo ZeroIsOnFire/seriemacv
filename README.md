@@ -111,3 +111,12 @@ python -m ruff check src tests scripts
 ```
 
 Install development tools with `python -m pip install -e ".[dev]"`.
+
+## License
+
+seriemaCV is licensed under the
+[GNU Affero General Public License v3.0 only](LICENSE).
+Copyright © 2026 Eli Fachin Junior.
+
+Career data supplied by users remains owned by its respective author. See the license
+for the terms that apply to the seriemaCV source code and bundled assets.
