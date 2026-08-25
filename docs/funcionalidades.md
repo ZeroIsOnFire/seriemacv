@@ -2,7 +2,7 @@
 
 Este documento separa o design do seriemaCV em capacidades implementáveis. A
 ordem proposta preserva o primeiro fluxo de valor: **`career.yml` + evidências
-+ vaga → match explicável → representações geradas → PDF/DOCX/DOC**.
++ vaga → match explicável → representações geradas → PDF/DOCX**.
 
 Cada módulo define um contrato próprio. A tecnologia deve ser escolhida por módulo
 somente depois de validar os critérios listados; a interface gráfica não deve ser
@@ -105,7 +105,7 @@ funcionalidade consumidora recebe IDs de evidência, não fatos implícitos em p
 ## 4. Estilos e renderização
 
 **Responsabilidade:** projetar o modelo de currículo estruturado em Markdown, HTML,
-PDF, DOCX ou DOC, sem modificar o YAML de origem.
+PDF ou DOCX, sem modificar o YAML de origem.
 
 **Entregas independentes**
 
@@ -117,13 +117,12 @@ PDF, DOCX ou DOC, sem modificar o YAML de origem.
   `clean-executive`, `sidebar` e `timeline`, cada uma com uma variante `-alt`.
 - Geração de Markdown e preview HTML.
 - Exportação PDF determinística.
-- Exportação DOCX por renderer próprio e conversão para DOC quando o formato
-  legado for necessário.
+- Exportação DOCX por renderer próprio. O formato legado `.doc` não integra o
+  produto.
 - Diagnósticos de falha de template e de paginação.
 
-**Contrato:** recebe o modelo de currículo e um estilo; produz Markdown, HTML, PDF,
-DOCX ou DOC e metadados do artefato. DOCX será outro renderer, não uma conversão
-de PDF; DOC é um formato legado e não deve orientar o modelo interno.
+**Contrato:** recebe o modelo de currículo e um estilo; produz Markdown, HTML, PDF
+ou DOCX e metadados do artefato. DOCX usa renderer próprio, não conversão de PDF.
 
 Os quatorze IDs internos usam manifests estritos e tokens compartilhados por HTML,
 PDF e DOCX. O ID padrão de cada família possui divisores nos títulos de seção e o sufixo
@@ -138,15 +137,19 @@ alternativas de conteúdo, mas não reproduz fontes, cores, colunas ou a faixa d
 sem persistência. Projetos antigos assumem `clean`. Todos os estilos escrevem
 atomicamente nos caminhos fixos `exports/resume.*`; renderizar outro estilo substitui
 o artefato anterior do formato. `resume_language` seleciona apenas títulos fixos e
-nunca traduz conteúdo do usuário. O formato `.doc` continua pendente.
+nunca traduz conteúdo do usuário. `.doc` está explicitamente fora do escopo.
+Layouts com faixas laterais coloridas usam uma única faixa fixa de impressão e um
+quadro paginado de apresentação, cujo cabeçalho e rodapé repetidos preservam o
+espaçamento do conteúdo sem criar emendas no fundo. No `timeline`, a quebra evita
+dividir cada registro, mas não bloqueia a seção inteira na primeira página.
 
 **Decisões tecnológicas**
 
 - Motor de templates HTML compatível com a linguagem escolhida para o núcleo.
 - Renderizador de navegador headless para PDF, escolhido por fidelidade de impressão,
   suporte local e manutenção.
-- Biblioteca/renderer de documentos para DOCX e estratégia de conversão local para
-  DOC, avaliadas por fidelidade, portabilidade e preservação de conteúdo.
+- Biblioteca/renderer próprio para DOCX, avaliado por fidelidade, portabilidade e
+  preservação de conteúdo.
 - Testes de snapshot/estrutura para HTML e testes de regressão visual quando houver
   UI.
 
@@ -227,6 +230,13 @@ fatos e mantendo o mestre inalterado até aceite explícito.
 **Contrato:** propostas são imutáveis até aceitação; a persistência de uma variante
 é uma operação explícita. Nenhuma proposta pode introduzir alegação não apoiada.
 
+As variantes persistidas usam `resume/variants/<id>/variant.yml` para vínculo
+opcional com `job_id`, estilo e seleção/ordem de IDs canônicos. Overrides editoriais
+específicos de vaga ficam em `resume/variants/<id>/locales/<locale>.yml`; são
+parciais, herdam `career.locales/<locale>.yml` e não podem sobrescrever fatos canônicos
+como empresa, instituição, datas ou contatos. Resumos e destaques direcionados exigem
+`evidence_ids` existentes e verificados.
+
 **Decisões tecnológicas**
 
 - Formato de diff que permita aceite granular no Studio, CLI e MCP.
@@ -297,7 +307,7 @@ está pausado sem remoção dos dados ou contratos já implementados.
 | Marco | Módulos | Resultado verificável |
 | --- | --- | --- |
 | Fundação | 1 | Projeto local válido e testável |
-| MVP 0 | 2, 4 e CLI de 8 | Career YAML validado e exportação Markdown/PDF/DOCX/DOC |
+| MVP 0 | 2, 4 e CLI de 8 | Career YAML validado e exportação Markdown/PDF/DOCX |
 | MVP 1 | 3, 7 e IA de 8 | Evidências e propostas revisáveis, sem mudar fatos |
 | MVP 2 | 5, 6 e restante de 8 | Vaga, match explicável e variante por vaga |
 | MVP 3 | 9 | Preparação de candidatura com revisão antes de enviar |
@@ -310,8 +320,8 @@ está pausado sem remoção dos dados ou contratos já implementados.
 2. **Forma do primeiro Studio:** Tauri desde o início ou web local temporária.
 3. **Formato de schemas:** biblioteca de validação e política de compatibilidade
    para `seriemacv.yml`, perfil, evidências, vagas e relatórios.
-4. **Pipeline de exportação:** navegador headless para PDF, renderer próprio para
-   DOCX e estratégia local para conversão a DOC quando necessária.
+4. **Pipeline de exportação:** **decidido:** navegador headless para PDF e renderer
+   próprio para DOCX; `.doc` não será implementado.
 5. **Primeiro adaptador de IA:** manter a interface agnóstica e escolher um
    adaptador compatível com OpenAI, endpoint local ou ambos para desenvolvimento.
 

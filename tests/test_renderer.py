@@ -233,15 +233,64 @@ class MarkdownRendererTests(unittest.TestCase):
                     ),
                 )
 
-    def test_full_bleed_headers_do_not_use_negative_page_margins(self) -> None:
-        for style_id in ("contact-band", "contact-band-alt", "detail-sidebar", "detail-sidebar-alt"):
+    def test_full_bleed_styles_keep_vertical_margins_on_every_page(self) -> None:
+        for style_id in (
+            "contact-band",
+            "contact-band-alt",
+            "detail-sidebar",
+            "detail-sidebar-alt",
+        ):
+            with self.subTest(style=style_id):
+                html = render_html(self._career(), "en", style_id)
+
+                self.assertIn("@page:first { margin-top: 0; }", html)
+                self.assertNotIn("@page { size: A4; margin: 0; }", html)
+                self.assertNotIn("margin: -", html)
+        for style_id in ("left-rail", "left-rail-alt", "timeline", "timeline-alt"):
             with self.subTest(style=style_id):
                 html = render_html(self._career(), "en", style_id)
 
                 self.assertIn("@page { size: A4; margin: 0; }", html)
+                self.assertIn('class="page-frame" role="presentation"', html)
+                self.assertIn(".page-frame > thead, .page-frame > tfoot { height: 14mm; }", html)
+                self.assertNotIn("@page:first", html)
                 self.assertNotIn("margin: -", html)
         contact_band = render_html(self._career(), "en", "contact-band")
+        self.assertIn("@page { size: A4; margin: 12mm 0; }", contact_band)
         self.assertIn("header { background:", contact_band)
+        timeline = render_html(self._career(), "en", "timeline")
+        self.assertIn("@page { size: A4; margin: 0; }", timeline)
+        self.assertNotIn("section, article { break-inside: avoid; }", timeline)
+        self.assertIn("margin: 0 0 7pt -44mm; break-inside: avoid;", timeline)
+
+    def test_colored_side_rails_bleed_through_vertical_page_margins(self) -> None:
+        for style_id in ("sidebar", "sidebar-alt"):
+            with self.subTest(style=style_id):
+                html = render_html(self._career(), "en", style_id)
+                self.assertIn("body::before { position: fixed;", html)
+                self.assertIn(
+                    ".page-frame > thead > tr > td, .page-frame > tfoot > tr > td { height: 12mm; }",
+                    html,
+                )
+                self.assertNotIn("@top-right", html)
+                self.assertNotIn("@bottom-right", html)
+
+        for style_id in ("left-rail", "left-rail-alt"):
+            with self.subTest(style=style_id):
+                html = render_html(self._career(), "en", style_id)
+                self.assertIn("body::before { position: fixed;", html)
+                self.assertNotIn("@top-left", html)
+                self.assertNotIn("@bottom-left", html)
+
+        for style_id in ("timeline", "timeline-alt"):
+            with self.subTest(style=style_id):
+                html = render_html(self._career(), "en", style_id)
+                self.assertIn(
+                    ".date-rail { position: fixed; inset: 0 auto 0 0;",
+                    html,
+                )
+                self.assertNotIn("@top-left", html)
+                self.assertNotIn("@bottom-left", html)
 
     def test_non_configurable_styles_and_markdown_ignore_resume_color(self) -> None:
         html = render_html(self._career(), "en", "clean", "AA12BC")

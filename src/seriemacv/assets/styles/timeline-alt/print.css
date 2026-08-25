@@ -1,8 +1,11 @@
 @page { size: A4; margin: 0; }
 * { box-sizing: border-box; }
 body { margin: 0; color: #333; font: {{body_size_pt}}pt {{font_family}}, sans-serif; line-height: {{line_spacing}}; }
-main { position: relative; width: 210mm; min-height: 297mm; margin: auto; padding: 14mm 14mm 14mm 44mm; }
-.date-rail { position: absolute; inset: 0 auto 0 0; width: {{sidebar_width_mm}}mm; background: {{primary_color}}; }
+.page-frame { width: 210mm; border-collapse: collapse; }
+.page-frame > thead, .page-frame > tfoot { height: 14mm; }
+.page-frame td { padding: 0; }
+main { position: relative; width: 210mm; min-height: 269mm; margin: auto; padding: 0 14mm 0 44mm; }
+.date-rail { position: fixed; inset: 0 auto 0 0; width: {{sidebar_width_mm}}mm; background: {{primary_color}}; }
 header { position: relative; text-align: {{header_alignment}}; padding-bottom: 7pt; }
 h1 { margin: 0 0 2pt; color: {{primary_color}}; font-size: {{name_size_pt}}pt; }
 header .title { margin: 2pt 0 6pt; color: {{accent_color}}; font-size: 12pt; font-style: italic; }
@@ -11,8 +14,8 @@ h2 { margin: {{section_spacing_pt}}pt 0 5pt; color: {{primary_color}}; font-size
 h3 { margin: 0 0 2pt; font-size: {{record_size_pt}}pt; }
 p { margin: 0 0 4pt; }
 ul { margin: 2pt 0 6pt; padding-left: 16pt; }
-section, article { break-inside: avoid; }
-.timeline-record { display: grid; grid-template-columns: {{sidebar_width_mm}}mm minmax(0, 1fr); column-gap: 8mm; margin: 0 0 7pt -44mm; }
+article { break-inside: avoid; }
+.timeline-record { display: grid; grid-template-columns: {{sidebar_width_mm}}mm minmax(0, 1fr); column-gap: 8mm; margin: 0 0 7pt -44mm; break-inside: avoid; }
 .timeline-date { z-index: 1; align-self: start; padding: 2pt 3mm 0; color: #fff; text-align: center; }
 .timeline-record article { position: relative; border-left: 1px solid #b8c7d2; padding-left: 6mm; }
 .timeline-record article::before { position: absolute; top: 3pt; left: -2.1mm; width: 3.5mm; height: 3.5mm; border-radius: 50%; background: {{accent_color}}; content: ""; }

@@ -1,1 +1,22 @@
-@page { size: A4; margin: 0; } * { box-sizing: border-box; } body { margin: 0; color: #27332f; font: {{body_size_pt}}pt {{font_family}}, Arial, sans-serif; line-height: {{line_spacing}}; } main { width: 210mm; } .resume-layout { display: grid; grid-template-columns: {{sidebar_width_mm}}mm minmax(0, 1fr); min-height: 297mm; } .sidebar { grid-column: 1; background: {{primary_color}}; color: white; padding: 18mm 10pt; } .sidebar a { color: white; overflow-wrap: anywhere; } .main-content { grid-column: 2; padding: 14mm 12mm; } header { padding-bottom: 8pt; } h1 { color: {{primary_color}}; margin: 0; font-size: {{name_size_pt}}pt; } header p, p { margin: 2pt 0; } .sidebar .rail-name { margin: 0 0 3pt; color: white; font-weight: 700; } h2 { color: {{primary_color}}; margin: {{section_spacing_pt}}pt 0 4pt; font-size: {{section_size_pt}}pt; } .sidebar h2 { color: white; } h3 { margin: 7pt 0 1pt; font-size: {{record_size_pt}}pt; } ul { margin: 2pt 0 5pt; padding-left: 15pt; } article { break-inside: avoid; } a { color: {{primary_color}}; }
+@page { size: A4; margin: 0; }
+* { box-sizing: border-box; }
+body { margin: 0; color: #27332f; font: {{body_size_pt}}pt {{font_family}}, Arial, sans-serif; line-height: {{line_spacing}}; }
+body::before { position: fixed; z-index: 0; top: 0; bottom: 0; left: 0; width: {{sidebar_width_mm}}mm; background: {{primary_color}}; content: ""; }
+.page-frame { width: 210mm; border-collapse: collapse; }
+.page-frame > thead, .page-frame > tfoot { height: 14mm; }
+.page-frame td { padding: 0; }
+main { position: relative; z-index: 1; width: 210mm; }
+.resume-layout { display: grid; grid-template-columns: {{sidebar_width_mm}}mm minmax(0, 1fr); min-height: 269mm; }
+.sidebar { grid-column: 1; background: {{primary_color}}; color: white; padding: 4mm 10pt; }
+.sidebar a { color: white; overflow-wrap: anywhere; }
+.main-content { grid-column: 2; padding: 0 12mm; }
+header { padding-bottom: 8pt; }
+h1 { color: {{primary_color}}; margin: 0; font-size: {{name_size_pt}}pt; }
+header p, p { margin: 2pt 0; }
+.sidebar .rail-name { margin: 0 0 3pt; color: white; font-weight: 700; }
+h2 { color: {{primary_color}}; margin: {{section_spacing_pt}}pt 0 4pt; font-size: {{section_size_pt}}pt; }
+.sidebar h2 { color: white; }
+h3 { margin: 7pt 0 1pt; font-size: {{record_size_pt}}pt; }
+ul { margin: 2pt 0 5pt; padding-left: 15pt; }
+article { break-inside: avoid; }
+a { color: {{primary_color}}; }

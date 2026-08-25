@@ -1,7 +1,11 @@
-@page { size: A4; margin: {{margins_mm}}mm; }
+@page { size: A4; margin: 0; }
 * { box-sizing: border-box; }
 body { margin: 0; color: #17324d; font: {{body_size_pt}}pt {{font_family}}, Arial, sans-serif; line-height: {{line_spacing}}; }
-main { max-width: {{content_width_mm}}mm; margin: auto; }
+body::before { position: fixed; z-index: 0; top: 0; bottom: 0; right: {{margins_mm}}mm; width: {{sidebar_width_mm}}mm; background: {{primary_color}}; content: ""; }
+.page-frame { width: 210mm; border-collapse: collapse; }
+.page-frame > thead > tr > td, .page-frame > tfoot > tr > td { height: {{margins_mm}}mm; }
+.page-frame > tbody > tr > td { padding: 0 {{margins_mm}}mm; }
+main { position: relative; z-index: 1; max-width: {{content_width_mm}}mm; margin: auto; }
 header { text-align: {{header_alignment}}; padding: 0 0 9pt {{sidebar_offset_mm}}mm; }
 h1 { margin: 0 0 2pt; color: {{primary_color}}; font-size: {{name_size_pt}}pt; }
 header p { margin: 1pt 0; }
