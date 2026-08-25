@@ -1,0 +1,10 @@
+# Partial job-specific overrides; omitted content inherits the static locale.
+schema_version: 1
+locale: en
+evidence_ids: [example-service]
+profile:
+  title: Platform Engineer
+summary: Builds reliable platform services with collaborative teams.
+experience:
+  example-platform:
+    highlights: [Delivered a documented internal service.]

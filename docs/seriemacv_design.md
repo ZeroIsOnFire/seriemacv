@@ -314,6 +314,9 @@ my-career/
 ├── career.yml
 ├── resume/
 │   └── variants/
+│       └── <id>/
+│           ├── variant.yml
+│           └── locales/<locale>.yml
 ├── jobs/
 │   ├── index.jsonl
 │   └── sources/
@@ -416,8 +419,8 @@ Browser renderer
 PDF
 ```
 
-Markdown, DOCX and DOC exports are separate renderers because no document format
-should be generated from PDF.
+Markdown and DOCX use dedicated renderers because neither document format should be
+generated from PDF. Legacy `.doc` export is intentionally unsupported.
 
 ---
 
@@ -821,7 +824,7 @@ The first useful release should prove the **career source → job → tailored r
 - Versioned career YAML schema.
 - Live resume preview.
 - 2–3 ATS-safe styles.
-- Markdown, PDF, DOCX and DOC export.
+- Markdown, HTML, PDF and DOCX export; legacy `.doc` is out of scope.
 - CLI edit/validate/render commands.
 
 ### MVP 1 — Career knowledge + AI

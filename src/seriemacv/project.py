@@ -148,6 +148,29 @@ PROJECT_EXAMPLES = {
         "    statement: Cloud-platform experience.\n"
         "    priority: preferred\n"
     ),
+    "variant.yml.example": (
+        "# Fictitious resume variant. Every id must reference canonical data.\n"
+        "schema_version: 1\n"
+        "id: example-platform-variant\n"
+        "job_id: example-platform-engineer\n"
+        "style: clean\n"
+        "selection:\n"
+        "  experience: [example-platform]\n"
+        "  education: [example-degree]\n"
+        "  skills: [python]\n"
+    ),
+    "variant-locale.yml.example": (
+        "# Partial job-specific overrides; omitted content inherits the static locale.\n"
+        "schema_version: 1\n"
+        "locale: en\n"
+        "evidence_ids: [example-service]\n"
+        "profile:\n"
+        "  title: Platform Engineer\n"
+        "summary: Builds reliable platform services with collaborative teams.\n"
+        "experience:\n"
+        "  example-platform:\n"
+        "    highlights: [Delivered a documented internal service.]\n"
+    ),
     "career.locales/pt-BR.yml.example": (
         "schema_version: 1\nlocale: pt-BR\ncatalog:\n"
         "  labels: {summary: Resumo, experience: Experiencia profissional, education: Formacao academica, skills: Habilidades, languages: Idiomas, current: Atual, other: Outras, level.beginner: Iniciante, level.intermediate: Intermediario, level.advanced: Avancado, level.expert: Especialista}\n"
@@ -263,7 +286,10 @@ def create_project(
     return project_path
 
 
-def load_template(path: Path, template_name: Literal["career", "job"]) -> str:
+def load_template(
+    path: Path,
+    template_name: Literal["career", "job", "variant", "variant-locale"],
+) -> str:
     """Read a local example, falling back to the built-in template for older projects."""
     filename = f"{template_name}.yml.example"
     template_path = path.expanduser().resolve() / filename

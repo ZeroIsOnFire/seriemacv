@@ -1,0 +1,9 @@
+# Fictitious resume variant. Every id must reference canonical data.
+schema_version: 1
+id: example-platform-variant
+job_id: example-platform-engineer
+style: clean
+selection:
+  experience: [example-platform]
+  education: [example-degree]
+  skills: [python]

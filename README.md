@@ -31,6 +31,9 @@ seriemacv career validate .\my-career
 Each project includes an empty `career.yml` plus fictional `career.yml.example`
 and `seriemacv.yml.example` files. `career.yml` is the canonical source for facts;
 `career.locales/<locale>.yml` contains the localized resume wording and catalog.
+Job-specific wording stays separate under
+`resume/variants/<id>/locales/<locale>.yml` and inherits omitted content from the
+static career locale.
 
 The jobs workspace is temporarily paused. Existing job files and the underlying
 validated domain remain intact, but job commands are not exposed by the CLI.
@@ -44,6 +47,9 @@ seriemacv resume render .\my-career --language en --format pdf --format docx
 seriemacv resume render .\my-career --format html --style classic
 seriemacv resume render .\my-career --format pdf --style modern
 seriemacv resume render .\my-career --format docx --style compact
+seriemacv resume variants list .\my-career
+seriemacv resume variants validate .\my-career
+seriemacv resume render .\my-career --variant platform-role --format pdf
 ```
 
 `resume_style` in `seriemacv.yml` defines the default. `--style` overrides it for one
@@ -78,6 +84,8 @@ External tools can read the current fictional career contract with:
 
 ```powershell
 seriemacv template show .\my-career career
+seriemacv template show .\my-career variant
+seriemacv template show .\my-career variant-locale
 ```
 
 ```yaml

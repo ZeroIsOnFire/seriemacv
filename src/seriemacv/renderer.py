@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import os
+import re
 import tempfile
 from dataclasses import dataclass
 from html import escape
@@ -82,8 +83,9 @@ def render_markdown(
     career: CareerDocument,
     locale: ResumeLocale,
     style_id: ResumeStyleId = "clean",
+    preserve_record_order: bool = False,
 ) -> str:
-    presentation = _presentation(career, locale)
+    presentation = _presentation(career, locale, preserve_record_order)
     style = load_style(style_id).manifest
     _ensure_supported(style, "markdown")
     variant = style.markdown_variant
@@ -153,8 +155,9 @@ def render_html(
     locale: ResumeLocale,
     style_id: ResumeStyleId = "clean",
     resume_color: str | None = None,
+    preserve_record_order: bool = False,
 ) -> str:
-    presentation = _presentation(career, locale)
+    presentation = _presentation(career, locale, preserve_record_order)
     style = resolve_resume_color(load_style(style_id), resume_color)
     _ensure_supported(style.manifest, "html")
     header, main, sidebar = _html_parts(presentation, style.manifest)
@@ -175,8 +178,9 @@ def render_docx(
     locale: ResumeLocale,
     style_id: ResumeStyleId = "clean",
     resume_color: str | None = None,
+    preserve_record_order: bool = False,
 ) -> bytes:
-    presentation = _presentation(career, locale)
+    presentation = _presentation(career, locale, preserve_record_order)
     base_style = load_style(style_id).manifest
     style = resolve_resume_color(load_style(style_id), resume_color).manifest
     _ensure_supported(style, "docx")
@@ -215,22 +219,52 @@ def write_resume(
     pdf_renderer: PdfRenderer | None = None,
     style_id: ResumeStyleId = "clean",
     resume_color: str | None = None,
+    variant_id: str | None = None,
 ) -> Path:
-    path = project_path / "exports" / f"resume.{locale}.{_FILENAMES[output_format]}"
+    if variant_id is not None and not re.fullmatch(
+        r"[a-z0-9]+(?:-[a-z0-9]+)*", variant_id
+    ):
+        raise ResumeRenderError("variant id must use lowercase kebab-case")
+    variant_segment = f".{variant_id}" if variant_id else ""
+    path = (
+        project_path
+        / "exports"
+        / f"resume{variant_segment}.{locale}.{_FILENAMES[output_format]}"
+    )
     path.parent.mkdir(parents=True, exist_ok=True)
     style = load_style(style_id).manifest
     _ensure_supported(style, output_format)
     content: bytes
     if output_format == "markdown":
-        content = render_markdown(career, locale, style_id).encode()
+        content = render_markdown(
+            career, locale, style_id, preserve_record_order=variant_id is not None
+        ).encode()
     elif output_format == "html":
-        content = render_html(career, locale, style_id, resume_color).encode()
+        content = render_html(
+            career,
+            locale,
+            style_id,
+            resume_color,
+            preserve_record_order=variant_id is not None,
+        ).encode()
     elif output_format == "pdf":
         content = (pdf_renderer or PlaywrightPdfRenderer()).render(
-            render_html(career, locale, style_id, resume_color)
+            render_html(
+                career,
+                locale,
+                style_id,
+                resume_color,
+                preserve_record_order=variant_id is not None,
+            )
         )
     else:
-        content = render_docx(career, locale, style_id, resume_color)
+        content = render_docx(
+            career,
+            locale,
+            style_id,
+            resume_color,
+            preserve_record_order=variant_id is not None,
+        )
     _atomic_write(path, content)
     return path
 
@@ -280,7 +314,11 @@ def _style_css(style: StylePackage) -> str:
     return css
 
 
-def _presentation(career: CareerDocument, locale: ResumeLocale) -> ResumePresentation:
+def _presentation(
+    career: CareerDocument,
+    locale: ResumeLocale,
+    preserve_record_order: bool = False,
+) -> ResumePresentation:
     profile = career.profile
     links = {**profile.links}
     if profile.linkedin:
@@ -298,8 +336,16 @@ def _presentation(career: CareerDocument, locale: ResumeLocale) -> ResumePresent
             item for item in (profile.location, profile.email, profile.phone) if item
         ),
         links=tuple(links.items()),
-        experience=list(_ordered(career.experience)),
-        education=list(_ordered(career.education)),
+        experience=(
+            career.experience
+            if preserve_record_order
+            else list(_ordered(career.experience))
+        ),
+        education=(
+            career.education
+            if preserve_record_order
+            else list(_ordered(career.education))
+        ),
     )
 
 

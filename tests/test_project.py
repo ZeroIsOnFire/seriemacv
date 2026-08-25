@@ -6,6 +6,8 @@ import unittest
 from contextlib import closing
 from pathlib import Path
 
+from ruamel.yaml import YAML
+
 from seriemacv.jobs import load_yaml_payload
 from seriemacv.project import (
     PROJECT_ARTIFACTS,
@@ -18,6 +20,7 @@ from seriemacv.project import (
     open_project,
     validate_project,
 )
+from seriemacv.variants import ResumeVariant, ResumeVariantLocale
 
 
 class CreateProjectTests(unittest.TestCase):
@@ -32,6 +35,8 @@ class CreateProjectTests(unittest.TestCase):
             self.assertTrue((project_path / "seriemacv.yml.example").is_file())
             self.assertTrue((project_path / "career.yml.example").is_file())
             self.assertTrue((project_path / "job.yml.example").is_file())
+            self.assertTrue((project_path / "variant.yml.example").is_file())
+            self.assertTrue((project_path / "variant-locale.yml.example").is_file())
             self.assertIn(
                 "resume_style: clean",
                 (project_path / "seriemacv.yml.example").read_text(encoding="utf-8"),
@@ -57,6 +62,23 @@ class CreateProjectTests(unittest.TestCase):
         self.assertEqual(
             (repository_path / "examples" / "job.yml").read_text(encoding="utf-8"),
             PROJECT_EXAMPLES["job.yml.example"],
+        )
+        self.assertEqual(
+            (repository_path / "examples" / "variant.yml").read_text(encoding="utf-8"),
+            PROJECT_EXAMPLES["variant.yml.example"],
+        )
+        self.assertEqual(
+            (repository_path / "examples" / "variant-locale.yml").read_text(
+                encoding="utf-8"
+            ),
+            PROJECT_EXAMPLES["variant-locale.yml.example"],
+        )
+        yaml = YAML(typ="safe")
+        ResumeVariant.model_validate(
+            yaml.load(PROJECT_EXAMPLES["variant.yml.example"])
+        )
+        ResumeVariantLocale.model_validate(
+            yaml.load(PROJECT_EXAMPLES["variant-locale.yml.example"])
         )
 
     def test_refuses_to_overwrite_an_existing_project(self) -> None:

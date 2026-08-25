@@ -6,6 +6,38 @@ A geração de currículo é uma projeção somente leitura dos fatos em `career
 do documento editorial em `career.locales/<locale>.yml`.
 Cada saída é escrita atomicamente em um caminho fixo dentro de `exports/`.
 
+## Variantes estruturadas
+
+O texto estático e reutilizável permanece em `career.locales/`. Uma variante de vaga
+usa a estrutura separada:
+
+```text
+resume/variants/<id>/
+├── variant.yml
+└── locales/
+    ├── en.yml
+    └── pt-BR.yml
+```
+
+`variant.yml` pode referenciar um `job_id` preservado, escolher um estilo e selecionar
+ou ordenar IDs canônicos de experiência, formação e habilidades. Os arquivos em
+`locales/` são overrides editoriais parciais: campos omitidos herdam o locale estático
+de carreira. Eles não podem alterar nome, contatos, empresas, instituições, datas ou
+outros fatos canônicos. Resumos ou destaques direcionados exigem `evidence_ids` que
+existam e estejam marcados como `verified: true` em `career.yml`.
+
+```powershell
+seriemacv resume variants list .\minha-carreira
+seriemacv resume variants validate .\minha-carreira
+seriemacv resume variants validate .\minha-carreira --id vaga-plataforma
+seriemacv resume render .\minha-carreira --variant vaga-plataforma --language pt-BR --format pdf
+```
+
+Artefatos de variante usam `exports/resume.<variante>.<locale>.<ext>` e nunca
+sobrescrevem o currículo-base. A precedência de estilo é `--style`, depois o estilo
+da variante e, por fim, o padrão do projeto. O locale de variante é opcional; sem ele,
+a seleção e a ordem ainda se aplicam, mas todo o texto vem do locale estático.
+
 ## Listar estilos
 
 ```powershell
@@ -55,9 +87,9 @@ mantêm as cores próprias. `#647D74` e `647D74` são aceitos.
 | Formato | Saída | Observações |
 | --- | --- | --- |
 | `markdown` | `exports/resume.<locale>.md` | Texto portátil; fontes, cores e colunas são achatadas |
-| `html` | `exports/resume.html` | HTML semântico independente, com CSS embutido e sem recursos de rede |
+| `html` | `exports/resume.<locale>.html` | HTML semântico independente, com CSS embutido e sem recursos de rede |
 | `pdf` | `exports/resume.<locale>.pdf` | PDF A4 gerado do HTML no Chromium local |
-| `docx` | `exports/resume.docx` | Documento Word editável produzido pelo renderer dedicado |
+| `docx` | `exports/resume.<locale>.docx` | Documento Word editável produzido pelo renderer dedicado |
 
 Renderizar outro estilo no mesmo formato substitui o artefato anterior daquele
 formato. Os demais formatos não são alterados. Se a validação ou geração falhar, um

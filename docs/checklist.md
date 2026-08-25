@@ -27,7 +27,8 @@ currículo. Vagas, match e tailoring permanecem pausados nesta fase.
   evidências.
 - [x] Validar seções, experiência e campos obrigatórios do YAML.
 - [x] Emitir diagnósticos com arquivo, posição e orientação acionável.
-- [ ] Criar e validar variantes estruturadas em `resume/variants/`.
+- [x] Criar e validar variantes estruturadas em `resume/variants/`, separando
+  locales estáticos de overrides editoriais específicos de vaga.
 - [x] Definir o contrato de pacote de estilo (`style.yml`, HTML e CSS).
 - [x] Adicionar seis famílias visuais estruturais, originais e sem foto, com variantes
   `-alt`: `split-header`, `contact-band`, `left-rail` e `detail-sidebar`.
@@ -48,8 +49,7 @@ currículo. Vagas, match e tailoring permanecem pausados nesta fase.
 - [x] Renderizar currículo em HTML.
 - [x] Exportar PDF por renderizador local de navegador.
 - [x] Exportar DOCX por renderer próprio, sem converter do PDF.
-- [ ] Exportar DOC para compatibilidade legada, a partir de uma estratégia local
-  definida para o formato.
+- [x] Manter `.doc` fora do produto; a compatibilidade editável termina em DOCX.
 - [x] Adicionar CLI para editar dados estruturados, validar e renderizar currículo.
 - [x] Cobrir YAML, validação e renderização com testes e fixtures.
 
@@ -84,7 +84,8 @@ arquivos e compatibilidade existentes permanecem preservados para retomada.
 - [ ] Gerar relatório explicável com evidências, lacunas e conflitos.
 - [ ] Integrar tailoring de currículo a uma vaga.
 - [x] Expandir a CLI para vagas.
-- [ ] Expandir a CLI para match e variantes.
+- [ ] Expandir a CLI para match; listagem, validação e renderização de variantes já
+  estão disponíveis.
 - [ ] Expor MCP somente de leitura e proposta inicialmente.
 - [ ] Implementar Studio após os casos de uso do núcleo estarem estáveis.
 - [ ] Cobrir fluxos de sucesso, dados ausentes, conflito e `NO_EVIDENCE`.

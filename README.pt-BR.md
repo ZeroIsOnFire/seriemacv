@@ -33,6 +33,9 @@ Cada projeto inclui `career.yml` vazio e exemplos fictícios em
 `career.yml.example` e `seriemacv.yml.example`. `career.yml` é sempre a fonte
 canônica dos fatos. O texto por idioma e seu catálogo ficam em
 `career.locales/<locale>.yml`.
+Textos específicos de vaga ficam separados em
+`resume/variants/<id>/locales/<locale>.yml` e herdam o conteúdo omitido do locale
+estático de carreira.
 
 A área de vagas está temporariamente pausada. Arquivos existentes e o domínio
 validado permanecem intactos, mas os comandos de vagas não são expostos pela CLI.
@@ -46,6 +49,9 @@ seriemacv resume render .\minha-carreira --language en --format pdf --format doc
 seriemacv resume render .\minha-carreira --format html --style classic
 seriemacv resume render .\minha-carreira --format pdf --style modern
 seriemacv resume render .\minha-carreira --format docx --style compact
+seriemacv resume variants list .\minha-carreira
+seriemacv resume variants validate .\minha-carreira
+seriemacv resume render .\minha-carreira --variant vaga-plataforma --format pdf
 ```
 
 `resume_style` em `seriemacv.yml` define o padrão. `--style` o substitui em uma
@@ -81,6 +87,8 @@ Ferramentas externas podem consultar o contrato fictício de carreira atual com:
 
 ```powershell
 seriemacv template show .\minha-carreira career
+seriemacv template show .\minha-carreira variant
+seriemacv template show .\minha-carreira variant-locale
 ```
 
 ```yaml

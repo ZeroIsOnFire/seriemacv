@@ -42,6 +42,13 @@ from seriemacv.project import (
 )
 from seriemacv.renderer import ResumeRenderError, write_resume
 from seriemacv.styles import STYLE_IDS, list_styles
+from seriemacv.variants import (
+    list_variant_locales,
+    list_variants,
+    load_variant_career,
+    validate_variant,
+    validate_variants,
+)
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -110,9 +117,23 @@ def build_parser() -> argparse.ArgumentParser:
     render_parser.add_argument("--format", choices=("markdown", "html", "pdf", "docx"), required=True, action="append")
     render_parser.add_argument("--style", choices=STYLE_IDS)
     render_parser.add_argument("--language")
+    render_parser.add_argument("--variant")
     resume_subparsers.add_parser(
         "styles", help="List built-in resume styles and their capabilities"
     )
+    variants_parser = resume_subparsers.add_parser(
+        "variants", help="List and validate structured resume variants"
+    )
+    variants_subparsers = variants_parser.add_subparsers(
+        dest="variants_command", required=True
+    )
+    variants_list = variants_subparsers.add_parser("list", help="List resume variants")
+    variants_list.add_argument("path", type=Path)
+    variants_validate = variants_subparsers.add_parser(
+        "validate", help="Validate one or every resume variant"
+    )
+    variants_validate.add_argument("path", type=Path)
+    variants_validate.add_argument("--id")
 
     template_parser = subparsers.add_parser(
         "template", help="Read built-in structured-data templates"
@@ -121,10 +142,10 @@ def build_parser() -> argparse.ArgumentParser:
         dest="template_command", required=True
     )
     template_show = template_subparsers.add_parser(
-        "show", help="Print a career template for an external tool"
+        "show", help="Print a structured YAML template for an external tool"
     )
     template_show.add_argument("path", type=Path)
-    template_show.add_argument("name", choices=("career",))
+    template_show.add_argument("name", choices=("career", "variant", "variant-locale"))
     return parser
 
 
@@ -309,6 +330,33 @@ def _run_resume_command(args: argparse.Namespace) -> int:
             print(f"{style.id}\t{style.name}\t{style.layout}\t{ats}\t{formats}")
         return 0
 
+    if args.resume_command == "variants":
+        project_path = args.path.expanduser().resolve()
+        try:
+            if args.variants_command == "list":
+                for variant in list_variants(project_path):
+                    job_id = variant.job_id or "-"
+                    locales = (
+                        ",".join(list_variant_locales(project_path, variant.id)) or "-"
+                    )
+                    print(f"{variant.id}\t{job_id}\t{locales}")
+                return 0
+            diagnostics = (
+                validate_variant(project_path, args.id)
+                if args.id
+                else validate_variants(project_path)
+            )
+        except (OSError, ValueError, ValidationError, YAMLError) as error:
+            print(f"{project_path}: {error}", file=sys.stderr)
+            return 1
+        if diagnostics:
+            for diagnostic in diagnostics:
+                print(diagnostic.format(), file=sys.stderr)
+            return 1
+        target = args.id or "all"
+        print(f"Valid resume variant(s): {target}")
+        return 0
+
     project_path = args.path.expanduser().resolve()
     career_path = project_path / CAREER_FILE
     configuration_path = project_path / "seriemacv.yml"
@@ -323,9 +371,17 @@ def _run_resume_command(args: argparse.Namespace) -> int:
         print(f"{configuration_path}: {error}", file=sys.stderr)
         return 1
     try:
-        style_id = args.style or configuration.resume_style
         locale = args.language or configuration.resume_language
-        career = load_localized_career(project_path, locale)
+        variant = None
+        if args.variant:
+            variant, career = load_variant_career(project_path, args.variant, locale)
+        else:
+            career = load_localized_career(project_path, locale)
+        style_id = (
+            args.style
+            or (variant.style if variant else None)
+            or configuration.resume_style
+        )
         output_paths = [
             write_resume(
                 project_path,
@@ -334,6 +390,7 @@ def _run_resume_command(args: argparse.Namespace) -> int:
                 output_format,
                 style_id=style_id,
                 resume_color=configuration.resume_color,
+                variant_id=args.variant,
             )
             for output_format in args.format
         ]

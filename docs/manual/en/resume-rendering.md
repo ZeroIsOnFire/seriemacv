@@ -6,6 +6,38 @@ Resume generation is a read-only projection of canonical `career.yml` facts plus
 complete `career.locales/<locale>.yml` editorial document. Each output
 is written atomically to a fixed path under `exports/`.
 
+## Structured variants
+
+Static, reusable wording remains in `career.locales/`. A job-specific variant uses
+this separate layout:
+
+```text
+resume/variants/<id>/
+├── variant.yml
+└── locales/
+    ├── en.yml
+    └── pt-BR.yml
+```
+
+`variant.yml` may reference a preserved `job_id`, choose a style, and select or
+order canonical experience, education, and skill IDs. Files under `locales/` are
+partial editorial overrides: omitted fields inherit the static career locale. They
+cannot change names, contacts, employers, institutions, dates, or other canonical
+facts. A tailored summary or highlights require `evidence_ids` that exist and are
+marked `verified: true` in `career.yml`.
+
+```powershell
+seriemacv resume variants list .\my-career
+seriemacv resume variants validate .\my-career
+seriemacv resume variants validate .\my-career --id platform-role
+seriemacv resume render .\my-career --variant platform-role --language en --format pdf
+```
+
+Variant artifacts use `exports/resume.<variant>.<locale>.<ext>` and never overwrite
+the base resume. Style precedence is `--style`, then the variant style, then the
+project default. A variant locale is optional; without one, selection and ordering
+still apply while all wording comes from the static locale.
+
 ## List styles
 
 ```powershell
@@ -57,9 +89,9 @@ Both `#647D74` and `647D74` are accepted.
 | Format | Output | Notes |
 | --- | --- | --- |
 | `markdown` | `exports/resume.<locale>.md` | Portable text; fonts, colors, and columns are flattened |
-| `html` | `exports/resume.html` | Semantic standalone HTML with embedded CSS and no network assets |
+| `html` | `exports/resume.<locale>.html` | Semantic standalone HTML with embedded CSS and no network assets |
 | `pdf` | `exports/resume.<locale>.pdf` | A4 PDF generated from HTML in local Chromium |
-| `docx` | `exports/resume.docx` | Editable Word document from the dedicated renderer |
+| `docx` | `exports/resume.<locale>.docx` | Editable Word document from the dedicated renderer |
 
 Rendering another style in the same format replaces that format's previous artifact.
 Other formats are untouched. If validation or generation fails, an existing artifact
