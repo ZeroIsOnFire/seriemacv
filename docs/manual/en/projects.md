@@ -45,8 +45,11 @@ resume_style: modern
 resume_color: "#647D74"
 ```
 
-`resume_language` translates only labels maintained by seriemaCV, such as section
-titles, months, skill levels, and “Present”. It never translates user content.
+`resume_language` selects both `career.locales/<locale>.yml`, which contains the
+user's resume wording, and `i18n/<locale>.yml`, which contains seriemaCV section
+titles, months, skill levels, “Present”, and `date_format`. To add a language such as
+`es`, create both `career.locales/es.yml` and `i18n/es.yml`; no code change is needed.
+Run `seriemacv career locale validate <project> --language es` before rendering.
 
 Projects created before `resume_style` or `resume_color` existed remain compatible and
 use `clean` and mascot green `#647D74`.

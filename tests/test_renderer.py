@@ -782,10 +782,6 @@ stories: []
         (project_path / "career.locales" / "en.yml").write_text(
             """schema_version: 1
 locale: en
-catalog:
-  labels: {summary: Summary, experience: Experience, education: Education, skills: Skills, languages: Languages, current: Present, other: Other, level.beginner: Beginner, level.intermediate: Intermediate, level.advanced: Advanced, level.expert: Expert}
-  months: [Jan, Feb, Mar, Apr, May, Jun, Jul, Aug, Sep, Oct, Nov, Dec]
-  date_format: '{month} {year}'
 profile: {title: Engineer}
 summary: Canonical content.
 experience: {}

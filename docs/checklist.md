@@ -27,8 +27,8 @@ currículo. Vagas, match e tailoring permanecem pausados nesta fase.
   evidências.
 - [x] Validar seções, experiência e campos obrigatórios do YAML.
 - [x] Emitir diagnósticos com arquivo, posição e orientação acionável.
-- [x] Criar e validar variantes estruturadas em `resume/variants/`, separando
-  locales estáticos de overrides editoriais específicos de vaga.
+- [x] Separar `i18n/` da aplicação, conteúdo profissional em `career.locales/` e
+  overrides editoriais específicos de vaga em `resume/variants/`.
 - [x] Definir o contrato de pacote de estilo (`style.yml`, HTML e CSS).
 - [x] Adicionar seis famílias visuais estruturais, originais e sem foto, com variantes
   `-alt`: `split-header`, `contact-band`, `left-rail` e `detail-sidebar`.

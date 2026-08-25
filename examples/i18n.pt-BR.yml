@@ -1,0 +1,5 @@
+schema_version: 1
+locale: pt-BR
+labels: {summary: Resumo, experience: Experiência profissional, education: Formação acadêmica, skills: Habilidades, languages: Idiomas, current: Atual, other: Outras, level.beginner: Iniciante, level.intermediate: Intermediário, level.advanced: Avançado, level.expert: Especialista}
+months: [Jan., Fev., Mar., Abr., Mai., Jun., Jul., Ago., Set., Out., Nov., Dez.]
+date_format: '{month} de {year}'

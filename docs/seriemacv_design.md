@@ -312,6 +312,10 @@ Suggested project layout:
 my-career/
 ├── seriemacv.yml
 ├── career.yml
+├── career.locales/
+│   └── <locale>.yml
+├── i18n/
+│   └── <locale>.yml
 ├── resume/
 │   └── variants/
 │       └── <id>/

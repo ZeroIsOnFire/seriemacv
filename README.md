@@ -30,7 +30,9 @@ seriemacv career validate .\my-career
 
 Each project includes an empty `career.yml` plus fictional `career.yml.example`
 and `seriemacv.yml.example` files. `career.yml` is the canonical source for facts;
-`career.locales/<locale>.yml` contains the localized resume wording and catalog.
+`career.locales/<locale>.yml` contains localized resume wording, while
+`i18n/<locale>.yml` contains customizable seriemaCV labels, months, levels, and date
+formatting.
 Job-specific wording stays separate under
 `resume/variants/<id>/locales/<locale>.yml` and inherits omitted content from the
 static career locale.

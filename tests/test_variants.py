@@ -40,7 +40,7 @@ class ResumeVariantTests(unittest.TestCase):
                 ["Built reliable backend services."],
             )
 
-    def test_variant_locale_is_optional_and_static_locale_is_inherited(self) -> None:
+    def test_variant_locale_is_optional_and_career_locale_is_inherited(self) -> None:
         with tempfile.TemporaryDirectory() as temporary_directory:
             project_path = _complete_project(temporary_directory)
             _write_variant(project_path, with_locale=False)
@@ -312,9 +312,6 @@ stories: []
     (project_path / "career.locales/en.yml").write_text(
         """schema_version: 1
 locale: en
-catalog:
-  labels: {summary: Summary, experience: Experience, education: Education, skills: Skills, languages: Languages, current: Present, other: Other, level.beginner: Beginner, level.intermediate: Intermediate, level.advanced: Advanced, level.expert: Expert}
-  months: [Jan, Feb, Mar, Apr, May, Jun, Jul, Aug, Sep, Oct, Nov, Dec]
 profile: {title: Software Engineer, location: 'Sao Paulo, Brazil'}
 summary: General software engineering summary.
 experience:

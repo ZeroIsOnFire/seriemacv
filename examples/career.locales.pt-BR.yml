@@ -1,9 +1,5 @@
 schema_version: 1
 locale: pt-BR
-catalog:
-  labels: {summary: Resumo, experience: Experiencia profissional, education: Formacao academica, skills: Habilidades, languages: Idiomas, current: Atual, other: Outras, level.beginner: Iniciante, level.intermediate: Intermediario, level.advanced: Avancado, level.expert: Especialista}
-  months: [Jan., Fev., Mar., Abr., Mai., Jun., Jul., Ago., Set., Out., Nov., Dez.]
-  date_format: '{month} de {year}'
 profile: {title: Engenheiro de Software, location: 'Cidade Exemplo, Brasil', languages: [Português, Inglês]}
 summary: Desenvolve software confiável com equipes colaborativas.
 experience: {example-platform: {title: Engenheiro de Software, highlights: [Entregou um serviço interno documentado.]}}

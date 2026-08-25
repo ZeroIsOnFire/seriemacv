@@ -23,8 +23,9 @@ seriemacv template show .\minha-carreira variant-locale
 ```
 
 O primeiro template descreve seleção, ordem, vínculo com vaga e estilo. O segundo
-descreve textos parciais específicos de vaga aplicados sobre um arquivo estático de
-`career.locales`. As cópias versionadas ficam em `examples/variant.yml` e
+descreve textos parciais específicos de vaga aplicados sobre um arquivo de
+`career.locales`; ele não contém traduções da aplicação mantidas em `i18n/`. As
+cópias versionadas ficam em `examples/variant.yml` e
 `examples/variant-locale.yml`.
 
 ## Fluxo seguro com uma ferramenta externa

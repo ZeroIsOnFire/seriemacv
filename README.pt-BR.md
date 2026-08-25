@@ -31,8 +31,9 @@ seriemacv career validate .\minha-carreira
 
 Cada projeto inclui `career.yml` vazio e exemplos fictícios em
 `career.yml.example` e `seriemacv.yml.example`. `career.yml` é sempre a fonte
-canônica dos fatos. O texto por idioma e seu catálogo ficam em
-`career.locales/<locale>.yml`.
+canônica dos fatos. O texto profissional por idioma fica em
+`career.locales/<locale>.yml`; rótulos, meses, níveis e formato de data configuráveis
+do seriemaCV ficam em `i18n/<locale>.yml`.
 Textos específicos de vaga ficam separados em
 `resume/variants/<id>/locales/<locale>.yml` e herdam o conteúdo omitido do locale
 estático de carreira.

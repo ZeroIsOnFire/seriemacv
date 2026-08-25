@@ -230,7 +230,10 @@ fatos e mantendo o mestre inalterado até aceite explícito.
 **Contrato:** propostas são imutáveis até aceitação; a persistência de uma variante
 é uma operação explícita. Nenhuma proposta pode introduzir alegação não apoiada.
 
-As variantes persistidas usam `resume/variants/<id>/variant.yml` para vínculo
+Os catálogos configuráveis da aplicação ficam em `i18n/<locale>.yml` e contêm apenas
+rótulos fixos, meses, níveis e formato de data. O conteúdo profissional localizado
+permanece em `career.locales/<locale>.yml`. As variantes persistidas usam
+`resume/variants/<id>/variant.yml` para vínculo
 opcional com `job_id`, estilo e seleção/ordem de IDs canônicos. Overrides editoriais
 específicos de vaga ficam em `resume/variants/<id>/locales/<locale>.yml`; são
 parciais, herdam `career.locales/<locale>.yml` e não podem sobrescrever fatos canônicos

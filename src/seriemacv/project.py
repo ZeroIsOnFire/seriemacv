@@ -18,6 +18,7 @@ from seriemacv.styles import ResumeStyleId
 CONFIG_FILE = "seriemacv.yml"
 PROJECT_DIRECTORIES = (
     "career.locales",
+    "i18n",
     "resume",
     "resume/variants",
     "jobs",
@@ -59,16 +60,24 @@ PROJECT_ARTIFACTS = {
         "stories: []\n"
     ),
     "career.locales/pt-BR.yml": (
-        "schema_version: 1\nlocale: pt-BR\ncatalog:\n"
-        "  labels: {summary: Resumo, experience: Experiencia profissional, education: Formacao academica, skills: Habilidades, languages: Idiomas, current: Atual, other: Outras, level.beginner: Iniciante, level.intermediate: Intermediario, level.advanced: Avancado, level.expert: Especialista}\n"
-        "  months: [Jan., Fev., Mar., Abr., Mai., Jun., Jul., Ago., Set., Out., Nov., Dez.]\n"
-        "  date_format: '{month} de {year}'\nprofile: {title: '', location: ''}\nsummary: ''\nexperience: {}\neducation: {}\nskills: {}\n"
+        "schema_version: 1\nlocale: pt-BR\nprofile: {title: '', location: ''}\n"
+        "summary: ''\nexperience: {}\neducation: {}\nskills: {}\n"
     ),
     "career.locales/en.yml": (
-        "schema_version: 1\nlocale: en\ncatalog:\n"
-        "  labels: {summary: Summary, experience: Professional Experience, education: Education, skills: Skills, languages: Languages, current: Present, other: Other, level.beginner: Beginner, level.intermediate: Intermediate, level.advanced: Advanced, level.expert: Expert}\n"
-        "  months: [Jan, Feb, Mar, Apr, May, Jun, Jul, Aug, Sep, Oct, Nov, Dec]\n"
-        "  date_format: '{month} {year}'\nprofile: {title: '', location: ''}\nsummary: ''\nexperience: {}\neducation: {}\nskills: {}\n"
+        "schema_version: 1\nlocale: en\nprofile: {title: '', location: ''}\n"
+        "summary: ''\nexperience: {}\neducation: {}\nskills: {}\n"
+    ),
+    "i18n/pt-BR.yml": (
+        "schema_version: 1\nlocale: pt-BR\n"
+        "labels: {summary: Resumo, experience: Experiência profissional, education: Formação acadêmica, skills: Habilidades, languages: Idiomas, current: Atual, other: Outras, level.beginner: Iniciante, level.intermediate: Intermediário, level.advanced: Avançado, level.expert: Especialista}\n"
+        "months: [Jan., Fev., Mar., Abr., Mai., Jun., Jul., Ago., Set., Out., Nov., Dez.]\n"
+        "date_format: '{month} de {year}'\n"
+    ),
+    "i18n/en.yml": (
+        "schema_version: 1\nlocale: en\n"
+        "labels: {summary: Summary, experience: Professional Experience, education: Education, skills: Skills, languages: Languages, current: Present, other: Other, level.beginner: Beginner, level.intermediate: Intermediate, level.advanced: Advanced, level.expert: Expert}\n"
+        "months: [Jan, Feb, Mar, Apr, May, Jun, Jul, Aug, Sep, Oct, Nov, Dec]\n"
+        "date_format: '{month} {year}'\n"
     ),
 }
 LEGACY_PROJECT_ARTIFACTS = (
@@ -160,7 +169,7 @@ PROJECT_EXAMPLES = {
         "  skills: [python]\n"
     ),
     "variant-locale.yml.example": (
-        "# Partial job-specific overrides; omitted content inherits the static locale.\n"
+        "# Partial job-specific overrides; omitted content inherits the career locale.\n"
         "schema_version: 1\n"
         "locale: en\n"
         "evidence_ids: [example-service]\n"
@@ -172,16 +181,22 @@ PROJECT_EXAMPLES = {
         "    highlights: [Delivered a documented internal service.]\n"
     ),
     "career.locales/pt-BR.yml.example": (
-        "schema_version: 1\nlocale: pt-BR\ncatalog:\n"
-        "  labels: {summary: Resumo, experience: Experiencia profissional, education: Formacao academica, skills: Habilidades, languages: Idiomas, current: Atual, other: Outras, level.beginner: Iniciante, level.intermediate: Intermediario, level.advanced: Avancado, level.expert: Especialista}\n"
-        "  months: [Jan., Fev., Mar., Abr., Mai., Jun., Jul., Ago., Set., Out., Nov., Dez.]\n"
-        "  date_format: '{month} de {year}'\nprofile: {title: Engenheiro de Software, location: 'Cidade Exemplo, Brasil', languages: [Português, Inglês]}\nsummary: Desenvolve software confiável com equipes colaborativas.\nexperience: {example-platform: {title: Engenheiro de Software, highlights: [Entregou um serviço interno documentado.]}}\neducation: {example-degree: {degree: Bacharelado em Tecnologia}}\nskills: {python: {name: Python, category: Linguagem de programação}}\n"
+        "schema_version: 1\nlocale: pt-BR\nprofile: {title: Engenheiro de Software, location: 'Cidade Exemplo, Brasil', languages: [Português, Inglês]}\nsummary: Desenvolve software confiável com equipes colaborativas.\nexperience: {example-platform: {title: Engenheiro de Software, highlights: [Entregou um serviço interno documentado.]}}\neducation: {example-degree: {degree: Bacharelado em Tecnologia}}\nskills: {python: {name: Python, category: Linguagem de programação}}\n"
     ),
     "career.locales/en.yml.example": (
-        "schema_version: 1\nlocale: en\ncatalog:\n"
-        "  labels: {summary: Summary, experience: Professional Experience, education: Education, skills: Skills, languages: Languages, current: Present, other: Other, level.beginner: Beginner, level.intermediate: Intermediate, level.advanced: Advanced, level.expert: Expert}\n"
-        "  months: [Jan, Feb, Mar, Apr, May, Jun, Jul, Aug, Sep, Oct, Nov, Dec]\n"
-        "  date_format: '{month} {year}'\nprofile: {title: Software Engineer, location: 'Example City, Brazil', languages: [Portuguese, English]}\nsummary: Build reliable software with collaborative teams.\nexperience: {example-platform: {title: Software Engineer, highlights: [Delivered a documented internal service.]}}\neducation: {example-degree: {degree: Bachelor of Technology}}\nskills: {python: {name: Python, category: Programming language}}\n"
+        "schema_version: 1\nlocale: en\nprofile: {title: Software Engineer, location: 'Example City, Brazil', languages: [Portuguese, English]}\nsummary: Build reliable software with collaborative teams.\nexperience: {example-platform: {title: Software Engineer, highlights: [Delivered a documented internal service.]}}\neducation: {example-degree: {degree: Bachelor of Technology}}\nskills: {python: {name: Python, category: Programming language}}\n"
+    ),
+    "i18n/pt-BR.yml.example": (
+        "schema_version: 1\nlocale: pt-BR\n"
+        "labels: {summary: Resumo, experience: Experiência profissional, education: Formação acadêmica, skills: Habilidades, languages: Idiomas, current: Atual, other: Outras, level.beginner: Iniciante, level.intermediate: Intermediário, level.advanced: Avançado, level.expert: Especialista}\n"
+        "months: [Jan., Fev., Mar., Abr., Mai., Jun., Jul., Ago., Set., Out., Nov., Dez.]\n"
+        "date_format: '{month} de {year}'\n"
+    ),
+    "i18n/en.yml.example": (
+        "schema_version: 1\nlocale: en\n"
+        "labels: {summary: Summary, experience: Professional Experience, education: Education, skills: Skills, languages: Languages, current: Present, other: Other, level.beginner: Beginner, level.intermediate: Intermediate, level.advanced: Advanced, level.expert: Expert}\n"
+        "months: [Jan, Feb, Mar, Apr, May, Jun, Jul, Aug, Sep, Oct, Nov, Dec]\n"
+        "date_format: '{month} {year}'\n"
     ),
 }
 DATABASE_RELATIVE_PATH = Path(".seriemacv/index/seriemacv.db")
@@ -269,8 +284,10 @@ def create_project(
     for relative_directory in PROJECT_DIRECTORIES:
         (project_path / relative_directory).mkdir(parents=True, exist_ok=True)
     for relative_path, content in PROJECT_ARTIFACTS.items():
+        (project_path / relative_path).parent.mkdir(parents=True, exist_ok=True)
         _atomic_write(project_path / relative_path, content)
     for relative_path, content in PROJECT_EXAMPLES.items():
+        (project_path / relative_path).parent.mkdir(parents=True, exist_ok=True)
         _atomic_write(project_path / relative_path, content)
 
     config = (

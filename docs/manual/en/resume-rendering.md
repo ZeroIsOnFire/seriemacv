@@ -3,12 +3,14 @@
 [Back to the complete guide](index.md) · [Português](../pt-BR/renderizacao.md)
 
 Resume generation is a read-only projection of canonical `career.yml` facts plus a
-complete `career.locales/<locale>.yml` editorial document. Each output
-is written atomically to a fixed path under `exports/`.
+complete `career.locales/<locale>.yml` editorial document and the application catalog
+in `i18n/<locale>.yml`. Each output is written atomically to a fixed path under
+`exports/`.
 
 ## Structured variants
 
-Static, reusable wording remains in `career.locales/`. A job-specific variant uses
+Reusable career wording remains in `career.locales/`; fixed application labels,
+months, levels, and date formatting remain in `i18n/`. A job-specific variant uses
 this separate layout:
 
 ```text
@@ -21,7 +23,7 @@ resume/variants/<id>/
 
 `variant.yml` may reference a preserved `job_id`, choose a style, and select or
 order canonical experience, education, and skill IDs. Files under `locales/` are
-partial editorial overrides: omitted fields inherit the static career locale. They
+partial editorial overrides: omitted fields inherit the career locale. They
 cannot change names, contacts, employers, institutions, dates, or other canonical
 facts. A tailored summary or highlights require `evidence_ids` that exist and are
 marked `verified: true` in `career.yml`.
@@ -36,7 +38,7 @@ seriemacv resume render .\my-career --variant platform-role --language en --form
 Variant artifacts use `exports/resume.<variant>.<locale>.<ext>` and never overwrite
 the base resume. Style precedence is `--style`, then the variant style, then the
 project default. A variant locale is optional; without one, selection and ordering
-still apply while all wording comes from the static locale.
+still apply while all career wording comes from `career.locales/<locale>.yml`.
 
 ## List styles
 

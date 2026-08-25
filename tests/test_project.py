@@ -8,6 +8,7 @@ from pathlib import Path
 
 from ruamel.yaml import YAML
 
+from seriemacv.career import CareerLocaleDocument, I18nDocument
 from seriemacv.jobs import load_yaml_payload
 from seriemacv.project import (
     PROJECT_ARTIFACTS,
@@ -37,6 +38,14 @@ class CreateProjectTests(unittest.TestCase):
             self.assertTrue((project_path / "job.yml.example").is_file())
             self.assertTrue((project_path / "variant.yml.example").is_file())
             self.assertTrue((project_path / "variant-locale.yml.example").is_file())
+            self.assertTrue((project_path / "i18n" / "pt-BR.yml").is_file())
+            self.assertTrue((project_path / "i18n" / "en.yml").is_file())
+            self.assertNotIn(
+                "catalog:",
+                (project_path / "career.locales" / "pt-BR.yml").read_text(
+                    encoding="utf-8"
+                ),
+            )
             self.assertIn(
                 "resume_style: clean",
                 (project_path / "seriemacv.yml.example").read_text(encoding="utf-8"),
@@ -54,6 +63,7 @@ class CreateProjectTests(unittest.TestCase):
 
     def test_repository_examples_match_init_templates(self) -> None:
         repository_path = Path(__file__).resolve().parents[1]
+        yaml = YAML(typ="safe")
 
         self.assertEqual(
             (repository_path / "examples" / "career.yml").read_text(encoding="utf-8"),
@@ -73,7 +83,20 @@ class CreateProjectTests(unittest.TestCase):
             ),
             PROJECT_EXAMPLES["variant-locale.yml.example"],
         )
-        yaml = YAML(typ="safe")
+        for locale in ("pt-BR", "en"):
+            career_locale = (
+                repository_path / "examples" / f"career.locales.{locale}.yml"
+            ).read_text(encoding="utf-8")
+            i18n = (
+                repository_path / "examples" / f"i18n.{locale}.yml"
+            ).read_text(encoding="utf-8")
+            self.assertEqual(
+                career_locale,
+                PROJECT_EXAMPLES[f"career.locales/{locale}.yml.example"],
+            )
+            self.assertEqual(i18n, PROJECT_EXAMPLES[f"i18n/{locale}.yml.example"])
+            CareerLocaleDocument.model_validate(yaml.load(career_locale))
+            I18nDocument.model_validate(yaml.load(i18n))
         ResumeVariant.model_validate(
             yaml.load(PROJECT_EXAMPLES["variant.yml.example"])
         )

@@ -3,13 +3,15 @@
 [Voltar ao guia completo](index.md) · [English](../en/resume-rendering.md)
 
 A geração de currículo é uma projeção somente leitura dos fatos em `career.yml` e
-do documento editorial em `career.locales/<locale>.yml`.
-Cada saída é escrita atomicamente em um caminho fixo dentro de `exports/`.
+do documento editorial em `career.locales/<locale>.yml`, usando o catálogo da
+aplicação em `i18n/<locale>.yml`. Cada saída é escrita atomicamente em um caminho
+fixo dentro de `exports/`.
 
 ## Variantes estruturadas
 
-O texto estático e reutilizável permanece em `career.locales/`. Uma variante de vaga
-usa a estrutura separada:
+O texto profissional reutilizável permanece em `career.locales/`; rótulos fixos,
+meses, níveis e formato de data ficam em `i18n/`. Uma variante de vaga usa a estrutura
+separada:
 
 ```text
 resume/variants/<id>/
@@ -21,7 +23,7 @@ resume/variants/<id>/
 
 `variant.yml` pode referenciar um `job_id` preservado, escolher um estilo e selecionar
 ou ordenar IDs canônicos de experiência, formação e habilidades. Os arquivos em
-`locales/` são overrides editoriais parciais: campos omitidos herdam o locale estático
+`locales/` são overrides editoriais parciais: campos omitidos herdam o locale
 de carreira. Eles não podem alterar nome, contatos, empresas, instituições, datas ou
 outros fatos canônicos. Resumos ou destaques direcionados exigem `evidence_ids` que
 existam e estejam marcados como `verified: true` em `career.yml`.
@@ -36,7 +38,8 @@ seriemacv resume render .\minha-carreira --variant vaga-plataforma --language pt
 Artefatos de variante usam `exports/resume.<variante>.<locale>.<ext>` e nunca
 sobrescrevem o currículo-base. A precedência de estilo é `--style`, depois o estilo
 da variante e, por fim, o padrão do projeto. O locale de variante é opcional; sem ele,
-a seleção e a ordem ainda se aplicam, mas todo o texto vem do locale estático.
+a seleção e a ordem ainda se aplicam, mas todo o texto profissional vem de
+`career.locales/<locale>.yml`.
 
 ## Listar estilos
 

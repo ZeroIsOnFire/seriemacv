@@ -45,9 +45,12 @@ resume_style: modern
 resume_color: "#647D74"
 ```
 
-`resume_language` traduz somente os rótulos mantidos pelo seriemaCV, como títulos de
-seção, meses, níveis de competência e “Atual”. O conteúdo do usuário nunca é
-traduzido.
+`resume_language` seleciona `career.locales/<locale>.yml`, que contém os textos do
+currículo do usuário, e `i18n/<locale>.yml`, que contém títulos de seção, meses,
+níveis, “Atual” e `date_format` do seriemaCV. Para adicionar um idioma como `es`, crie
+`career.locales/es.yml` e `i18n/es.yml`; nenhuma alteração de código é necessária.
+Antes de renderizar, execute
+`seriemacv career locale validate <projeto> --language es`.
 
 Projetos criados antes de `resume_style` ou `resume_color` continuam compatíveis e usam
 `clean` e o verde do mascote `#647D74`. Campos desconhecidos na configuração são

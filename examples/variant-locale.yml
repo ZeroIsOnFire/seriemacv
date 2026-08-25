@@ -1,4 +1,4 @@
-# Partial job-specific overrides; omitted content inherits the static locale.
+# Partial job-specific overrides; omitted content inherits the career locale.
 schema_version: 1
 locale: en
 evidence_ids: [example-service]

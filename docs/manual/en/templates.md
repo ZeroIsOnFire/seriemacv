@@ -23,7 +23,8 @@ seriemacv template show .\my-career variant-locale
 ```
 
 The first template describes selection, order, job linkage, and style. The second
-describes partial job-specific wording layered over a static `career.locales` file.
+describes partial job-specific wording layered over a `career.locales` file; it does
+not contain application translations from `i18n/`.
 Repository copies live in `examples/variant.yml` and `examples/variant-locale.yml`.
 
 ## Safe workflow with an external tool

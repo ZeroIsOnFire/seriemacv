@@ -24,6 +24,7 @@ from ruamel.yaml.error import YAMLError
 
 CAREER_FILE = "career.yml"
 LOCALES_DIRECTORY = "career.locales"
+I18N_DIRECTORY = "i18n"
 _ID_PATTERN = re.compile(r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
 _YEAR_MONTH_PATTERN = re.compile(r"^\d{4}-(0[1-9]|1[0-2])$")
 _LOCALE_PATTERN = re.compile(r"^[A-Za-z]{2,8}(?:-[A-Za-z0-9]{2,8})*$")
@@ -286,6 +287,20 @@ class LocaleCatalog(StrictModel):
         return self
 
 
+class I18nDocument(LocaleCatalog):
+    """Project-owned translations for labels, months, and date formatting."""
+
+    schema_version: Literal[1]
+    locale: str
+
+    @field_validator("locale")
+    @classmethod
+    def valid_locale(cls, value: str) -> str:
+        if not _LOCALE_PATTERN.fullmatch(value):
+            raise ValueError("must be a BCP 47 locale identifier")
+        return value
+
+
 class LocalizedProfile(StrictModel):
     title: str = ""
     location: str = ""
@@ -317,7 +332,6 @@ class LocalizedSkill(StrictModel):
 class CareerLocaleDocument(StrictModel):
     schema_version: Literal[1]
     locale: str
-    catalog: LocaleCatalog
     profile: LocalizedProfile = Field(default_factory=LocalizedProfile)
     summary: str = ""
     experience: dict[str, LocalizedExperience] = Field(default_factory=dict)
@@ -429,6 +443,29 @@ def list_locales(project_path: Path) -> list[str]:
     return sorted(path.stem for path in directory.glob("*.yml") if _LOCALE_PATTERN.fullmatch(path.stem))
 
 
+def i18n_path(project_path: Path, locale: str) -> Path:
+    if not _LOCALE_PATTERN.fullmatch(locale):
+        raise ValueError(f"Invalid locale identifier: {locale}")
+    return project_path / I18N_DIRECTORY / f"{locale}.yml"
+
+
+def load_i18n_catalog(
+    project_path: Path,
+    locale: str,
+) -> LocaleCatalog:
+    path = i18n_path(project_path, locale)
+    if path.is_file():
+        document = I18nDocument.model_validate(_load_yaml(path))
+        if document.locale != locale:
+            raise ValueError(
+                f"i18n document declares '{document.locale}', expected '{locale}'"
+            )
+        return LocaleCatalog.model_validate(
+            document.model_dump(exclude={"schema_version", "locale"})
+        )
+    raise ValueError(f"i18n document is missing: {path.relative_to(project_path)}")
+
+
 def load_localized_career(project_path: Path, locale: str) -> CareerDocument:
     facts = CareerFactsDocument.model_validate(_load_yaml(project_path / CAREER_FILE))
     path = locale_path(project_path, locale)
@@ -438,6 +475,7 @@ def load_localized_career(project_path: Path, locale: str) -> CareerDocument:
     if translated.locale != locale:
         raise ValueError(f"locale document declares '{translated.locale}', expected '{locale}'")
     _ensure_locale_references(facts, translated)
+    catalog = load_i18n_catalog(project_path, locale)
     return CareerDocument.model_validate({
         "schema_version": 2,
         "profile": {**facts.profile.model_dump(), **translated.profile.model_dump()},
@@ -457,7 +495,7 @@ def load_localized_career(project_path: Path, locale: str) -> CareerDocument:
         "evidence": [item.model_dump() for item in facts.evidence],
         "answers": [item.model_dump() for item in facts.answers],
         "stories": [item.model_dump() for item in facts.stories],
-        "catalog": translated.catalog.model_dump(),
+        "catalog": catalog.model_dump(),
     })
 
 
