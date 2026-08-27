@@ -15,8 +15,8 @@ from seriemacv.applications import (
 )
 from seriemacv.jobs import load_job, load_jobs
 from seriemacv.matching import match_job
-from seriemacv.project import load_project_configuration
 from seriemacv.privacy import redact_sensitive_text
+from seriemacv.project import load_project_configuration
 
 
 def create_studio_server(

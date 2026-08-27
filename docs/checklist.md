@@ -109,10 +109,10 @@ mesmo núcleo e preservam a carreira canônica.
 - [ ] Implementar armazenamento seguro de segredos.
 - [x] Redigir tokens e dados sensíveis em logs.
 - [x] Exibir o contexto enviado a provedores de IA.
-- [ ] Impedir telemetria de currículo por padrão.
+- [x] Impedir telemetria de currículo por padrão.
 - [x] Isolar perfis e dados do navegador.
-- [ ] Garantir que diagnósticos não exportem artefatos pessoais por padrão.
-- [ ] Adicionar formatter, linter e análise de tipos compatíveis com a stack.
+- [x] Garantir que diagnósticos não exportem artefatos pessoais por padrão.
+- [x] Adicionar formatter, linter e análise de tipos compatíveis com a stack.
 - [x] Configurar CI para testes e verificações estáticas.
 - [x] Documentar instalação, uso local e comandos oficiais em guia bilíngue por funcionalidade.
-- [ ] Revisar dependências e políticas de atualização.
+- [x] Revisar dependências e políticas de atualização.

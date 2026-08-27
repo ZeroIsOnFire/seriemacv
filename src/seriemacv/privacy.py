@@ -5,11 +5,16 @@ from __future__ import annotations
 import re
 
 REDACTED = "<redacted>"
+TELEMETRY_ENABLED = False
 
 _EMAIL = re.compile(r"(?i)\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b")
-_PHONE = re.compile(r"(?<!\w)(?:\+?\d{1,3}[ .-])?(?:\(?\d{2,3}\)?[ .-])?\d{3,5}[ .-]\d{4}(?!\w)")
+_PHONE = re.compile(
+    r"(?<!\w)(?:\+?\d{1,3}[ .-])?(?:\(?\d{2,3}\)?[ .-])?\d{3,5}[ .-]\d{4}(?!\w)"
+)
 _BEARER = re.compile(r"(?i)\bbearer\s+[A-Z0-9._~+/=-]+")
-_AUTHORIZATION = re.compile(r"(?i)(\bauthorization\s*:\s*)(?:bearer\s+[^\s,;]+|[^\s,;]+)")
+_AUTHORIZATION = re.compile(
+    r"(?i)(\bauthorization\s*:\s*)(?:bearer\s+[^\s,;]+|[^\s,;]+)"
+)
 _SENSITIVE_VALUE = re.compile(
     r"(?ix)(\b(?:api[_ -]?key|access[_ -]?token|token|secret|password|passwd|cookie|"
     r"credential(?:s)?|email|e-mail|phone|telephone|salary|compensation|pay|legal|"

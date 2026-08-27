@@ -42,6 +42,17 @@ Technical errors redact credentials and personal values, including tokens, passw
 cookies, email addresses, phone numbers, and sensitive application fields. The field
 name remains visible so the problem can still be located.
 
+## Share a diagnostic bundle safely
+
+```powershell
+seriemacv diagnostics bundle .\my-career --output .\diagnostics.zip
+```
+
+The ZIP contains only `diagnostics.json` with the seriemaCV version and redacted
+project-structure validation. It excludes career YAML, job and application records,
+exports, SQLite indexes, browser profiles, and AI request/response files. seriemaCV
+does not collect or send telemetry.
+
 Dates must use `YYYY-MM`, for example `2024-01`. Current records omit `end_date`.
 
 ## PDF says Chromium is missing

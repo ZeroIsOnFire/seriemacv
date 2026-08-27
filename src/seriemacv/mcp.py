@@ -20,9 +20,9 @@ from seriemacv.applications import (
 from seriemacv.evidence_search import search_verified_evidence
 from seriemacv.jobs import dump_job, load_job, load_jobs
 from seriemacv.matching import dump_match_report, match_job
+from seriemacv.privacy import redact_sensitive_text
 from seriemacv.project import load_project_configuration
 from seriemacv.proposals import create_proposal_request
-from seriemacv.privacy import redact_sensitive_text
 
 TOOLS = [
     {"name": "search_career_evidence", "description": "Search verified canonical career evidence.", "inputSchema": {"type": "object", "required": ["project_path"], "properties": {"project_path": {"type": "string"}, "query": {"type": "string"}, "tags": {"type": "array", "items": {"type": "string"}}, "experience_id": {"type": "string"}}}},

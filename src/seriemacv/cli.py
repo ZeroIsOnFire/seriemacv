@@ -39,6 +39,7 @@ from seriemacv.career import (
     validate_career,
     validate_locale,
 )
+from seriemacv.diagnostics import write_diagnostic_bundle
 from seriemacv.evidence_search import search_verified_evidence
 from seriemacv.jobs import (
     JOB_DIRECTORY,
@@ -54,6 +55,7 @@ from seriemacv.jobs import (
     validate_jobs,
 )
 from seriemacv.matching import dump_match_report, extract_requirements, match_job
+from seriemacv.privacy import redact_sensitive_text
 from seriemacv.project import (
     ProjectAlreadyExistsError,
     create_project,
@@ -61,7 +63,6 @@ from seriemacv.project import (
     load_template,
     validate_project,
 )
-from seriemacv.privacy import redact_sensitive_text
 from seriemacv.proposals import (
     apply_proposal,
     create_proposal_request,
@@ -103,6 +104,18 @@ def build_parser() -> argparse.ArgumentParser:
         "validate", help="Validate a local career project"
     )
     validate_parser.add_argument("path", nargs="?", type=Path, default=Path.cwd())
+
+    diagnostics_parser = subparsers.add_parser(
+        "diagnostics", help="Create a minimal diagnostic bundle without career data"
+    )
+    diagnostics_subparsers = diagnostics_parser.add_subparsers(
+        dest="diagnostics_command", required=True
+    )
+    diagnostics_bundle = diagnostics_subparsers.add_parser(
+        "bundle", help="Write redacted project-structure diagnostics to a ZIP file"
+    )
+    diagnostics_bundle.add_argument("path", type=Path)
+    diagnostics_bundle.add_argument("--output", type=Path, required=True)
 
     career_parser = subparsers.add_parser("career", help="Manage canonical career data")
     career_subparsers = career_parser.add_subparsers(dest="career_command", required=True)
@@ -450,6 +463,15 @@ def main(arguments: list[str] | None = None) -> int:
 
     if args.command == "studio":
         return _run_studio_command(args)
+
+    if args.command == "diagnostics":
+        try:
+            output_path = write_diagnostic_bundle(args.path, args.output)
+        except OSError as error:
+            _print_error(f"{args.output}: {error}")
+            return 1
+        print(f"Wrote diagnostic bundle: {output_path}")
+        return 0
 
     if args.command == "template":
         try:

@@ -26,5 +26,9 @@ jobs:
         run: python -m pip install '.[dev]'
       - name: Lint
         run: python -m ruff check src tests
+      - name: Check formatting
+        run: python -m ruff format --check src/seriemacv/diagnostics.py src/seriemacv/privacy.py tests/test_privacy.py
+      - name: Check types
+        run: python -m mypy src/seriemacv/diagnostics.py src/seriemacv/privacy.py
       - name: Test
         run: python -m unittest discover -s tests -v
