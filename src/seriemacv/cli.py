@@ -61,11 +61,13 @@ from seriemacv.project import (
     load_template,
     validate_project,
 )
+from seriemacv.privacy import redact_sensitive_text
 from seriemacv.proposals import (
     apply_proposal,
     create_proposal_request,
     diff_proposal,
     dump_proposal_diff,
+    dump_proposal_request,
     load_proposal_request,
     load_proposal_response,
     validate_proposal,
@@ -81,6 +83,10 @@ from seriemacv.variants import (
     validate_variant,
     validate_variants,
 )
+
+
+def _print_error(value: object) -> None:
+    print(redact_sensitive_text(value), file=sys.stderr)
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -207,6 +213,12 @@ def build_parser() -> argparse.ArgumentParser:
     application_ai_request.add_argument("id")
     application_ai_request.add_argument("--request-id", required=True)
     application_ai_request.add_argument("--output", type=Path, required=True)
+    application_ai_preview = applications_subparsers.add_parser(
+        "ai-preview", help="Print the exact minimal AI assistance context without writing it"
+    )
+    application_ai_preview.add_argument("path", type=Path)
+    application_ai_preview.add_argument("id")
+    application_ai_preview.add_argument("--request-id", required=True)
     application_ai_review = applications_subparsers.add_parser("ai-review", help="Validate and show an AI application response")
     application_ai_review.add_argument("path", type=Path)
     application_ai_review.add_argument("request", type=Path)
@@ -266,6 +278,14 @@ def build_parser() -> argparse.ArgumentParser:
     proposal_request.add_argument("--language", required=True)
     proposal_request.add_argument("--job-id")
     proposal_request.add_argument("--output", required=True, type=Path)
+    proposal_preview = proposal_subparsers.add_parser(
+        "preview", help="Print the exact proposal context without writing it"
+    )
+    proposal_preview.add_argument("path", type=Path)
+    proposal_preview.add_argument("--id", required=True)
+    proposal_preview.add_argument("--variant-id", required=True)
+    proposal_preview.add_argument("--language", required=True)
+    proposal_preview.add_argument("--job-id")
     proposal_review = proposal_subparsers.add_parser(
         "review", help="Validate a proposal response and print its granular diff"
     )
@@ -406,7 +426,7 @@ def main(arguments: list[str] | None = None) -> int:
                 resume_style=args.style,
             )
         except (OSError, ValueError, ProjectAlreadyExistsError) as error:
-            parser.error(str(error))
+            parser.error(redact_sensitive_text(error))
         print(f"Created seriemaCV project at {project_path}")
         return 0
 
@@ -435,14 +455,14 @@ def main(arguments: list[str] | None = None) -> int:
         try:
             print(load_template(args.path, args.name), end="")
         except OSError as error:
-            print(f"{args.path}: {error}", file=sys.stderr)
+            _print_error(f"{args.path}: {error}")
             return 1
         return 0
 
     errors = validate_project(args.path)
     if errors:
         for error in errors:
-            print(error, file=sys.stderr)
+            _print_error(error)
         return 1
     print(f"Valid seriemaCV project: {args.path.expanduser().resolve()}")
     return 0
@@ -458,7 +478,7 @@ def _run_career_command(args: argparse.Namespace) -> int:
         diagnostics = validate_locale(project_path, args.language)
         if diagnostics:
             for diagnostic in diagnostics:
-                print(diagnostic.format(project_path / "career.locales" / f"{args.language}.yml"), file=sys.stderr)
+                _print_error(diagnostic.format(project_path / "career.locales" / f"{args.language}.yml"))
             return 1
         print(f"Valid locale document: {args.language}")
         return 0
@@ -467,7 +487,7 @@ def _run_career_command(args: argparse.Namespace) -> int:
         diagnostics = validate_career(career_path)
         if diagnostics:
             for diagnostic in diagnostics:
-                print(diagnostic.format(career_path), file=sys.stderr)
+                _print_error(diagnostic.format(career_path))
             return 1
         print(f"Valid career document: {career_path}")
         return 0
@@ -527,7 +547,7 @@ def _run_career_command(args: argparse.Namespace) -> int:
         else:  # pragma: no cover - argparse guards this branch
             raise ValueError(f"Unknown career command: {args.career_command}")
     except (OSError, ValueError, ValidationError, YAMLError) as error:
-        print(f"{career_path}: {error}", file=sys.stderr)
+        _print_error(f"{career_path}: {error}")
         return 1
 
     print(f"Updated career document: {career_path}")
@@ -537,7 +557,7 @@ def _run_career_command(args: argparse.Namespace) -> int:
 def _run_proposal_command(args: argparse.Namespace) -> int:
     project_path = args.path.expanduser().resolve()
     try:
-        if args.proposal_command == "request":
+        if args.proposal_command in {"request", "preview"}:
             request = create_proposal_request(
                 project_path,
                 args.id,
@@ -545,6 +565,9 @@ def _run_proposal_command(args: argparse.Namespace) -> int:
                 args.language,
                 job_id=args.job_id,
             )
+            if args.proposal_command == "preview":
+                print(dump_proposal_request(request), end="")
+                return 0
             write_proposal_request(args.output.expanduser().resolve(), request)
             print(f"Wrote proposal request: {args.output.expanduser().resolve()}")
             return 0
@@ -553,14 +576,14 @@ def _run_proposal_command(args: argparse.Namespace) -> int:
         diagnostics = validate_proposal(project_path, request, response)
         if diagnostics:
             for diagnostic in diagnostics:
-                print(f"{args.response}: {diagnostic.path}: {diagnostic.message}", file=sys.stderr)
+                _print_error(f"{args.response}: {diagnostic.path}: {diagnostic.message}")
             return 1
         if args.proposal_command == "review":
             print(dump_proposal_diff(diff_proposal(response)), end="")
             return 0
         applied = apply_proposal(project_path, request, response, args.accept)
     except (OSError, ValueError, ValidationError, YAMLError) as error:
-        print(f"{project_path}: {error}", file=sys.stderr)
+        _print_error(f"{project_path}: {error}")
         return 1
     paths = [path for path in (applied.variant_path, applied.cover_letter_path) if path]
     print(f"Applied proposal items: {', '.join(args.accept)}")
@@ -594,11 +617,11 @@ def _run_resume_command(args: argparse.Namespace) -> int:
                 else validate_variants(project_path)
             )
         except (OSError, ValueError, ValidationError, YAMLError) as error:
-            print(f"{project_path}: {error}", file=sys.stderr)
+            _print_error(f"{project_path}: {error}")
             return 1
         if diagnostics:
             for diagnostic in diagnostics:
-                print(diagnostic.format(), file=sys.stderr)
+                _print_error(diagnostic.format())
             return 1
         target = args.id or "all"
         print(f"Valid resume variant(s): {target}")
@@ -610,12 +633,12 @@ def _run_resume_command(args: argparse.Namespace) -> int:
     diagnostics = validate_career(career_path)
     if diagnostics:
         for diagnostic in diagnostics:
-            print(diagnostic.format(career_path), file=sys.stderr)
+            _print_error(diagnostic.format(career_path))
         return 1
     try:
         configuration = load_project_configuration(project_path)
     except (OSError, ValueError, ValidationError, YAMLError) as error:
-        print(f"{configuration_path}: {error}", file=sys.stderr)
+        _print_error(f"{configuration_path}: {error}")
         return 1
     try:
         locale = args.language or configuration.resume_language
@@ -642,7 +665,7 @@ def _run_resume_command(args: argparse.Namespace) -> int:
             for output_format in args.format
         ]
     except (OSError, ResumeRenderError, ValueError, ValidationError, YAMLError) as error:
-        print(f"{career_path}: {error}", file=sys.stderr)
+        _print_error(f"{career_path}: {error}")
         return 1
     print(f"Rendered {', '.join(item.upper() for item in args.format)} resume using {style_id}: {', '.join(str(path) for path in output_paths)}")
     return 0
@@ -665,7 +688,7 @@ def _run_applications_command(args: argparse.Namespace) -> int:
             diagnostics = validate_applications(project_path)
             if diagnostics:
                 for path, message in diagnostics:
-                    print(f"{path}: {message}", file=sys.stderr)
+                    _print_error(f"{path}: {message}")
                 return 1
             print(f"Valid application document(s): {project_path / 'applications'}")
             return 0
@@ -692,6 +715,9 @@ def _run_applications_command(args: argparse.Namespace) -> int:
             write_ai_request(args.output.expanduser().resolve(), request)
             print(f"Wrote application AI request: {args.output.expanduser().resolve()}")
             return 0
+        if args.applications_command == "ai-preview":
+            print(dump_ai(create_ai_request(project_path, args.request_id, args.id)), end="")
+            return 0
         if args.applications_command == "ai-review":
             request = load_ai_request(args.request.expanduser().resolve())
             response = load_ai_response(args.response.expanduser().resolve())
@@ -708,7 +734,7 @@ def _run_applications_command(args: argparse.Namespace) -> int:
             return 0
         raise ValueError(f"Unknown applications command: {args.applications_command}")
     except (OSError, ValueError, ValidationError, YAMLError) as error:
-        print(f"{project_path / 'applications'}: {error}", file=sys.stderr)
+        _print_error(f"{project_path / 'applications'}: {error}")
         return 1
 
 
@@ -723,7 +749,7 @@ def _run_jobs_command(args: argparse.Namespace) -> int:
                 diagnostics = validate_jobs(project_path)
             if diagnostics:
                 for invalid_job_path, diagnostic in diagnostics:
-                    print(diagnostic.format(invalid_job_path), file=sys.stderr)
+                    _print_error(diagnostic.format(invalid_job_path))
                 return 1
             print(f"Valid job document(s): {project_path / JOB_DIRECTORY}")
             return 0
@@ -737,7 +763,7 @@ def _run_jobs_command(args: argparse.Namespace) -> int:
             diagnostics = validate_job(document_path)
             if diagnostics:
                 for diagnostic in diagnostics:
-                    print(diagnostic.format(document_path), file=sys.stderr)
+                    _print_error(diagnostic.format(document_path))
                 return 1
             print(dump_job(load_job(document_path)), end="")
             return 0
@@ -747,7 +773,7 @@ def _run_jobs_command(args: argparse.Namespace) -> int:
             diagnostics = validate_job(document_path)
             if diagnostics:
                 for diagnostic in diagnostics:
-                    print(diagnostic.format(document_path), file=sys.stderr)
+                    _print_error(diagnostic.format(document_path))
                 return 1
             from io import StringIO
 
@@ -774,7 +800,7 @@ def _run_jobs_command(args: argparse.Namespace) -> int:
 
         saved_job_path = create_job(project_path, payload, source)
     except (OSError, ValueError, ValidationError, YAMLError) as error:
-        print(f"{project_path / JOB_DIRECTORY}: {error}", file=sys.stderr)
+        _print_error(f"{project_path / JOB_DIRECTORY}: {error}")
         return 1
 
     print(f"Saved job document: {saved_job_path}")
@@ -788,7 +814,7 @@ def _run_match_command(args: argparse.Namespace) -> int:
         diagnostics = validate_job(document_path)
         if diagnostics:
             for diagnostic in diagnostics:
-                print(diagnostic.format(document_path), file=sys.stderr)
+                _print_error(diagnostic.format(document_path))
             return 1
         configuration = load_project_configuration(project_path)
         report = match_job(
@@ -797,7 +823,7 @@ def _run_match_command(args: argparse.Namespace) -> int:
             weights=configuration.match_weights,
         )
     except (OSError, ValueError, ValidationError, YAMLError) as error:
-        print(f"{project_path}: {error}", file=sys.stderr)
+        _print_error(f"{project_path}: {error}")
         return 1
     print(dump_match_report(report), end="")
     return 0
@@ -807,7 +833,7 @@ def _run_studio_command(args: argparse.Namespace) -> int:
     try:
         server = create_studio_server(args.path, port=args.port)
     except OSError as error:
-        print(f"{args.path}: {error}", file=sys.stderr)
+        _print_error(f"{args.path}: {error}")
         return 1
     print(f"seriemaCV Studio: http://127.0.0.1:{server.server_port}")
     try:

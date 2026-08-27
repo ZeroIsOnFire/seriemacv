@@ -12,6 +12,7 @@ from seriemacv.application_ai import (
     ApplicationAiResponse,
     apply_ai_response,
     create_ai_request,
+    dump_ai,
     validate_ai_response,
 )
 from seriemacv.applications import (
@@ -23,7 +24,7 @@ from seriemacv.applications import (
     load_application,
     update_status,
 )
-from seriemacv.browser import BrowserField, _questions_for
+from seriemacv.browser import BrowserField, _questions_for, browser_profile_path
 from seriemacv.cli import main
 from seriemacv.project import create_project
 
@@ -79,6 +80,14 @@ class ApplicationTests(unittest.TestCase):
         self.assertEqual([item.id for item in questions], ["question-salary"])
         self.assertTrue(questions[0].sensitive)
 
+    def test_browser_profile_is_scoped_to_its_project(self) -> None:
+        other_project = Path(self.temporary.name) / "other-career"
+        create_project(other_project, project_name="Other career")
+
+        self.assertEqual(browser_profile_path(self.project), self.project / ".seriemacv" / "browser")
+        self.assertEqual(browser_profile_path(other_project), other_project / ".seriemacv" / "browser")
+        self.assertNotEqual(browser_profile_path(self.project), browser_profile_path(other_project))
+
     def test_cli_creates_lists_and_updates_application(self) -> None:
         with redirect_stdout(StringIO()):
             result = main([
@@ -116,3 +125,20 @@ class ApplicationTests(unittest.TestCase):
         sensitive = ApplicationAiResponse(request_id="role-ai", answers=[ApplicationAiAnswer(id="bad", question_id="question-salary", answer="100", confidence="low")])
         with self.assertRaisesRegex(ValueError, "sensitive"):
             validate_ai_response(self.project, request, sensitive)
+
+    def test_cli_ai_preview_matches_request_without_writing(self) -> None:
+        create_application(self.project, ApplicationDocument(id="role-application", job_id="role"))
+        add_questions(self.project, "role-application", [
+            ApplicationQuestion(id="question-why", field_id="why", label="Why this role?"),
+        ])
+        before = {path.relative_to(self.project) for path in self.project.rglob("*")}
+
+        with redirect_stdout(StringIO()) as output:
+            result = main([
+                "applications", "ai-preview", str(self.project), "role-application",
+                "--request-id", "role-ai",
+            ])
+
+        self.assertEqual(result, 0)
+        self.assertEqual(output.getvalue(), dump_ai(create_ai_request(self.project, "role-ai", "role-application")))
+        self.assertEqual(before, {path.relative_to(self.project) for path in self.project.rglob("*")})

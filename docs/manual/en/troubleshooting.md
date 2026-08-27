@@ -38,6 +38,10 @@ Read diagnostics as `file:line:column: field.path: message`. Common causes are a
 empty name/title/email, invalid indentation, an unknown field, duplicate IDs, an
 invalid date, or an evidence reference to a missing experience.
 
+Technical errors redact credentials and personal values, including tokens, passwords,
+cookies, email addresses, phone numbers, and sensitive application fields. The field
+name remains visible so the problem can still be located.
+
 Dates must use `YYYY-MM`, for example `2024-01`. Current records omit `end_date`.
 
 ## PDF says Chromium is missing

@@ -9,6 +9,18 @@ itens aceitos explicitamente.
 
 ## Criar um pedido
 
+Visualize o YAML local exato antes de criar ou compartilhar um pedido:
+
+```powershell
+seriemacv proposal preview .\minha-carreira `
+  --id plataforma-tailoring `
+  --variant-id vaga-plataforma `
+  --language pt-BR
+```
+
+`preview` é somente leitura: não grava arquivo nem envia dados. Seu YAML é idêntico
+ao pedido gravado pelo comando abaixo.
+
 ```powershell
 seriemacv proposal request .\minha-carreira `
   --id plataforma-tailoring `

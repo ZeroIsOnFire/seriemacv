@@ -118,6 +118,22 @@ class ProposalTests(unittest.TestCase):
             self.assertEqual(result, 1)
             self.assertIn("accepts unknown proposal item ids: missing", error.getvalue())
 
+    def test_cli_preview_matches_request_file_without_writing(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            project_path = _complete_project(temporary_directory)
+            request_path = project_path / "request.yml"
+            with redirect_stdout(StringIO()) as output:
+                result = main([
+                    "proposal", "preview", str(project_path), "--id", "backend-tailor",
+                    "--variant-id", "backend-role", "--language", "en",
+                ])
+
+            request = create_proposal_request(project_path, "backend-tailor", "backend-role", "en")
+            write_proposal_request(request_path, request)
+
+            self.assertEqual(result, 0)
+            self.assertEqual(output.getvalue(), request_path.read_text(encoding="utf-8"))
+
     def test_job_tailoring_request_includes_match_and_links_the_created_variant(self) -> None:
         with tempfile.TemporaryDirectory() as temporary_directory:
             project_path = _complete_project(temporary_directory)

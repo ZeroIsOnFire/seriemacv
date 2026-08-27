@@ -32,11 +32,16 @@ and verified evidence; it excludes contacts, passwords, cookies, and form values
 
 ```powershell
 seriemacv applications prepare .\my-career platform-application --interactive --ai-assisted
+seriemacv applications ai-preview .\my-career platform-application --request-id platform-form
 seriemacv applications ai-request .\my-career platform-application --request-id platform-form --output .\platform-form-request.yml
 # Ask Codex, Claude Code, or another local agent to return a response YAML.
 seriemacv applications ai-review .\my-career .\platform-form-request.yml .\platform-form-response.yml
 seriemacv applications ai-apply .\my-career .\platform-form-request.yml .\platform-form-response.yml --accept why-answer --accept cover-letter
 ```
+
+`ai-preview` prints the exact request YAML without writing it or sending data. Review
+it before sharing it with an external agent; the subsequent `ai-request` file has the
+same content.
 
 The response can map semantic field names and propose a separate cover letter, but
 every accepted item is selected individually. The agent cannot propose answers for

@@ -107,12 +107,12 @@ mesmo núcleo e preservam a carreira canônica.
 ## Privacidade, segurança e entrega
 
 - [ ] Implementar armazenamento seguro de segredos.
-- [ ] Redigir tokens e dados sensíveis em logs.
-- [ ] Exibir o contexto enviado a provedores de IA.
+- [x] Redigir tokens e dados sensíveis em logs.
+- [x] Exibir o contexto enviado a provedores de IA.
 - [ ] Impedir telemetria de currículo por padrão.
-- [ ] Isolar perfis e dados do navegador.
+- [x] Isolar perfis e dados do navegador.
 - [ ] Garantir que diagnósticos não exportem artefatos pessoais por padrão.
 - [ ] Adicionar formatter, linter e análise de tipos compatíveis com a stack.
-- [ ] Configurar CI para testes e verificações estáticas.
+- [x] Configurar CI para testes e verificações estáticas.
 - [x] Documentar instalação, uso local e comandos oficiais em guia bilíngue por funcionalidade.
 - [ ] Revisar dependências e políticas de atualização.

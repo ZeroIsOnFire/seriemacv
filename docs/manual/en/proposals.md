@@ -9,6 +9,18 @@ accepted items.
 
 ## Create a request
 
+Preview the exact local YAML before creating or sharing a request:
+
+```powershell
+seriemacv proposal preview .\my-career `
+  --id platform-tailor `
+  --variant-id platform-role `
+  --language en
+```
+
+`preview` is read-only: it neither writes a file nor sends data. Its YAML is identical
+to the request written by the command below.
+
 ```powershell
 seriemacv proposal request .\my-career `
   --id platform-tailor `

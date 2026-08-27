@@ -22,6 +22,7 @@ from seriemacv.jobs import dump_job, load_job, load_jobs
 from seriemacv.matching import dump_match_report, match_job
 from seriemacv.project import load_project_configuration
 from seriemacv.proposals import create_proposal_request
+from seriemacv.privacy import redact_sensitive_text
 
 TOOLS = [
     {"name": "search_career_evidence", "description": "Search verified canonical career evidence.", "inputSchema": {"type": "object", "required": ["project_path"], "properties": {"project_path": {"type": "string"}, "query": {"type": "string"}, "tags": {"type": "array", "items": {"type": "string"}}, "experience_id": {"type": "string"}}}},
@@ -41,12 +42,19 @@ def main() -> int:
             request = json.loads(line)
             response = _handle(request)
         except (ValueError, OSError, KeyError) as error:
-            response = {"jsonrpc": "2.0", "id": None, "error": {"code": -32602, "message": str(error)}}
+            response = _error_response(None, error)
         print(json.dumps(response), flush=True)
     return 0
 
 
 def _handle(request: dict[str, Any]) -> dict[str, Any]:
+    try:
+        return _handle_request(request)
+    except (ValueError, OSError, KeyError) as error:
+        return _error_response(request.get("id"), error)
+
+
+def _handle_request(request: dict[str, Any]) -> dict[str, Any]:
     method = request.get("method")
     request_id = request.get("id")
     if method == "initialize":
@@ -58,6 +66,14 @@ def _handle(request: dict[str, Any]) -> dict[str, Any]:
         result = _call(request["params"]["name"], arguments)
         return {"jsonrpc": "2.0", "id": request_id, "result": {"content": [{"type": "text", "text": result}]}}
     return {"jsonrpc": "2.0", "id": request_id, "error": {"code": -32601, "message": f"Unknown method: {method}"}}
+
+
+def _error_response(request_id: object, error: Exception) -> dict[str, Any]:
+    return {
+        "jsonrpc": "2.0",
+        "id": request_id,
+        "error": {"code": -32602, "message": redact_sensitive_text(error)},
+    }
 
 
 def _call(name: str, arguments: dict[str, Any]) -> str:

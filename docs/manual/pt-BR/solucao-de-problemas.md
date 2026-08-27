@@ -36,6 +36,10 @@ Leia o diagnóstico como `arquivo:linha:coluna: caminho.do.campo: mensagem`. Cau
 comuns são nome/cargo/e-mail vazios, indentação inválida, campo desconhecido, IDs
 duplicados, data inválida ou evidência apontando para uma experiência inexistente.
 
+Erros técnicos ocultam credenciais e valores pessoais, incluindo tokens, senhas,
+cookies, e-mails, telefones e campos sensíveis de candidatura. O nome do campo
+permanece visível para que o problema ainda possa ser localizado.
+
 Datas devem usar `YYYY-MM`, como `2024-01`. Registros atuais omitem `end_date`.
 
 ## O PDF informa que o Chromium está ausente

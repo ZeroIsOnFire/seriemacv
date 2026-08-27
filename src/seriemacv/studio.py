@@ -16,6 +16,7 @@ from seriemacv.applications import (
 from seriemacv.jobs import load_job, load_jobs
 from seriemacv.matching import match_job
 from seriemacv.project import load_project_configuration
+from seriemacv.privacy import redact_sensitive_text
 
 
 def create_studio_server(
@@ -59,7 +60,7 @@ def create_studio_server(
                 else:
                     self.send_error(HTTPStatus.NOT_FOUND, "Not found")
             except (OSError, ValueError) as error:
-                self._json({"error": str(error)}, status=HTTPStatus.BAD_REQUEST)
+                self._json({"error": redact_sensitive_text(error)}, status=HTTPStatus.BAD_REQUEST)
 
         def _html(self, content: str) -> None:
             encoded = content.encode("utf-8")

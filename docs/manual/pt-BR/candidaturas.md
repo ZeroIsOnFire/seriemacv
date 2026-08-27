@@ -33,11 +33,16 @@ e valores de formulário.
 
 ```powershell
 seriemacv applications prepare .\minha-carreira candidatura-plataforma --interactive --ai-assisted
+seriemacv applications ai-preview .\minha-carreira candidatura-plataforma --request-id formulario-plataforma
 seriemacv applications ai-request .\minha-carreira candidatura-plataforma --request-id formulario-plataforma --output .\formulario-request.yml
 # Peça a Codex, Claude Code ou outro agente local que devolva um YAML de resposta.
 seriemacv applications ai-review .\minha-carreira .\formulario-request.yml .\formulario-response.yml
 seriemacv applications ai-apply .\minha-carreira .\formulario-request.yml .\formulario-response.yml --accept resposta-por-que --accept carta
 ```
+
+`ai-preview` imprime o YAML exato do pedido sem gravá-lo nem enviar dados. Revise-o
+antes de compartilhá-lo com um agente externo; o arquivo de `ai-request` seguinte tem
+o mesmo conteúdo.
 
 A resposta pode mapear nomes semânticos de campos e propor uma carta separada, mas
 cada item aceito é selecionado individualmente. O agente não pode propor respostas

@@ -408,7 +408,12 @@ def load_proposal_response(path: Path) -> ProposalResponse:
 
 
 def write_proposal_request(path: Path, request: ProposalRequest) -> None:
-    _write_yaml(path, request)
+    _atomic_write(path, dump_proposal_request(request))
+
+
+def dump_proposal_request(request: ProposalRequest) -> str:
+    """Serialize the exact local context that may be shared with an external agent."""
+    return _dump_yaml(request.model_dump(mode="python"))
 
 
 def dump_proposal_diff(diffs: list[ProposalDiff]) -> str:
