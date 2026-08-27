@@ -156,10 +156,10 @@ seriemacv career search-evidence .\my-career reliability
 seriemacv career search-evidence .\my-career --tag python --experience-id example-company-senior
 ```
 
-The local lexical index is rebuilt from `career.yml` before every search. Searches
-only return evidence marked `verified: true`; pending evidence is never included in
-results. Provide text, one or more `--tag` filters, or `--experience-id`. Repeated
-tags are combined, and the output is validated YAML.
+Search reads `career.yml` directly. It only returns evidence marked `verified: true`;
+pending evidence is never included in results. Provide text, one or more `--tag`
+filters, or `--experience-id`. Repeated tags are combined, and the output is
+validated YAML.
 
 ## Inspect sections
 

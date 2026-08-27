@@ -155,10 +155,10 @@ seriemacv career search-evidence .\minha-carreira confiabilidade
 seriemacv career search-evidence .\minha-carreira --tag python --experience-id empresa-exemplo-senior
 ```
 
-O índice lexical local é reconstruído a partir de `career.yml` antes de cada busca.
-Ela retorna somente evidências marcadas como `verified: true`; evidências pendentes
-nunca aparecem nos resultados. Informe texto, um ou mais filtros `--tag` ou
-`--experience-id`. Tags repetidas são combinadas, e a saída é YAML validado.
+A busca lê `career.yml` diretamente. Ela retorna somente evidências marcadas como
+`verified: true`; evidências pendentes nunca aparecem nos resultados. Informe texto,
+um ou mais filtros `--tag` ou `--experience-id`. Tags repetidas são combinadas, e a
+saída é YAML validado.
 
 ## Inspecionar seções
 

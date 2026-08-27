@@ -11,7 +11,7 @@ registrada.
 - [x] Criar e validar um projeto de carreira local.
 - [x] Criar diretórios e artefatos canônicos iniciais.
 - [x] Usar escrita atômica para arquivos gerados.
-- [x] Criar índice SQLite local com migração inicial.
+- [x] Manter busca lexical direta no YAML, sem índice SQLite.
 - [x] Abrir um projeto validado por uma API tipada.
 - [x] Validar `seriemacv.yml` com YAML seguro e schema estrito.
 - [x] Impedir sobrescrita de um projeto existente.

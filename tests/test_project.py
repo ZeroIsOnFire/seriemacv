@@ -1,9 +1,7 @@
 from __future__ import annotations
 
-import sqlite3
 import tempfile
 import unittest
-from contextlib import closing
 from pathlib import Path
 
 from ruamel.yaml import YAML
@@ -203,7 +201,7 @@ class ValidateProjectTests(unittest.TestCase):
 
 
 class OpenProjectTests(unittest.TestCase):
-    def test_opens_a_valid_project_and_its_local_index(self) -> None:
+    def test_opens_a_valid_yaml_project_without_a_local_database(self) -> None:
         with tempfile.TemporaryDirectory() as temporary_directory:
             project_path = Path(temporary_directory) / "my-career"
             create_project(project_path, project_name="My Career")
@@ -212,8 +210,7 @@ class OpenProjectTests(unittest.TestCase):
 
             self.assertEqual(project.path, project_path)
             self.assertEqual(project.name, "My Career")
-            self.assertTrue(project.database_path.is_file())
-            self.assertEqual(project.database_schema_version, 2)
+            self.assertFalse((project_path / ".seriemacv/index").exists())
 
     def test_refuses_to_open_an_invalid_project(self) -> None:
         with tempfile.TemporaryDirectory() as temporary_directory:
@@ -258,8 +255,6 @@ def _create_legacy_project(project_path: Path) -> None:
     (project_path / "seriemacv.yml").write_text(
         "schema_version: 2\nproject_name: Legacy Career\n", encoding="utf-8"
     )
-    database_path = project_path / ".seriemacv/index/seriemacv.db"
-    with closing(sqlite3.connect(database_path)) as connection:
-        with connection:
-            connection.execute("CREATE TABLE schema_migrations (version INTEGER PRIMARY KEY)")
-            connection.execute("INSERT INTO schema_migrations (version) VALUES (1)")
+    (project_path / ".seriemacv/index/seriemacv.db").write_text(
+        "legacy index retained by the user\n", encoding="utf-8"
+    )

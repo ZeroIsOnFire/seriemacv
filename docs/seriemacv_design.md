@@ -718,20 +718,20 @@ If faster delivery matters more than native packaging, the same architecture can
 
 ## 16. Persistence and indexing
 
-Recommended v1 persistence:
+Current persistence:
 
 - YAML files for user-owned career artifacts and generated Markdown documents.
-- SQLite for indexes, job/application state, caches, and normalized records.
-- Optional full-text search via SQLite FTS5.
+- Direct lexical search over canonical YAML data.
+- No database or generated index is required.
 
-Why hybrid storage:
+Why YAML-only storage now:
 
 - Git-friendly resumes and knowledge files.
 - Easy backup and portability.
-- Transactional internal state.
-- No requirement for a separate database server.
+- No internal database to migrate, rebuild, or back up separately.
+- A disposable local index can be reconsidered if scale demonstrates the need.
 
-Embeddings can be stored later in SQLite or an optional local vector index.
+Embeddings can be stored later in an optional local vector index if needed.
 
 ---
 

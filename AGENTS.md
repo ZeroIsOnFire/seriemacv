@@ -15,7 +15,8 @@ future standalone GUI may reuse the same core without requiring an agent.
 ## Non-negotiable principles
 
 - The user's career is local, portable, and inspectable. `career.yml` is the
-  canonical career-data source; SQLite is for indexes, normalized state, and cache.
+  canonical career-data source; do not add a database or generated index without a
+  proven scale need and explicit authorization.
 - Markdown, DOCX, and PDF are artifacts generated from YAML. An importer or AI
   proposal may suggest YAML changes, but never changes the canonical source without
   an explicit user action.
@@ -95,8 +96,6 @@ future standalone GUI may reuse the same core without requiring an agent.
 - `template show <project> career` is the active read-only template interface.
 - Tracked `examples/career.yml` and `examples/job.yml` must exactly match the
   templates written by `init`; keep their synchronization test updated.
-- Explicitly close every SQLite connection, including reads: a connection context
-  manager commits or rolls back transactions but does not guarantee closing on Windows.
 - Preserve public formats and stable contracts. Validate predictable errors at system
   boundaries and return structured diagnostics.
 - For behavioral changes, write or update the test covering the rule or regression

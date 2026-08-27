@@ -43,7 +43,7 @@ candidaturas, estilos e artefatos internos.
 - Configuração versionada sem segredos.
 - Compatibilidade de leitura para projetos criados no layout anterior; migrações de
   dados canônicos exigem uma ação explícita do usuário.
-- Índice SQLite local para estado, cache e busca futura.
+- Busca lexical direta no YAML canônico, sem banco de dados local.
 
 **Contrato:** recebe um diretório de projeto e produz entidades válidas ou erros
 estruturados. Nenhuma interface conhece detalhes de caminhos ou serialização.
@@ -52,8 +52,9 @@ estruturados. Nenhuma interface conhece detalhes de caminhos ou serialização.
 
 - Escolher a linguagem do núcleo antes de implementar este módulo.
 - Adotar um parser YAML seguro e schemas de validação.
-- Usar SQLite local com migrações para dados internos; arquivos permanecem a fonte
-  de verdade para conteúdo pertencente ao usuário.
+- Manter os dados locais em YAML enquanto a escala não justificar um índice
+  descartável; arquivos permanecem a fonte de verdade para conteúdo pertencente ao
+  usuário.
 - Definir uma abstração de filesystem para testes sem disco real.
 
 **Depende de:** nada.
@@ -95,8 +96,8 @@ funcionalidade consumidora recebe IDs de evidência, não fatos implícitos em p
 
 **Decisões tecnológicas**
 
-- YAML para conteúdo editável; SQLite FTS5 para índice lexical, se
-  necessário após a primeira versão de busca.
+- YAML para conteúdo editável e busca lexical direta; avaliar um índice descartável
+  somente se a escala justificar.
 - Não usar embeddings inicialmente.
 - Modelagem explícita de dados sensíveis e campos permitidos para cada uso.
 
@@ -323,7 +324,7 @@ está pausado sem remoção dos dados ou contratos já implementados.
 ## Decisões que precisam ser tomadas antes do código
 
 1. **Linguagem do núcleo e CLI:** **decidido: Python**. As escolhas de bibliotecas
-   e empacotamento devem priorizar portabilidade local, parsing/validação, SQLite,
+   e empacotamento devem priorizar portabilidade local, parsing/validação,
    PDF, ecossistema MCP, testes e futura integração com o Studio.
 2. **Forma do primeiro Studio:** Tauri desde o início ou web local temporária.
 3. **Formato de schemas:** biblioteca de validação e política de compatibilidade
