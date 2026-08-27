@@ -7,6 +7,27 @@ from pathlib import Path
 from pydantic import ValidationError
 from ruamel.yaml.error import YAMLError
 
+from seriemacv.application_ai import (
+    apply_ai_response,
+    create_ai_request,
+    dump_ai,
+    load_ai_request,
+    load_ai_response,
+    validate_ai_response,
+    write_ai_request,
+)
+from seriemacv.applications import (
+    ApplicationDocument,
+    apply_answer,
+    create_application,
+    dump_application,
+    list_applications,
+    load_application,
+    pending_questions,
+    update_status,
+    validate_applications,
+)
+from seriemacv.browser import clear_browser_profile, prepare_application
 from seriemacv.career import (
     CAREER_FILE,
     add_record,
@@ -142,6 +163,59 @@ def build_parser() -> argparse.ArgumentParser:
     search_evidence_parser.add_argument("query", nargs="?")
     search_evidence_parser.add_argument("--tag", action="append", default=[])
     search_evidence_parser.add_argument("--experience-id")
+
+    applications_parser = subparsers.add_parser("applications", help="Manage local, reviewable job applications")
+    applications_subparsers = applications_parser.add_subparsers(dest="applications_command", required=True)
+    application_create = applications_subparsers.add_parser("create", help="Create a local application record")
+    application_create.add_argument("path", type=Path)
+    application_create.add_argument("--id", required=True)
+    application_create.add_argument("--job-id", required=True)
+    application_create.add_argument("--variant-id")
+    application_create.add_argument("--url", default="")
+    application_create.add_argument("--attachment", action="append", default=[])
+    application_create.add_argument("--cover-letter-path")
+    application_list = applications_subparsers.add_parser("list", help="List application records")
+    application_list.add_argument("path", type=Path)
+    application_validate = applications_subparsers.add_parser("validate", help="Validate application records")
+    application_validate.add_argument("path", type=Path)
+    application_show = applications_subparsers.add_parser("show", help="Print one application record")
+    application_show.add_argument("path", type=Path)
+    application_show.add_argument("id")
+    application_status = applications_subparsers.add_parser("set-status", help="Transition an application status")
+    application_status.add_argument("path", type=Path)
+    application_status.add_argument("id")
+    application_status.add_argument("status", choices=("saved", "preparing", "needs_user_input", "ready_for_review", "applied", "recruiter", "interview", "offer", "rejected", "withdrawn"))
+    application_prepare = applications_subparsers.add_parser("prepare", help="Prepare a generic browser form without submitting it")
+    application_prepare.add_argument("path", type=Path)
+    application_prepare.add_argument("id")
+    application_prepare.add_argument("--interactive", action="store_true")
+    application_prepare.add_argument("--ai-assisted", action="store_true")
+    application_questions = applications_subparsers.add_parser("questions", help="List unresolved application questions")
+    application_questions.add_argument("path", type=Path)
+    application_questions.add_argument("id")
+    application_answer = applications_subparsers.add_parser("apply-answer", help="Explicitly apply a proposed or supplied answer")
+    application_answer.add_argument("path", type=Path)
+    application_answer.add_argument("id")
+    application_answer.add_argument("question-id")
+    application_answer.add_argument("--answer")
+    application_answer.add_argument("--save-answer-id")
+    application_answer.add_argument("--save-prompt")
+    application_browser = applications_subparsers.add_parser("clear-browser-profile", help="Delete the isolated browser profile for this project")
+    application_browser.add_argument("path", type=Path)
+    application_ai_request = applications_subparsers.add_parser("ai-request", help="Write a minimal AI assistance request for detected form fields")
+    application_ai_request.add_argument("path", type=Path)
+    application_ai_request.add_argument("id")
+    application_ai_request.add_argument("--request-id", required=True)
+    application_ai_request.add_argument("--output", type=Path, required=True)
+    application_ai_review = applications_subparsers.add_parser("ai-review", help="Validate and show an AI application response")
+    application_ai_review.add_argument("path", type=Path)
+    application_ai_review.add_argument("request", type=Path)
+    application_ai_review.add_argument("response", type=Path)
+    application_ai_apply = applications_subparsers.add_parser("ai-apply", help="Persist explicitly accepted AI application proposals")
+    application_ai_apply.add_argument("path", type=Path)
+    application_ai_apply.add_argument("request", type=Path)
+    application_ai_apply.add_argument("response", type=Path)
+    application_ai_apply.add_argument("--accept", action="append", required=True)
 
     jobs_parser = subparsers.add_parser("jobs", help="Manage structured local job documents")
     jobs_subparsers = jobs_parser.add_subparsers(dest="jobs_command", required=True)
@@ -347,6 +421,9 @@ def main(arguments: list[str] | None = None) -> int:
 
     if args.command == "jobs":
         return _run_jobs_command(args)
+
+    if args.command == "applications":
+        return _run_applications_command(args)
 
     if args.command == "match":
         return _run_match_command(args)
@@ -569,6 +646,70 @@ def _run_resume_command(args: argparse.Namespace) -> int:
         return 1
     print(f"Rendered {', '.join(item.upper() for item in args.format)} resume using {style_id}: {', '.join(str(path) for path in output_paths)}")
     return 0
+
+
+def _run_applications_command(args: argparse.Namespace) -> int:
+    project_path = args.path.expanduser().resolve()
+    try:
+        if args.applications_command == "create":
+            saved = create_application(project_path, ApplicationDocument(
+                id=args.id, job_id=args.job_id, variant_id=args.variant_id, url=args.url,
+                attachments=args.attachment, cover_letter_path=args.cover_letter_path,
+            ))
+            print(f"Saved application document: {saved}")
+            return 0
+        if args.applications_command == "list":
+            print(dump_application(list_applications(project_path)), end="")
+            return 0
+        if args.applications_command == "validate":
+            diagnostics = validate_applications(project_path)
+            if diagnostics:
+                for path, message in diagnostics:
+                    print(f"{path}: {message}", file=sys.stderr)
+                return 1
+            print(f"Valid application document(s): {project_path / 'applications'}")
+            return 0
+        if args.applications_command == "show":
+            print(dump_application(load_application(project_path, args.id)), end="")
+            return 0
+        if args.applications_command == "set-status":
+            print(dump_application(update_status(project_path, args.id, args.status)), end="")
+            return 0
+        if args.applications_command == "questions":
+            print(dump_application(pending_questions(project_path, args.id)), end="")
+            return 0
+        if args.applications_command == "apply-answer":
+            print(dump_application(apply_answer(
+                project_path, args.id, args.question_id, args.answer,
+                save_answer_id=args.save_answer_id, save_prompt=args.save_prompt,
+            )), end="")
+            return 0
+        if args.applications_command == "prepare":
+            print(dump_application(prepare_application(project_path, args.id, interactive=args.interactive, ai_assisted=args.ai_assisted)), end="")
+            return 0
+        if args.applications_command == "ai-request":
+            request = create_ai_request(project_path, args.request_id, args.id)
+            write_ai_request(args.output.expanduser().resolve(), request)
+            print(f"Wrote application AI request: {args.output.expanduser().resolve()}")
+            return 0
+        if args.applications_command == "ai-review":
+            request = load_ai_request(args.request.expanduser().resolve())
+            response = load_ai_response(args.response.expanduser().resolve())
+            print(dump_ai([item.__dict__ for item in validate_ai_response(project_path, request, response)]), end="")
+            return 0
+        if args.applications_command == "ai-apply":
+            request = load_ai_request(args.request.expanduser().resolve())
+            response = load_ai_response(args.response.expanduser().resolve())
+            print(dump_application(apply_ai_response(project_path, request, response, args.accept)), end="")
+            return 0
+        if args.applications_command == "clear-browser-profile":
+            clear_browser_profile(project_path)
+            print("Cleared isolated browser profile")
+            return 0
+        raise ValueError(f"Unknown applications command: {args.applications_command}")
+    except (OSError, ValueError, ValidationError, YAMLError) as error:
+        print(f"{project_path / 'applications'}: {error}", file=sys.stderr)
+        return 1
 
 
 def _run_jobs_command(args: argparse.Namespace) -> int:

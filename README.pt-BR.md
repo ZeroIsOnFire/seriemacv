@@ -39,7 +39,7 @@ Textos específicos de vaga ficam separados em
 base de carreira.
 
 A área de vagas suporta importação estruturada local, relatórios determinísticos de
-match, propostas de tailoring revisáveis e Studio local somente leitura.
+match, propostas de tailoring revisáveis, candidaturas locais assistidas e Studio local somente leitura.
 
 ## Gerar currículo
 

@@ -38,7 +38,7 @@ Job-specific wording stays separate under
 base career locale.
 
 The jobs workspace supports local structured imports, deterministic match reports,
-reviewable tailoring proposals, and a read-only local Studio.
+reviewable tailoring proposals, local assisted applications, and a read-only Studio.
 
 ## Render a resume
 

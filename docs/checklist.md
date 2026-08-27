@@ -92,17 +92,17 @@ mesmo núcleo e preservam a carreira canônica.
 
 ## MVP 3 — Candidatura assistida
 
-- [ ] Definir schema e máquina de estados de candidatura.
-- [ ] Criar, atualizar e listar registros de candidatura.
-- [ ] Associar vaga, variante, carta e respostas à candidatura.
-- [ ] Preparar sessão isolada de navegador por projeto.
-- [ ] Detectar campos e mapear dados determinísticos de perfil.
-- [ ] Reutilizar respostas salvas quando aplicável.
-- [ ] Criar rascunhos de IA apenas para campos incertos.
-- [ ] Exigir revisão explícita antes de submeter.
-- [ ] Exigir token/checkpoint de confirmação para submissão.
-- [ ] Registrar resultado e atualizar status.
-- [ ] Cobrir campos obrigatórios não resolvidos e dados sensíveis.
+- [x] Definir schema e máquina de estados de candidatura.
+- [x] Criar, atualizar e listar registros de candidatura.
+- [x] Associar vaga, variante, carta e respostas à candidatura.
+- [x] Preparar sessão isolada de navegador por projeto.
+- [x] Detectar campos e mapear dados determinísticos de perfil.
+- [x] Reutilizar respostas salvas quando aplicável.
+- [x] Criar rascunhos de IA apenas para campos incertos.
+- [x] Exigir revisão explícita antes de submeter.
+- [ ] Exigir token/checkpoint de confirmação para submissão (adiado: este MVP não submete externamente).
+- [x] Registrar resultado e atualizar status.
+- [x] Cobrir campos obrigatórios não resolvidos e dados sensíveis.
 
 ## Privacidade, segurança e entrega
 

@@ -17,6 +17,7 @@ YAML de origem permanece sempre sob controle do usuário.
 | Propostas locais de IA | Troca propostas YAML revisáveis com Codex, Claude Code ou outro agente | [Propostas locais de IA](propostas.md) |
 | Templates | Expõe o contrato YAML atual para pessoas e ferramentas externas | [Templates e ferramentas externas](templates.md) |
 | Vagas e match | Importa vagas, gera relatórios explicáveis e prepara propostas por vaga | [Vagas e match](vagas-e-match.md) |
+| Candidaturas assistidas | Prepara candidaturas locais revisáveis sem enviá-las | [Candidaturas assistidas](candidaturas.md) |
 | Diagnósticos | Explica erros de validação, navegador, arquivos e Python | [Solução de problemas](solucao-de-problemas.md) |
 
 ## Primeiro fluxo recomendado

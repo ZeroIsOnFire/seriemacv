@@ -16,6 +16,7 @@ remains under the user's control.
 | Resume generation | Lists styles and renders Markdown, HTML, PDF, and DOCX | [Resumes and styles](resume-rendering.md) |
 | Local AI proposals | Exchanges reviewable YAML proposals with Codex, Claude Code, or another agent | [Local AI proposals](proposals.md) |
 | Jobs and match | Imports jobs, generates explainable reports, and prepares job-specific proposals | [Jobs and match](jobs-and-match.md) |
+| Assisted applications | Prepares local, reviewable browser applications without submitting them | [Assisted applications](applications.md) |
 | Templates | Exposes the current YAML contract to people and external tools | [Templates and external tools](templates.md) |
 | Diagnostics | Explains validation, browser, filesystem, and Python errors | [Troubleshooting](troubleshooting.md) |
 

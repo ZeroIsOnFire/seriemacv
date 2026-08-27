@@ -8,6 +8,11 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import unquote, urlparse
 
+from seriemacv.applications import (
+    list_applications,
+    load_application,
+    pending_questions,
+)
 from seriemacv.jobs import load_job, load_jobs
 from seriemacv.matching import match_job
 from seriemacv.project import load_project_configuration
@@ -39,6 +44,18 @@ def create_studio_server(
                         weights=load_project_configuration(resolved_path).match_weights,
                     )
                     self._json(report.model_dump(mode="json"))
+                elif path == "/api/applications":
+                    self._json([
+                        {"id": item.id, "job_id": item.job_id, "status": item.status,
+                         "pending_questions": len(item.questions)}
+                        for item in list_applications(resolved_path)
+                    ])
+                elif path.startswith("/api/application/"):
+                    application_id = unquote(path.removeprefix("/api/application/"))
+                    self._json(load_application(resolved_path, application_id).model_dump(mode="json"))
+                elif path.startswith("/api/application-questions/"):
+                    application_id = unquote(path.removeprefix("/api/application-questions/"))
+                    self._json([item.model_dump(mode="json") for item in pending_questions(resolved_path, application_id)])
                 else:
                     self.send_error(HTTPStatus.NOT_FOUND, "Not found")
             except (OSError, ValueError) as error:
@@ -72,5 +89,5 @@ _PAGE = """<!doctype html>
 </head><body><h1>seriemaCV Studio</h1><p>Local, read-only job workspace.</p><div id="jobs">Loading jobs…</div><pre id="report" hidden></pre>
 <script>
 const output=document.querySelector('#report');
-fetch('/api/jobs').then(r=>r.json()).then(jobs=>{const box=document.querySelector('#jobs');box.textContent='';if(!jobs.length){box.textContent='No jobs imported.'}for(const job of jobs){const b=document.createElement('button');b.textContent=job.title;b.onclick=()=>fetch('/api/match/'+encodeURIComponent(job.id)).then(r=>r.json()).then(report=>{output.hidden=false;output.textContent=JSON.stringify(report,null,2)});box.append(b)}}).catch(error=>document.querySelector('#jobs').textContent=error.message);
+Promise.all([fetch('/api/jobs').then(r=>r.json()),fetch('/api/applications').then(r=>r.json())]).then(([jobs,applications])=>{const box=document.querySelector('#jobs');box.textContent='';if(!jobs.length){box.textContent='No jobs imported.'}for(const job of jobs){const b=document.createElement('button');b.textContent=job.title;b.onclick=()=>fetch('/api/match/'+encodeURIComponent(job.id)).then(r=>r.json()).then(report=>{output.hidden=false;output.textContent=JSON.stringify(report,null,2)});box.append(b)}for(const application of applications){const b=document.createElement('button');b.textContent='Application: '+application.id;b.onclick=()=>fetch('/api/application/'+encodeURIComponent(application.id)).then(r=>r.json()).then(record=>{output.hidden=false;output.textContent=JSON.stringify(record,null,2)});box.append(b)}}).catch(error=>document.querySelector('#jobs').textContent=error.message);
 </script></body></html>"""

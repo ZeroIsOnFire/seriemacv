@@ -301,6 +301,9 @@ confirmação de uma revisão aprovada pelo usuário.
 - Máquina de estados persistível e observável, não um prompt único.
 - Adaptadores de plataforma somente depois de fluxo genérico robusto.
 - Armazenamento e exclusão explícita de cookies/perfis por projeto.
+- O primeiro fluxo persiste `applications/<id>.yml`, usa login manual e não
+  oferece comando de submissão; o checkpoint/token fica para a etapa que introduzir
+  ação externa.
 
 **Depende de:** Perfil, Tailor, Vagas e Interfaces. É pós-MVP.
 

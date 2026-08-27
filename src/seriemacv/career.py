@@ -141,6 +141,7 @@ class SavedAnswer(IdentifiedRecord):
     answer: str = Field(min_length=1)
     tags: list[str] = Field(default_factory=list)
     evidence_ids: list[str] = Field(default_factory=list)
+    sensitive: bool = False
 
     @field_validator("evidence_ids")
     @classmethod
