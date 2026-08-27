@@ -49,13 +49,14 @@ For a variant, save the accepted files under `resume/variants/<id>/`, run
 `seriemacv resume variants validate <project> --id <id>`, and render with
 `resume render --variant <id>`. This changes no canonical career facts.
 
-An AI tool may edit these YAML files directly when the user explicitly authorizes
-that project change, but seriemaCV does not currently provide an importer or
-automatically apply AI proposals. The user must still review the diff and validation
-result.
+For a structured, provider-neutral exchange with Codex, Claude Code, or another
+agent, use [Local AI proposals](proposals.md). The user still reviews the diff and
+selects every item that may be persisted.
 
 ## Jobs template status
 
-The job domain and repository example remain preserved for future work, but
-`template show ... job` and public `jobs` commands are intentionally unavailable
-while the jobs feature is paused.
+Use `jobs import <project> <job.yml|job.json|jobs.zip>` to add one YAML or
+JSON job, or every YAML job in a ZIP archive. The importer validates every document
+and ID collision before writing; the original source text stays preserved in each job
+record. Use `jobs list`, `jobs show`, and `jobs extract-requirements` for local
+inspection, then `seriemacv match <project> <job-id>` for an evidence-backed YAML report.

@@ -39,7 +39,7 @@ reserved directories for future capabilities.
 | `seriemacv.yml.example` | Fictional configuration example |
 | `exports/resume.*` | Generated artifacts; never canonical data |
 | `.seriemacv/index/` | Internal local SQLite state |
-| `jobs/` | Preserved workspace for the paused jobs capability |
+| `jobs/` | Local structured job documents and their preserved sources |
 
 ## Configuration
 

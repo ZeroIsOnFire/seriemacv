@@ -125,6 +125,42 @@ Tags and details are repeatable. `--experience-id` must reference an existing
 experience. Omit `--verified` when the statement still needs confirmation. Evidence
 is kept in the canonical document but is not printed in resumes.
 
+## Add reusable answers and stories
+
+```powershell
+seriemacv career add-answer .\my-career `
+  --id availability `
+  --prompt "When can you start?" `
+  --answer "I can start immediately." `
+  --tag availability `
+  --evidence-id deployment-reliability
+
+seriemacv career add-story .\my-career `
+  --id deployment-recovery `
+  --title "Deployment recovery" `
+  --situation "A release needed recovery." `
+  --action "Coordinated the recovery." `
+  --result "Service was restored." `
+  --evidence-id deployment-reliability
+```
+
+Answers can omit `--evidence-id` when they contain user-configured operational
+information. When supplied, every evidence ID must exist and be marked
+`verified: true`. Stories require situation, action, and result; neither record is
+printed in a resume.
+
+## Search verified evidence
+
+```powershell
+seriemacv career search-evidence .\my-career reliability
+seriemacv career search-evidence .\my-career --tag python --experience-id example-company-senior
+```
+
+The local lexical index is rebuilt from `career.yml` before every search. Searches
+only return evidence marked `verified: true`; pending evidence is never included in
+results. Provide text, one or more `--tag` filters, or `--experience-id`. Repeated
+tags are combined, and the output is validated YAML.
+
 ## Inspect sections
 
 ```powershell
@@ -139,8 +175,8 @@ or use by another local tool. Locale documents remain directly inspectable YAML.
 
 ## Fields without editing commands
 
-The CLI does not yet edit localized wording, saved answers, stories, or existing
-records. Edit canonical facts in `career.yml` and professional wording in
+The CLI does not yet edit localized wording or existing records. Edit canonical facts
+in `career.yml` and professional wording in
 `career.locales/<locale>.yml`, following their `.example` files. Then run both
 `career validate` and `career locale validate`. Unknown fields are rejected, and a
 failed CLI write does not modify the canonical file.

@@ -140,6 +140,14 @@ class SavedAnswer(IdentifiedRecord):
     prompt: str = Field(min_length=1)
     answer: str = Field(min_length=1)
     tags: list[str] = Field(default_factory=list)
+    evidence_ids: list[str] = Field(default_factory=list)
+
+    @field_validator("evidence_ids")
+    @classmethod
+    def unique_evidence_ids(cls, value: list[str]) -> list[str]:
+        if len(value) != len(set(value)):
+            raise ValueError("contains duplicate ids")
+        return value
 
 
 class CareerStory(IdentifiedRecord):
@@ -148,6 +156,13 @@ class CareerStory(IdentifiedRecord):
     action: str = ""
     result: str = ""
     evidence_ids: list[str] = Field(default_factory=list)
+
+    @field_validator("evidence_ids")
+    @classmethod
+    def unique_evidence_ids(cls, value: list[str]) -> list[str]:
+        if len(value) != len(set(value)):
+            raise ValueError("contains duplicate ids")
+        return value
 
 
 class CareerDocument(StrictModel):
@@ -180,13 +195,9 @@ class CareerDocument(StrictModel):
                     f"evidence '{record.id}' references unknown experience_id "
                     f"'{record.experience_id}'"
                 )
-        for record in self.stories:
-            unknown = set(record.evidence_ids) - evidence_ids
-            if unknown:
-                raise ValueError(
-                    f"story '{record.id}' references unknown evidence_ids: "
-                    f"{', '.join(sorted(unknown))}"
-                )
+        _ensure_verified_evidence_references(
+            self.answers, self.stories, self.evidence, evidence_ids
+        )
         return self
 
 
@@ -264,11 +275,34 @@ class CareerFactsDocument(StrictModel):
         for record in self.evidence:
             if record.experience_id and record.experience_id not in experience_ids:
                 raise ValueError(f"evidence '{record.id}' references unknown experience_id '{record.experience_id}'")
-        for record in self.stories:
-            unknown = set(record.evidence_ids) - evidence_ids
-            if unknown:
-                raise ValueError(f"story '{record.id}' references unknown evidence_ids: {', '.join(sorted(unknown))}")
+        _ensure_verified_evidence_references(
+            self.answers, self.stories, self.evidence, evidence_ids
+        )
         return self
+
+
+def _ensure_verified_evidence_references(
+    answers: list[SavedAnswer],
+    stories: list[CareerStory],
+    evidence: list[CareerEvidence],
+    evidence_ids: set[str],
+) -> None:
+    verified_evidence_ids = {record.id for record in evidence if record.verified}
+    for section, records in (("answer", answers), ("story", stories)):
+        for record in records:
+            references = set(record.evidence_ids)
+            unknown = references - evidence_ids
+            if unknown:
+                raise ValueError(
+                    f"{section} '{record.id}' references unknown evidence_ids: "
+                    f"{', '.join(sorted(unknown))}"
+                )
+            unverified = references - verified_evidence_ids
+            if unverified:
+                raise ValueError(
+                    f"{section} '{record.id}' references unverified evidence_ids: "
+                    f"{', '.join(sorted(unverified))}"
+                )
 
 
 class LocaleCatalog(StrictModel):
@@ -412,7 +446,7 @@ def set_profile(path: Path, values: dict[str, Any]) -> None:
 
 
 def add_record(path: Path, section: str, values: dict[str, Any]) -> None:
-    if section not in {"experience", "education", "skills", "evidence"}:
+    if section not in {"experience", "education", "skills", "evidence", "answers", "stories"}:
         raise ValueError(f"Unsupported editable section: {section}")
     document = _load_yaml(path)
     records = document.setdefault(section, [])
@@ -500,7 +534,6 @@ def load_localized_career(project_path: Path, locale: str) -> CareerDocument:
 
 
 def validate_locale(project_path: Path, locale: str) -> list[CareerDiagnostic]:
-    path = locale_path(project_path, locale)
     try:
         load_localized_career(project_path, locale)
     except (OSError, ValueError, YAMLError, ValidationError) as error:

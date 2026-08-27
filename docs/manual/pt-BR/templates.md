@@ -52,13 +52,15 @@ Para uma variante, salve os arquivos aceitos em `resume/variants/<id>/`, execute
 `seriemacv resume variants validate <projeto> --id <id>` e renderize com
 `resume render --variant <id>`. Isso não altera nenhum fato canônico de carreira.
 
-Uma ferramenta de IA pode editar esses YAMLs diretamente quando o usuário autorizar
-explicitamente a alteração do projeto, mas o seriemaCV ainda não oferece um importador
-nem aplica propostas de IA automaticamente. O usuário deve revisar o diff e o
-resultado das validações.
+Para uma troca estruturada e agnóstica de provedor com Codex, Claude Code ou outro
+agente, use [Propostas locais de IA](propostas.md). O usuário continua revisando o
+diff e selecionando cada item que pode ser persistido.
 
 ## Situação do template de vagas
 
-O domínio e o exemplo de vaga do repositório continuam preservados para trabalho
-futuro, mas `template show ... job` e os comandos públicos `jobs` estão
-intencionalmente indisponíveis enquanto a funcionalidade de vagas está pausada.
+Use `jobs import <projeto> <vaga.yml|vaga.json|vagas.zip>` para
+adicionar uma vaga YAML/JSON ou todos os YAMLs de um arquivo ZIP. O importador valida
+todos os documentos e colisões de ID antes de gravar; o texto-fonte original permanece
+preservado em cada registro. Use `jobs list`, `jobs show` e
+`jobs extract-requirements` para inspeção local, depois execute
+`seriemacv match <projeto> <id-da-vaga>` para gerar um relatório YAML com evidências.

@@ -6,7 +6,13 @@ from contextlib import redirect_stderr, redirect_stdout
 from io import StringIO
 from pathlib import Path
 
-from seriemacv.career import add_record, load_career, set_profile, validate_career
+from seriemacv.career import (
+    CareerDocument,
+    add_record,
+    load_career,
+    set_profile,
+    validate_career,
+)
 from seriemacv.cli import main
 from seriemacv.project import create_project
 
@@ -95,6 +101,71 @@ class CareerSchemaTests(unittest.TestCase):
 
             self.assertEqual(career_path.read_text(encoding="utf-8"), original)
 
+    def test_answers_and_stories_require_unique_verified_evidence_references(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            project_path = _create_project(temporary_directory)
+            career_path = project_path / "career.yml"
+            career_path.write_text(
+                """schema_version: 2
+profile: {}
+evidence:
+  - id: verified-proof
+    statement: Verified fact
+    verified: true
+  - id: pending-proof
+    statement: Pending fact
+answers:
+  - id: supported-answer
+    prompt: Question?
+    answer: Answer.
+    evidence_ids: [verified-proof]
+stories:
+  - id: supported-story
+    title: Story
+    evidence_ids: [verified-proof]
+""",
+                encoding="utf-8",
+            )
+            self.assertEqual(
+                [item.message for item in validate_career(career_path) if "evidence_ids" in item.message],
+                [],
+            )
+
+            original = career_path.read_text(encoding="utf-8")
+            with self.assertRaisesRegex(ValueError, "unverified evidence_ids: pending-proof"):
+                add_record(career_path, "answers", {
+                    "id": "invalid-answer", "prompt": "Question?", "answer": "Answer.",
+                    "evidence_ids": ["pending-proof"],
+                })
+            self.assertEqual(career_path.read_text(encoding="utf-8"), original)
+
+            with self.assertRaisesRegex(ValueError, "unknown evidence_ids: missing-proof"):
+                add_record(career_path, "answers", {
+                    "id": "missing-answer", "prompt": "Question?", "answer": "Answer.",
+                    "evidence_ids": ["missing-proof"],
+                })
+            self.assertEqual(career_path.read_text(encoding="utf-8"), original)
+
+            with self.assertRaisesRegex(ValueError, "contains duplicate ids"):
+                add_record(career_path, "stories", {
+                    "id": "invalid-story", "title": "Story", "evidence_ids": ["verified-proof", "verified-proof"],
+                })
+
+            with self.assertRaisesRegex(ValueError, "unverified evidence_ids: pending-proof"):
+                CareerDocument.model_validate({
+                    "schema_version": 2,
+                    "evidence": [{"id": "pending-proof", "statement": "Pending fact"}],
+                    "stories": [{"id": "story", "title": "Story", "evidence_ids": ["pending-proof"]}],
+                })
+
+    def test_legacy_saved_answer_without_evidence_ids_is_valid(self) -> None:
+        career = CareerDocument.model_validate({
+            "schema_version": 2,
+            "answers": [{"id": "legacy-answer", "prompt": "Question?", "answer": "Answer."}],
+        })
+
+        self.assertEqual(career.answers[0].evidence_ids, [])
+
     def test_profile_and_record_edits_preserve_comments(self) -> None:
         with tempfile.TemporaryDirectory() as temporary_directory:
             project_path = _create_project(temporary_directory)
@@ -170,6 +241,36 @@ class CareerCliTests(unittest.TestCase):
             self.assertEqual(result, 0)
             profile = load_career(project_path / "career.yml").profile
             self.assertEqual(set(profile.links), {"github", "linkedin", "portfolio"})
+
+    def test_cli_adds_and_lists_reusable_answers_and_stories(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            project_path = _create_project(temporary_directory)
+            with redirect_stdout(StringIO()):
+                main([
+                    "career", "add-evidence", str(project_path), "--id", "proof",
+                    "--statement", "Verified fact", "--verified",
+                ])
+                answer_result = main([
+                    "career", "add-answer", str(project_path), "--id", "availability",
+                    "--prompt", "When can you start?", "--answer", "Immediately.",
+                    "--tag", "availability", "--evidence-id", "proof",
+                ])
+                story_result = main([
+                    "career", "add-story", str(project_path), "--id", "delivery",
+                    "--title", "Delivery", "--situation", "A need existed.",
+                    "--action", "Delivered it.", "--result", "Released.",
+                    "--evidence-id", "proof",
+                ])
+            self.assertEqual(answer_result, 0)
+            self.assertEqual(story_result, 0)
+
+            with redirect_stdout(StringIO()) as output:
+                result = main(["career", "list", str(project_path), "answers"])
+            self.assertEqual(result, 0)
+            self.assertIn("evidence_ids:\n  - proof", output.getvalue())
+
+            career = load_career(project_path / "career.yml")
+            self.assertEqual(career.stories[0].evidence_ids, ["proof"])
 
     def test_cli_reports_invalid_yaml_instead_of_raising(self) -> None:
         with tempfile.TemporaryDirectory() as temporary_directory:

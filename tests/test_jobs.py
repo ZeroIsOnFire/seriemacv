@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import tempfile
 import unittest
+import zipfile
 from pathlib import Path
 
 from seriemacv.jobs import (
@@ -9,6 +10,7 @@ from seriemacv.jobs import (
     JobImportPayload,
     JobSource,
     create_job,
+    import_jobs,
     job_path,
     load_job,
     load_jobs,
@@ -127,8 +129,29 @@ class DormantJobDomainTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "Unsupported job source format"):
             source_format_for_path(Path("role.md"))
 
+    def test_imports_all_yaml_jobs_from_a_zip_without_extracting_it(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            project_path = _create_project(temporary_directory)
+            archive_path = Path(temporary_directory) / "jobs.zip"
+            with zipfile.ZipFile(archive_path, "w") as archive:
+                archive.writestr("first.yaml", _job_yaml("first-role", "First Role"))
+                archive.writestr("nested/second.yml", _job_yaml("second-role", "Second Role"))
+                archive.writestr("README.md", "Ignored")
+
+            paths = import_jobs(project_path, archive_path)
+
+            self.assertEqual([path.name for path in paths], ["first-role.yml", "second-role.yml"])
+            self.assertEqual(validate_job(paths[0]), [])
+            self.assertEqual(load_job(paths[0]).source.filename, "jobs.zip!first.yaml")
+            with self.assertRaisesRegex(FileExistsError, "already exist"):
+                import_jobs(project_path, archive_path)
+
 
 def _create_project(temporary_directory: str) -> Path:
     project_path = Path(temporary_directory) / "my-career"
     create_project(project_path, project_name="My Career")
     return project_path
+
+
+def _job_yaml(job_id: str, title: str) -> str:
+    return f"schema_version: 1\nid: {job_id}\ntitle: {title}\n"

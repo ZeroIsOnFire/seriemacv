@@ -38,8 +38,8 @@ Textos específicos de vaga ficam separados em
 `resume/variants/<id>/locales/<locale>.yml` e herdam o conteúdo omitido do locale
 base de carreira.
 
-A área de vagas está temporariamente pausada. Arquivos existentes e o domínio
-validado permanecem intactos, mas os comandos de vagas não são expostos pela CLI.
+A área de vagas suporta importação estruturada local, relatórios determinísticos de
+match, propostas de tailoring revisáveis e Studio local somente leitura.
 
 ## Gerar currículo
 

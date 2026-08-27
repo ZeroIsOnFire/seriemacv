@@ -270,6 +270,8 @@ de proposta não altera o projeto; ferramentas de escrita são distintas.
 - Definir a linguagem do núcleo e o runtime da CLI antes do Studio.
 - Desktop: avaliar **Tauri + frontend web + host Rust** após o núcleo/CLI estarem
   funcionais; uma aplicação web local é alternativa válida para acelerar feedback.
+- O Studio inicial é uma aplicação web local somente leitura, servida em loopback
+  pela biblioteca padrão do Python; ele reutiliza os casos de uso de vagas e match.
 - Protocolo MCP conforme SDK oficial da linguagem escolhida.
 - A UI precisa de preview, builder estruturado e diff confiáveis antes de investir em comandos
   de IA ou telas secundárias.

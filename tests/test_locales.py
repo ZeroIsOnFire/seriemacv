@@ -4,10 +4,9 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from seriemacv.career import list_locales, load_localized_career, validate_locale
+from seriemacv.career import load_localized_career, validate_locale
 from seriemacv.cli import main
 from seriemacv.project import create_project
-
 
 FACTS = '''schema_version: 2
 profile: {name: Example, email: example@example.invalid}

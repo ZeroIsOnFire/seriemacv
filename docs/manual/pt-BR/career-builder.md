@@ -124,6 +124,42 @@ Tags e detalhes são repetíveis. `--experience-id` deve apontar para uma experi
 existente. Omita `--verified` quando a declaração ainda precisar de confirmação. A
 evidência fica no documento canônico, mas não é impressa nos currículos.
 
+## Adicionar respostas e histórias reutilizáveis
+
+```powershell
+seriemacv career add-answer .\minha-carreira `
+  --id disponibilidade `
+  --prompt "Quando você pode começar?" `
+  --answer "Posso começar imediatamente." `
+  --tag disponibilidade `
+  --evidence-id confiabilidade-deploy
+
+seriemacv career add-story .\minha-carreira `
+  --id recuperacao-deploy `
+  --title "Recuperação de deploy" `
+  --situation "Uma entrega precisou de recuperação." `
+  --action "Coordenou a recuperação." `
+  --result "O serviço foi restaurado." `
+  --evidence-id confiabilidade-deploy
+```
+
+Respostas podem omitir `--evidence-id` quando contêm informações operacionais
+configuradas pelo usuário. Quando informado, cada ID deve existir e estar marcado
+como `verified: true`. Histórias exigem situação, ação e resultado; nenhum desses
+registros é impresso no currículo.
+
+## Buscar evidências verificadas
+
+```powershell
+seriemacv career search-evidence .\minha-carreira confiabilidade
+seriemacv career search-evidence .\minha-carreira --tag python --experience-id empresa-exemplo-senior
+```
+
+O índice lexical local é reconstruído a partir de `career.yml` antes de cada busca.
+Ela retorna somente evidências marcadas como `verified: true`; evidências pendentes
+nunca aparecem nos resultados. Informe texto, um ou mais filtros `--tag` ou
+`--experience-id`. Tags repetidas são combinadas, e a saída é YAML validado.
+
 ## Inspecionar seções
 
 ```powershell
@@ -139,8 +175,8 @@ diretamente inspecionável.
 
 ## Campos sem comandos de edição
 
-A CLI ainda não edita textos localizados, respostas salvas, histórias ou registros
-existentes. Edite fatos canônicos em `career.yml` e textos profissionais em
+A CLI ainda não edita textos localizados ou registros existentes. Edite fatos
+canônicos em `career.yml` e textos profissionais em
 `career.locales/<locale>.yml`, seguindo seus arquivos `.example`. Depois execute
 `career validate` e `career locale validate`. Campos desconhecidos são rejeitados, e
 uma escrita inválida pela CLI não modifica o arquivo canônico.

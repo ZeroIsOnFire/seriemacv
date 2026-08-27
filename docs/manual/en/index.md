@@ -14,6 +14,8 @@ remains under the user's control.
 | Career projects | Creates, configures, and validates the local workspace | [Projects and configuration](projects.md) |
 | Career Builder | Maintains canonical facts and localized career wording | [Career Builder](career-builder.md) |
 | Resume generation | Lists styles and renders Markdown, HTML, PDF, and DOCX | [Resumes and styles](resume-rendering.md) |
+| Local AI proposals | Exchanges reviewable YAML proposals with Codex, Claude Code, or another agent | [Local AI proposals](proposals.md) |
+| Jobs and match | Imports jobs, generates explainable reports, and prepares job-specific proposals | [Jobs and match](jobs-and-match.md) |
 | Templates | Exposes the current YAML contract to people and external tools | [Templates and external tools](templates.md) |
 | Diagnostics | Explains validation, browser, filesystem, and Python errors | [Troubleshooting](troubleshooting.md) |
 
@@ -37,6 +39,5 @@ with its application i18n catalog before rendering.
 
 ## Current scope
 
-The public workflow currently focuses on career data and resume generation. The job
-domain and existing job files are preserved, but job commands are intentionally
-hidden while that area is paused.
+The local workflow covers career data, resume generation, structured job imports,
+explainable match reports, reviewable tailoring proposals, and a read-only Studio.

@@ -20,7 +20,7 @@ registrada.
 ## MVP 0 — Career builder
 
 **Foco ativo:** ampliar a biblioteca de estilos e a qualidade dos artefatos de
-currículo. Vagas, match e tailoring permanecem pausados nesta fase.
+currículo, com vagas, match e tailoring locais disponíveis.
 
 - [x] Definir o schema versionado e o modelo intermediário de `career.yml`.
 - [x] Criar o builder estruturado para perfil, experiência, educação, habilidades e
@@ -55,40 +55,40 @@ currículo. Vagas, match e tailoring permanecem pausados nesta fase.
 
 ## MVP 1 — Career Library e assistência por IA
 
-- [ ] Definir schemas para perfil, habilidades e evidências verificadas.
-- [ ] Indexar e buscar evidências por texto, tags e metadados.
-- [ ] Criar base de respostas e histórias reutilizáveis.
-- [ ] Implementar contrato de proposta com `evidence_ids`, confiança e pendências.
-- [ ] Definir interface agnóstica de provedor de IA.
-- [ ] Implementar primeiro adaptador de IA aprovado.
-- [ ] Validar que uma proposta não referencia evidência inexistente.
-- [ ] Exibir ou retornar diff com aceite/rejeição granular.
-- [ ] Salvar variante apenas após ação explícita do usuário.
-- [ ] Gerar carta de apresentação como artefato separado.
-- [ ] Cobrir falhas de IA, ausência de evidência e propostas inválidas.
+- [x] Definir schemas para perfil, habilidades e evidências verificadas.
+- [x] Indexar e buscar evidências por texto, tags e metadados.
+- [x] Criar base de respostas e histórias reutilizáveis.
+- [x] Implementar contrato de proposta com `evidence_ids`, confiança e pendências.
+- [x] Definir interface agnóstica de provedor de IA.
+- [x] Implementar primeiro adaptador de IA aprovado.
+- [x] Validar que uma proposta não referencia evidência inexistente.
+- [x] Exibir ou retornar diff com aceite/rejeição granular.
+- [x] Salvar variante apenas após ação explícita do usuário.
+- [x] Gerar carta de apresentação como artefato separado.
+- [x] Cobrir falhas de IA, ausência de evidência e propostas inválidas.
 
 ## MVP 2 — Vagas, Match e interfaces
 
-**Pausado:** a interface pública de vagas está temporariamente oculta. Domínio,
-arquivos e compatibilidade existentes permanecem preservados para retomada.
+**Ativo:** vagas, match explicável, tailoring revisável e interfaces locais usam o
+mesmo núcleo e preservam a carreira canônica.
 
 - [x] Definir schemas de vaga e requisito.
-- [ ] Definir schema de relatório de match.
+- [x] Definir schema de relatório de match.
 - [x] Importar vaga de JSON ou YAML estruturado.
 - [x] Preservar conteúdo e origem da vaga importada.
 - [x] Expor templates de carreira e vaga para ferramentas externas.
-- [ ] Extrair requisitos de forma determinística ou como proposta revisável.
-- [ ] Recuperar evidências relevantes para cada requisito.
-- [ ] Classificar requisitos com os estados oficiais de match.
-- [ ] Calcular score a partir das classificações e pesos configuráveis.
-- [ ] Gerar relatório explicável com evidências, lacunas e conflitos.
-- [ ] Integrar tailoring de currículo a uma vaga.
+- [x] Extrair requisitos de forma determinística ou como proposta revisável.
+- [x] Recuperar evidências relevantes para cada requisito.
+- [x] Classificar requisitos com os estados oficiais de match.
+- [x] Calcular score a partir das classificações e pesos configuráveis.
+- [x] Gerar relatório explicável com evidências, lacunas e conflitos.
+- [x] Integrar tailoring de currículo a uma vaga.
 - [x] Expandir a CLI para vagas.
-- [ ] Expandir a CLI para match; listagem, validação e renderização de variantes já
+- [x] Expandir a CLI para match; listagem, validação e renderização de variantes já
   estão disponíveis.
-- [ ] Expor MCP somente de leitura e proposta inicialmente.
-- [ ] Implementar Studio após os casos de uso do núcleo estarem estáveis.
-- [ ] Cobrir fluxos de sucesso, dados ausentes, conflito e `NO_EVIDENCE`.
+- [x] Expor MCP somente de leitura e proposta inicialmente.
+- [x] Implementar Studio após os casos de uso do núcleo estarem estáveis.
+- [x] Cobrir fluxos de sucesso, dados ausentes, conflito e `NO_EVIDENCE`.
 
 ## MVP 3 — Candidatura assistida
 

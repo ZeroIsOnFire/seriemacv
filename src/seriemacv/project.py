@@ -13,6 +13,7 @@ from pydantic import BaseModel, ConfigDict, Field, ValidationError, field_valida
 from ruamel.yaml import YAML
 from ruamel.yaml.error import YAMLError
 
+from seriemacv.matching import MatchWeights
 from seriemacv.styles import ResumeStyleId
 
 CONFIG_FILE = "seriemacv.yml"
@@ -120,6 +121,7 @@ PROJECT_EXAMPLES = {
         "  - id: work-authorization\n"
         "    prompt: Are you authorized to work in Brazil?\n"
         "    answer: Yes.\n"
+        "    evidence_ids: [example-service]\n"
         "stories:\n"
         "  - id: example-delivery\n"
         "    title: Service delivery\n"
@@ -232,6 +234,7 @@ class ProjectConfiguration(BaseModel):
     resume_language: str = "pt-BR"
     resume_style: ResumeStyleId = "clean"
     resume_color: str = "647D74"
+    match_weights: MatchWeights = Field(default_factory=MatchWeights)
 
     @field_validator("project_name")
     @classmethod
@@ -324,6 +327,7 @@ def open_project(path: Path) -> CareerProject:
 
     configuration = _read_project_configuration(project_path / CONFIG_FILE)
     database_path = project_path / DATABASE_RELATIVE_PATH
+    _initialize_database(database_path)
     return CareerProject(
         path=project_path,
         name=configuration.project_name,
@@ -434,6 +438,20 @@ def _initialize_database(database_path: Path) -> None:
             )
             connection.execute(
                 "INSERT OR IGNORE INTO schema_migrations (version) VALUES (1)"
+            )
+            connection.execute(
+                """
+                CREATE VIRTUAL TABLE IF NOT EXISTS evidence_fts USING fts5(
+                    evidence_id UNINDEXED,
+                    statement,
+                    tags,
+                    details,
+                    experience_id UNINDEXED
+                )
+                """
+            )
+            connection.execute(
+                "INSERT OR IGNORE INTO schema_migrations (version) VALUES (2)"
             )
 
 

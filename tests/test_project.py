@@ -213,7 +213,7 @@ class OpenProjectTests(unittest.TestCase):
             self.assertEqual(project.path, project_path)
             self.assertEqual(project.name, "My Career")
             self.assertTrue(project.database_path.is_file())
-            self.assertEqual(project.database_schema_version, 1)
+            self.assertEqual(project.database_schema_version, 2)
 
     def test_refuses_to_open_an_invalid_project(self) -> None:
         with tempfile.TemporaryDirectory() as temporary_directory:

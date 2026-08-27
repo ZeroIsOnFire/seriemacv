@@ -39,7 +39,7 @@ exportação e diretórios reservados para funcionalidades futuras.
 | `seriemacv.yml.example` | Exemplo fictício de configuração |
 | `exports/resume.*` | Artefatos gerados; nunca são dados canônicos |
 | `.seriemacv/index/` | Estado SQLite interno e local |
-| `jobs/` | Workspace preservado da funcionalidade pausada de vagas |
+| `jobs/` | Documentos estruturados locais de vagas e suas fontes preservadas |
 
 ## Configuração
 

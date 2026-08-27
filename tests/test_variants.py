@@ -11,7 +11,6 @@ from seriemacv.jobs import JobImportPayload, JobSource, create_job
 from seriemacv.project import create_project
 from seriemacv.variants import (
     list_variants,
-    load_variant,
     load_variant_career,
     validate_variant,
     validate_variants,

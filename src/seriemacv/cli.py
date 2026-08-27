@@ -18,21 +18,21 @@ from seriemacv.career import (
     validate_career,
     validate_locale,
 )
+from seriemacv.evidence_search import search_verified_evidence
 from seriemacv.jobs import (
     JOB_DIRECTORY,
     JobImportPayload,
     JobSource,
     create_job,
     dump_job,
+    import_jobs,
     job_path,
     load_job,
     load_jobs,
-    load_json_payload,
-    load_yaml_payload,
-    source_format_for_path,
     validate_job,
     validate_jobs,
 )
+from seriemacv.matching import dump_match_report, extract_requirements, match_job
 from seriemacv.project import (
     ProjectAlreadyExistsError,
     create_project,
@@ -40,7 +40,18 @@ from seriemacv.project import (
     load_template,
     validate_project,
 )
+from seriemacv.proposals import (
+    apply_proposal,
+    create_proposal_request,
+    diff_proposal,
+    dump_proposal_diff,
+    load_proposal_request,
+    load_proposal_response,
+    validate_proposal,
+    write_proposal_request,
+)
 from seriemacv.renderer import ResumeRenderError, write_resume
+from seriemacv.studio import create_studio_server
 from seriemacv.styles import STYLE_IDS, list_styles
 from seriemacv.variants import (
     list_variant_locales,
@@ -100,6 +111,8 @@ def build_parser() -> argparse.ArgumentParser:
     _add_education_parser(career_subparsers)
     _add_skill_parser(career_subparsers)
     _add_evidence_parser(career_subparsers)
+    _add_answer_parser(career_subparsers)
+    _add_story_parser(career_subparsers)
 
     list_parser = career_subparsers.add_parser("list", help="Print a validated section")
     list_parser.add_argument("path", type=Path)
@@ -121,6 +134,35 @@ def build_parser() -> argparse.ArgumentParser:
     resume_subparsers.add_parser(
         "styles", help="List built-in resume styles and their capabilities"
     )
+
+    search_evidence_parser = career_subparsers.add_parser(
+        "search-evidence", help="Search verified career evidence"
+    )
+    search_evidence_parser.add_argument("path", type=Path)
+    search_evidence_parser.add_argument("query", nargs="?")
+    search_evidence_parser.add_argument("--tag", action="append", default=[])
+    search_evidence_parser.add_argument("--experience-id")
+
+    jobs_parser = subparsers.add_parser("jobs", help="Manage structured local job documents")
+    jobs_subparsers = jobs_parser.add_subparsers(dest="jobs_command", required=True)
+    _add_job_parser(jobs_subparsers)
+    _add_job_import_parser(jobs_subparsers)
+    _add_job_read_parsers(jobs_subparsers)
+    job_extract = jobs_subparsers.add_parser(
+        "extract-requirements", help="Print deterministic requirement candidates"
+    )
+    job_extract.add_argument("path", type=Path)
+    job_extract.add_argument("id")
+
+    match_parser = subparsers.add_parser(
+        "match", help="Generate an evidence-backed deterministic job match report"
+    )
+    match_parser.add_argument("path", type=Path)
+    match_parser.add_argument("job_id")
+
+    studio_parser = subparsers.add_parser("studio", help="Start the local read-only Studio")
+    studio_parser.add_argument("path", type=Path)
+    studio_parser.add_argument("--port", type=int, default=8765)
     variants_parser = resume_subparsers.add_parser(
         "variants", help="List and validate structured resume variants"
     )
@@ -135,6 +177,35 @@ def build_parser() -> argparse.ArgumentParser:
     variants_validate.add_argument("path", type=Path)
     variants_validate.add_argument("--id")
 
+    proposal_parser = subparsers.add_parser(
+        "proposal", help="Exchange local, reviewable proposals with an AI agent"
+    )
+    proposal_subparsers = proposal_parser.add_subparsers(
+        dest="proposal_command", required=True
+    )
+    proposal_request = proposal_subparsers.add_parser(
+        "request", help="Write a minimal proposal request for an external agent"
+    )
+    proposal_request.add_argument("path", type=Path)
+    proposal_request.add_argument("--id", required=True)
+    proposal_request.add_argument("--variant-id", required=True)
+    proposal_request.add_argument("--language", required=True)
+    proposal_request.add_argument("--job-id")
+    proposal_request.add_argument("--output", required=True, type=Path)
+    proposal_review = proposal_subparsers.add_parser(
+        "review", help="Validate a proposal response and print its granular diff"
+    )
+    proposal_review.add_argument("path", type=Path)
+    proposal_review.add_argument("request", type=Path)
+    proposal_review.add_argument("response", type=Path)
+    proposal_apply = proposal_subparsers.add_parser(
+        "apply", help="Persist explicitly accepted proposal items"
+    )
+    proposal_apply.add_argument("path", type=Path)
+    proposal_apply.add_argument("request", type=Path)
+    proposal_apply.add_argument("response", type=Path)
+    proposal_apply.add_argument("--accept", action="append", required=True)
+
     template_parser = subparsers.add_parser(
         "template", help="Read built-in structured-data templates"
     )
@@ -145,7 +216,7 @@ def build_parser() -> argparse.ArgumentParser:
         "show", help="Print a structured YAML template for an external tool"
     )
     template_show.add_argument("path", type=Path)
-    template_show.add_argument("name", choices=("career", "variant", "variant-locale"))
+    template_show.add_argument("name", choices=("career", "job", "variant", "variant-locale"))
     return parser
 
 
@@ -187,6 +258,27 @@ def _add_evidence_parser(subparsers: argparse._SubParsersAction[argparse.Argumen
     parser.add_argument("--verified", action="store_true")
 
 
+def _add_answer_parser(subparsers: argparse._SubParsersAction[argparse.ArgumentParser]) -> None:
+    parser = subparsers.add_parser("add-answer", help="Add a reusable saved answer")
+    parser.add_argument("path", type=Path)
+    parser.add_argument("--id", required=True)
+    parser.add_argument("--prompt", required=True)
+    parser.add_argument("--answer", required=True)
+    parser.add_argument("--tag", action="append", default=[])
+    parser.add_argument("--evidence-id", action="append", default=[])
+
+
+def _add_story_parser(subparsers: argparse._SubParsersAction[argparse.ArgumentParser]) -> None:
+    parser = subparsers.add_parser("add-story", help="Add a reusable structured story")
+    parser.add_argument("path", type=Path)
+    parser.add_argument("--id", required=True)
+    parser.add_argument("--title", required=True)
+    parser.add_argument("--situation", required=True)
+    parser.add_argument("--action", required=True)
+    parser.add_argument("--result", required=True)
+    parser.add_argument("--evidence-id", action="append", default=[])
+
+
 def _add_job_parser(subparsers: argparse._SubParsersAction[argparse.ArgumentParser]) -> None:
     parser = subparsers.add_parser("add", help="Add a job from explicit fields")
     parser.add_argument("path", type=Path)
@@ -198,6 +290,17 @@ def _add_job_import_parser(subparsers: argparse._SubParsersAction[argparse.Argum
     parser = subparsers.add_parser("import", help="Import a structured local JSON or YAML job")
     parser.add_argument("path", type=Path)
     parser.add_argument("source", type=Path)
+
+
+def _add_job_read_parsers(subparsers: argparse._SubParsersAction[argparse.ArgumentParser]) -> None:
+    validate = subparsers.add_parser("validate", help="Validate one or all job documents")
+    validate.add_argument("path", type=Path)
+    validate.add_argument("--id")
+    list_parser = subparsers.add_parser("list", help="Print validated job documents")
+    list_parser.add_argument("path", type=Path)
+    show = subparsers.add_parser("show", help="Print one validated job document")
+    show.add_argument("path", type=Path)
+    show.add_argument("id")
 
 
 def _add_job_fields(parser: argparse.ArgumentParser, *, required_identity: bool) -> None:
@@ -238,6 +341,18 @@ def main(arguments: list[str] | None = None) -> int:
 
     if args.command == "resume":
         return _run_resume_command(args)
+
+    if args.command == "proposal":
+        return _run_proposal_command(args)
+
+    if args.command == "jobs":
+        return _run_jobs_command(args)
+
+    if args.command == "match":
+        return _run_match_command(args)
+
+    if args.command == "studio":
+        return _run_studio_command(args)
 
     if args.command == "template":
         try:
@@ -309,8 +424,28 @@ def _run_career_command(args: argparse.Namespace) -> int:
                 "experience_id": args.experience_id, "tags": args.tag,
                 "details": args.detail, "verified": args.verified,
             })
+        elif args.career_command == "add-answer":
+            add_record(career_path, "answers", {
+                "id": args.id, "prompt": args.prompt, "answer": args.answer,
+                "tags": args.tag, "evidence_ids": args.evidence_id,
+            })
+        elif args.career_command == "add-story":
+            add_record(career_path, "stories", {
+                "id": args.id, "title": args.title, "situation": args.situation,
+                "action": args.action, "result": args.result,
+                "evidence_ids": args.evidence_id,
+            })
         elif args.career_command == "list":
             print(dump_section(list_section(career_path, args.section)), end="")
+            return 0
+        elif args.career_command == "search-evidence":
+            results = search_verified_evidence(
+                args.path,
+                query=args.query,
+                tags=args.tag,
+                experience_id=args.experience_id,
+            )
+            print(dump_section(results), end="")
             return 0
         else:  # pragma: no cover - argparse guards this branch
             raise ValueError(f"Unknown career command: {args.career_command}")
@@ -319,6 +454,41 @@ def _run_career_command(args: argparse.Namespace) -> int:
         return 1
 
     print(f"Updated career document: {career_path}")
+    return 0
+
+
+def _run_proposal_command(args: argparse.Namespace) -> int:
+    project_path = args.path.expanduser().resolve()
+    try:
+        if args.proposal_command == "request":
+            request = create_proposal_request(
+                project_path,
+                args.id,
+                args.variant_id,
+                args.language,
+                job_id=args.job_id,
+            )
+            write_proposal_request(args.output.expanduser().resolve(), request)
+            print(f"Wrote proposal request: {args.output.expanduser().resolve()}")
+            return 0
+        request = load_proposal_request(args.request.expanduser().resolve())
+        response = load_proposal_response(args.response.expanduser().resolve())
+        diagnostics = validate_proposal(project_path, request, response)
+        if diagnostics:
+            for diagnostic in diagnostics:
+                print(f"{args.response}: {diagnostic.path}: {diagnostic.message}", file=sys.stderr)
+            return 1
+        if args.proposal_command == "review":
+            print(dump_proposal_diff(diff_proposal(response)), end="")
+            return 0
+        applied = apply_proposal(project_path, request, response, args.accept)
+    except (OSError, ValueError, ValidationError, YAMLError) as error:
+        print(f"{project_path}: {error}", file=sys.stderr)
+        return 1
+    paths = [path for path in (applied.variant_path, applied.cover_letter_path) if path]
+    print(f"Applied proposal items: {', '.join(args.accept)}")
+    for path in paths:
+        print(path)
     return 0
 
 
@@ -431,20 +601,33 @@ def _run_jobs_command(args: argparse.Namespace) -> int:
             print(dump_job(load_job(document_path)), end="")
             return 0
 
+        if args.jobs_command == "extract-requirements":
+            document_path = job_path(project_path, args.id)
+            diagnostics = validate_job(document_path)
+            if diagnostics:
+                for diagnostic in diagnostics:
+                    print(diagnostic.format(document_path), file=sys.stderr)
+                return 1
+            from io import StringIO
+
+            from ruamel.yaml import YAML
+
+            stream = StringIO()
+            YAML().dump(
+                [item.model_dump(mode="python") for item in extract_requirements(load_job(document_path))],
+                stream,
+            )
+            print(stream.getvalue(), end="")
+            return 0
+
         if args.jobs_command == "add":
             payload = _job_payload_from_args(args)
             source = JobSource(format="manual", content=args.description)
         elif args.jobs_command == "import":
-            source_path = args.source.expanduser().resolve()
-            source_content = source_path.read_text(encoding="utf-8")
-            source_format = source_format_for_path(source_path)
-            if source_format == "json":
-                payload = load_json_payload(source_content)
-            else:
-                payload = load_yaml_payload(source_content)
-            source = JobSource(
-                format=source_format, filename=source_path.name, content=source_content
-            )
+            saved_job_paths = import_jobs(project_path, args.source)
+            for saved_job_path in saved_job_paths:
+                print(f"Saved job document: {saved_job_path}")
+            return 0
         else:  # pragma: no cover - argparse guards this branch
             raise ValueError(f"Unknown jobs command: {args.jobs_command}")
 
@@ -454,6 +637,44 @@ def _run_jobs_command(args: argparse.Namespace) -> int:
         return 1
 
     print(f"Saved job document: {saved_job_path}")
+    return 0
+
+
+def _run_match_command(args: argparse.Namespace) -> int:
+    project_path = args.path.expanduser().resolve()
+    document_path = job_path(project_path, args.job_id)
+    try:
+        diagnostics = validate_job(document_path)
+        if diagnostics:
+            for diagnostic in diagnostics:
+                print(diagnostic.format(document_path), file=sys.stderr)
+            return 1
+        configuration = load_project_configuration(project_path)
+        report = match_job(
+            project_path,
+            load_job(document_path),
+            weights=configuration.match_weights,
+        )
+    except (OSError, ValueError, ValidationError, YAMLError) as error:
+        print(f"{project_path}: {error}", file=sys.stderr)
+        return 1
+    print(dump_match_report(report), end="")
+    return 0
+
+
+def _run_studio_command(args: argparse.Namespace) -> int:
+    try:
+        server = create_studio_server(args.path, port=args.port)
+    except OSError as error:
+        print(f"{args.path}: {error}", file=sys.stderr)
+        return 1
+    print(f"seriemaCV Studio: http://127.0.0.1:{server.server_port}")
+    try:
+        server.serve_forever()
+    except KeyboardInterrupt:
+        return 0
+    finally:
+        server.server_close()
     return 0
 
 

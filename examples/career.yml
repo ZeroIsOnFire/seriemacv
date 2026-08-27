@@ -28,6 +28,7 @@ answers:
   - id: work-authorization
     prompt: Are you authorized to work in Brazil?
     answer: Yes.
+    evidence_ids: [example-service]
 stories:
   - id: example-delivery
     title: Service delivery

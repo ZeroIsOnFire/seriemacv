@@ -5,6 +5,7 @@ from __future__ import annotations
 import os
 import re
 import tempfile
+import zipfile
 from dataclasses import dataclass
 from io import StringIO
 from pathlib import Path
@@ -44,6 +45,15 @@ class IdentifiedRecord(StrictModel):
 class JobRequirement(IdentifiedRecord):
     statement: str = Field(min_length=1)
     priority: Literal["required", "preferred"] = "required"
+    dimension: Literal[
+        "core_technical_fit",
+        "experience_seniority",
+        "responsibilities",
+        "domain",
+        "location_schedule",
+        "language",
+        "other_constraints",
+    ] | None = None
 
     @field_validator("statement")
     @classmethod
@@ -152,6 +162,26 @@ def create_job(project_path: Path, payload: JobImportPayload, source: JobSource)
     return path
 
 
+def import_jobs(project_path: Path, source_path: Path) -> list[Path]:
+    """Import one structured job file or every YAML job in a local ZIP archive.
+
+    All payloads and destination collisions are checked before any job is written.
+    Source content remains embedded in each resulting job document.
+    """
+    source_path = source_path.expanduser().resolve()
+    documents = _import_documents(source_path)
+    identifiers = [document.id for document in documents]
+    if len(identifiers) != len(set(identifiers)):
+        raise ValueError("import contains duplicate job ids")
+    paths = [job_path(project_path, document.id) for document in documents]
+    existing = [path.name for path in paths if path.exists()]
+    if existing:
+        raise FileExistsError(f"job document(s) already exist: {', '.join(existing)}")
+    for path, document in zip(paths, documents, strict=True):
+        _write_yaml(path, document)
+    return paths
+
+
 def load_jobs(project_path: Path) -> list[JobDocument]:
     diagnostics = validate_jobs(project_path)
     if diagnostics:
@@ -185,6 +215,52 @@ def source_format_for_path(path: Path) -> Literal["json", "yaml"]:
     if suffix in {".yml", ".yaml"}:
         return "yaml"
     raise ValueError(f"Unsupported job source format: {path.suffix or '(no extension)'}")
+
+
+def _import_documents(source_path: Path) -> list[JobDocument]:
+    if source_path.suffix.lower() != ".zip":
+        content = source_path.read_text(encoding="utf-8")
+        source_format = source_format_for_path(source_path)
+        payload = (
+            load_json_payload(content)
+            if source_format == "json"
+            else load_yaml_payload(content)
+        )
+        return [
+            JobDocument(
+                **payload.model_dump(),
+                source=JobSource(
+                    format=source_format, filename=source_path.name, content=content
+                ),
+            )
+        ]
+
+    documents: list[JobDocument] = []
+    with zipfile.ZipFile(source_path) as archive:
+        entries = [
+            entry
+            for entry in archive.infolist()
+            if not entry.is_dir() and Path(entry.filename).suffix.lower() in {".yaml", ".yml"}
+        ]
+        if not entries:
+            raise ValueError("ZIP archive contains no YAML job documents")
+        for entry in entries:
+            try:
+                content = archive.read(entry).decode("utf-8")
+            except UnicodeDecodeError as error:
+                raise ValueError(f"ZIP entry '{entry.filename}' is not UTF-8") from error
+            payload = load_yaml_payload(content)
+            documents.append(
+                JobDocument(
+                    **payload.model_dump(),
+                    source=JobSource(
+                        format="yaml",
+                        filename=f"{source_path.name}!{entry.filename}",
+                        content=content,
+                    ),
+                )
+            )
+    return documents
 
 
 def load_json_payload(content: str) -> JobImportPayload:

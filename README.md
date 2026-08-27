@@ -37,8 +37,8 @@ Job-specific wording stays separate under
 `resume/variants/<id>/locales/<locale>.yml` and inherits omitted content from the
 base career locale.
 
-The jobs workspace is temporarily paused. Existing job files and the underlying
-validated domain remain intact, but job commands are not exposed by the CLI.
+The jobs workspace supports local structured imports, deterministic match reports,
+reviewable tailoring proposals, and a read-only local Studio.
 
 ## Render a resume
 
