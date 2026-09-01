@@ -15,16 +15,18 @@ from seriemacv.applications import (
     load_application,
     update_status,
 )
-from seriemacv.career import load_career
+from seriemacv.career import SavedAnswer, load_career
+from seriemacv.jobs import load_job
 from seriemacv.project import load_project_configuration
 from seriemacv.renderer import ResumeRenderError, write_resume
 from seriemacv.variants import load_variant_career
 
-_SENSITIVE = re.compile(r"salary|compensation|pay|legal|authorization|authori[sz]ation|visa|work permit|demographic|gender|race|ethnicity|disability|veteran|self.ident", re.I)
+_SENSITIVE = re.compile(r"salary|compensation|pay|legal|authorization|authori[sz]ation|visa|work permit|sole proprietor|invoice|demographic|gender|race|ethnicity|disability|veteran|self.ident", re.I)
 _PROFILE_FIELDS = {
     "name": "name", "full name": "name", "email": "email", "phone": "phone",
-    "linkedin": "linkedin", "portfolio": "portfolio",
+    "linkedin": "linkedin", "portfolio": "portfolio", "github": "portfolio",
 }
+_FORM_CONTROLS = "input, select, textarea"
 
 
 @dataclass(frozen=True)
@@ -49,9 +51,11 @@ def clear_browser_profile(project_path: Path) -> None:
 
 def discover_fields(page: Any) -> list[BrowserField]:
     """Inspect generic form controls without retaining their values."""
-    raw = page.locator("input, select, textarea").evaluate_all("""elements => elements.map((element, index) => {
+    raw = page.locator(_FORM_CONTROLS).evaluate_all("""elements => elements.map((element, index) => {
       const label = element.labels && element.labels.length ? element.labels[0].innerText :
-        element.getAttribute('aria-label') || element.getAttribute('placeholder') || element.name || element.id || `field-${index + 1}`;
+        element.getAttribute('aria-label') || element.getAttribute('placeholder') ||
+        (element.type === 'checkbox' ? element.parentElement?.innerText : '') ||
+        element.name || element.id || `field-${index + 1}`;
       return {id: element.id || element.name || `field-${index + 1}`, label, required: element.required || element.getAttribute('aria-required') === 'true', type: element.type || element.tagName.toLowerCase()};
     })""")
     fields: list[BrowserField] = []
@@ -64,6 +68,12 @@ def discover_fields(page: Any) -> list[BrowserField]:
         label = str(item["label"]).strip() or field_id
         fields.append(BrowserField(field_id, index, label, bool(item["required"]), str(item["type"]), bool(_SENSITIVE.search(label))))
     return fields
+
+
+def _wait_for_form_controls(page: Any) -> None:
+    """Wait for client-rendered application controls after initial navigation."""
+    page.wait_for_selector(_FORM_CONTROLS, state="attached")
+    page.wait_for_timeout(500)
 
 
 def prepare_application(project_path: Path, application_id: str, *, interactive: bool = False, ai_assisted: bool = False) -> ApplicationDocument:
@@ -82,12 +92,23 @@ def prepare_application(project_path: Path, application_id: str, *, interactive:
         try:
             page = context.pages[0] if context.pages else context.new_page()
             page.goto(document.url, wait_until="domcontentloaded")
-            if interactive:
-                input("Complete any login in the browser, then press Enter to inspect the form: ")
+            _wait_for_form_controls(page)
             fields = discover_fields(page)
             filled = _fill_known(page, fields, project_path, document)
             _attach_documents(page, fields, project_path, document)
-            questions = _questions_for(fields, document, filled, include_optional=ai_assisted)
+            if interactive:
+                input("Review the pre-filled safe fields and complete any login, then press Enter to inspect unresolved fields: ")
+            _wait_for_form_controls(page)
+            fields = discover_fields(page)
+            filled.update(_fill_known(page, fields, project_path, document))
+            _attach_documents(page, fields, project_path, document)
+            career = load_career(project_path / "career.yml")
+            job = load_job(project_path / "jobs" / f"{document.job_id}.yml")
+            saved_answers = _saved_answers_for_seniority(career.answers, job.seniority)
+            questions = _questions_for(
+                fields, document, filled, include_optional=ai_assisted,
+                saved_answers=saved_answers,
+            )
             if questions:
                 add_questions(project_path, application_id, questions)
             elif document.status == "preparing":
@@ -100,7 +121,6 @@ def prepare_application(project_path: Path, application_id: str, *, interactive:
 def _fill_known(page: Any, fields: list[BrowserField], project_path: Path, document: ApplicationDocument) -> set[str]:
     career = load_career(project_path / "career.yml")
     used = {item.field_id: item for item in document.answers}
-    saved_by_prompt = {item.prompt.casefold(): item for item in career.answers}
     filled: set[str] = set()
     for field in fields:
         if field.sensitive or field.input_type in {"file", "hidden", "submit", "checkbox", "radio"}:
@@ -109,15 +129,24 @@ def _fill_known(page: Any, fields: list[BrowserField], project_path: Path, docum
         key = next((value for name, value in _PROFILE_FIELDS.items() if name in normalized), None)
         value = getattr(career.profile, key, "") if key else ""
         saved = used.get(field.field_id)
-        reusable = saved_by_prompt.get(field.label.casefold())
-        if not value and reusable and not reusable.sensitive:
-            value = reusable.answer
         if not value and saved and (not saved.sensitive or saved.confirmed_for_application):
             value = saved.answer
         if value:
-            page.locator("input, select, textarea").nth(field.index).fill(value)
+            page.locator(_FORM_CONTROLS).nth(field.index).fill(value)
             filled.add(field.field_id)
     return filled
+
+
+def _saved_answers_for_seniority(
+    answers: list[SavedAnswer], seniority: str
+) -> dict[str, tuple[str, list[str], bool]]:
+    """Offer saved answers only for their matching role scope and later review."""
+    normalized_seniority = seniority.casefold()
+    return {
+        item.prompt.casefold(): (item.answer, item.evidence_ids, item.sensitive)
+        for item in answers
+        if not item.role_scope or normalized_seniority in item.role_scope
+    }
 
 
 def _attach_documents(page: Any, fields: list[BrowserField], project_path: Path, document: ApplicationDocument) -> None:
@@ -139,16 +168,38 @@ def _attach_documents(page: Any, fields: list[BrowserField], project_path: Path,
             # Chromium is unavailable; do not replace it with another format.
             return
     if attachments:
-        page.locator("input, select, textarea").nth(upload_fields[0].index).set_input_files([str(path) for path in attachments])
+        page.locator(_FORM_CONTROLS).nth(upload_fields[0].index).set_input_files([str(path) for path in attachments])
 
 
-def _questions_for(fields: list[BrowserField], document: ApplicationDocument, filled: set[str], *, include_optional: bool = False) -> list[ApplicationQuestion]:
+def _questions_for(
+    fields: list[BrowserField],
+    document: ApplicationDocument,
+    filled: set[str],
+    *,
+    include_optional: bool = False,
+    saved_answers: dict[str, tuple[str, list[str], bool]] | None = None,
+) -> list[ApplicationQuestion]:
     resolved = {item.field_id for item in document.answers} | filled
     existing = {item.field_id for item in document.questions}
     result: list[ApplicationQuestion] = []
     for field in fields:
-        if (not field.required and not include_optional) or field.input_type in {"hidden", "submit", "file"} or field.field_id in resolved | existing:
+        if (
+            (not field.required and not include_optional and not field.sensitive)
+            or field.input_type in {"hidden", "submit", "file"}
+            or field.field_id in resolved | existing
+        ):
             continue
         question_id = f"question-{field.field_id}"
-        result.append(ApplicationQuestion(id=question_id, field_id=field.field_id, label=field.label, context="Required field detected in the local browser session.", required=True, sensitive=field.sensitive))
+        candidate = (saved_answers or {}).get(field.label.casefold())
+        proposal = candidate if candidate and candidate[2] == field.sensitive else None
+        result.append(ApplicationQuestion(
+            id=question_id,
+            field_id=field.field_id,
+            label=field.label,
+            context="Required field detected in the local browser session.",
+            required=field.required,
+            sensitive=field.sensitive,
+            proposed_answer=proposal[0] if proposal else None,
+            proposed_evidence_ids=proposal[1] if proposal else [],
+        ))
     return result

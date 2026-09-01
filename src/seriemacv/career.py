@@ -142,12 +142,22 @@ class SavedAnswer(IdentifiedRecord):
     tags: list[str] = Field(default_factory=list)
     evidence_ids: list[str] = Field(default_factory=list)
     sensitive: bool = False
+    role_scope: list[str] = Field(default_factory=list)
 
     @field_validator("evidence_ids")
     @classmethod
     def unique_evidence_ids(cls, value: list[str]) -> list[str]:
         if len(value) != len(set(value)):
             raise ValueError("contains duplicate ids")
+        return value
+
+    @field_validator("role_scope")
+    @classmethod
+    def valid_role_scope(cls, value: list[str]) -> list[str]:
+        if len(value) != len(set(value)):
+            raise ValueError("contains duplicate role scopes")
+        if invalid := [item for item in value if not _ID_PATTERN.fullmatch(item)]:
+            raise ValueError(f"contains invalid role scopes: {', '.join(invalid)}")
         return value
 
 

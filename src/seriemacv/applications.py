@@ -195,7 +195,16 @@ def propose_answer(project_path: Path, application_id: str, question_id: str, an
     return updated
 
 
-def apply_answer(project_path: Path, application_id: str, question_id: str, answer: str | None = None, *, save_answer_id: str | None = None, save_prompt: str | None = None) -> ApplicationDocument:
+def apply_answer(
+    project_path: Path,
+    application_id: str,
+    question_id: str,
+    answer: str | None = None,
+    *,
+    save_answer_id: str | None = None,
+    save_prompt: str | None = None,
+    save_role_scope: list[str] | None = None,
+) -> ApplicationDocument:
     document = load_application(project_path, application_id)
     question = next((item for item in document.questions if item.id == question_id), None)
     if question is None:
@@ -204,7 +213,14 @@ def apply_answer(project_path: Path, application_id: str, question_id: str, answ
     if not resolved:
         raise ValueError("an explicit answer or a proposal is required")
     if save_answer_id:
-        add_record(project_path / "career.yml", "answers", {"id": save_answer_id, "prompt": save_prompt or question.label, "answer": resolved, "evidence_ids": question.proposed_evidence_ids, "sensitive": question.sensitive})
+        add_record(project_path / "career.yml", "answers", {
+            "id": save_answer_id,
+            "prompt": save_prompt or question.label,
+            "answer": resolved,
+            "evidence_ids": question.proposed_evidence_ids,
+            "sensitive": question.sensitive,
+            "role_scope": save_role_scope or [],
+        })
     record = ApplicationAnswer(field_id=question.field_id, answer=resolved, saved_answer_id=save_answer_id, sensitive=question.sensitive, confirmed_for_application=True)
     answers = [item for item in document.answers if item.field_id != question.field_id] + [record]
     questions = [item for item in document.questions if item.id != question_id]

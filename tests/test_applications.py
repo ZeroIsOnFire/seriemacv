@@ -24,7 +24,14 @@ from seriemacv.applications import (
     load_application,
     update_status,
 )
-from seriemacv.browser import BrowserField, _questions_for, browser_profile_path
+from seriemacv.browser import (
+    BrowserField,
+    _questions_for,
+    _saved_answers_for_seniority,
+    _wait_for_form_controls,
+    browser_profile_path,
+)
+from seriemacv.career import SavedAnswer
 from seriemacv.cli import main
 from seriemacv.project import create_project
 
@@ -80,6 +87,54 @@ class ApplicationTests(unittest.TestCase):
         self.assertEqual([item.id for item in questions], ["question-salary"])
         self.assertTrue(questions[0].sensitive)
 
+    def test_saved_answer_requires_review_before_it_can_fill_a_new_application(self) -> None:
+        create_application(self.project, ApplicationDocument(id="role-application", job_id="role"))
+        questions = _questions_for(
+            [BrowserField("portfolio", 0, "Portfolio", True, "text", False)],
+            load_application(self.project, "role-application"),
+            set(),
+            saved_answers={"portfolio": ("https://example.invalid/work", ["verified-work"], False)},
+        )
+
+        self.assertEqual(len(questions), 1)
+        self.assertEqual(questions[0].proposed_answer, "https://example.invalid/work")
+        self.assertEqual(questions[0].proposed_evidence_ids, ["verified-work"])
+
+    def test_saved_salary_is_proposed_only_for_its_staff_scope(self) -> None:
+        answer = SavedAnswer(
+            id="staff-salary",
+            prompt="Expected salary?",
+            answer="USD 8,000-10,000 monthly gross",
+            sensitive=True,
+            role_scope=["staff"],
+        )
+
+        staff_answers = _saved_answers_for_seniority([answer], "Staff")
+        senior_answers = _saved_answers_for_seniority([answer], "Senior")
+
+        self.assertIn("expected salary?", staff_answers)
+        self.assertNotIn("expected salary?", senior_answers)
+        create_application(self.project, ApplicationDocument(id="role-application", job_id="role"))
+        questions = _questions_for(
+            [BrowserField("salary", 0, "Expected salary?", True, "text", True)],
+            load_application(self.project, "role-application"),
+            set(),
+            saved_answers=staff_answers,
+        )
+        self.assertEqual(questions[0].proposed_answer, "USD 8,000-10,000 monthly gross")
+
+    def test_sensitive_optional_field_is_queued_for_review(self) -> None:
+        create_application(self.project, ApplicationDocument(id="role-application", job_id="role"))
+        questions = _questions_for(
+            [BrowserField("invoice", 0, "Can you issue invoices?", False, "checkbox", True)],
+            load_application(self.project, "role-application"),
+            set(),
+        )
+
+        self.assertEqual([item.id for item in questions], ["question-invoice"])
+        self.assertFalse(questions[0].required)
+        self.assertTrue(questions[0].sensitive)
+
     def test_browser_profile_is_scoped_to_its_project(self) -> None:
         other_project = Path(self.temporary.name) / "other-career"
         create_project(other_project, project_name="Other career")
@@ -87,6 +142,25 @@ class ApplicationTests(unittest.TestCase):
         self.assertEqual(browser_profile_path(self.project), self.project / ".seriemacv" / "browser")
         self.assertEqual(browser_profile_path(other_project), other_project / ".seriemacv" / "browser")
         self.assertNotEqual(browser_profile_path(self.project), browser_profile_path(other_project))
+
+    def test_browser_preparation_waits_for_client_rendered_form_controls(self) -> None:
+        class Page:
+            def __init__(self) -> None:
+                self.calls: list[tuple[object, ...]] = []
+
+            def wait_for_selector(self, selector: str, *, state: str) -> None:
+                self.calls.append(("selector", selector, state))
+
+            def wait_for_timeout(self, timeout: int) -> None:
+                self.calls.append(("timeout", timeout))
+
+        page = Page()
+        _wait_for_form_controls(page)
+
+        self.assertEqual(page.calls, [
+            ("selector", "input, select, textarea", "attached"),
+            ("timeout", 500),
+        ])
 
     def test_cli_creates_lists_and_updates_application(self) -> None:
         with redirect_stdout(StringIO()):
@@ -103,6 +177,21 @@ class ApplicationTests(unittest.TestCase):
             result = main(["applications", "set-status", str(self.project), "cli-application", "preparing"])
         self.assertEqual(result, 0)
         self.assertIn("preparing", output.getvalue())
+
+    def test_cli_applies_an_explicit_application_answer(self) -> None:
+        create_application(self.project, ApplicationDocument(id="role-application", job_id="role"))
+        add_questions(self.project, "role-application", [
+            ApplicationQuestion(id="question-why", field_id="why", label="Why this role?"),
+        ])
+
+        with redirect_stdout(StringIO()) as output:
+            result = main([
+                "applications", "apply-answer", str(self.project), "role-application",
+                "question-why", "--answer", "Because the work fits.",
+            ])
+
+        self.assertEqual(result, 0)
+        self.assertIn("Because the work fits.", output.getvalue())
 
     def test_ai_response_is_reviewable_and_requires_explicit_item_acceptance(self) -> None:
         create_application(self.project, ApplicationDocument(id="role-application", job_id="role"))
