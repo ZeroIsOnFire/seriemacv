@@ -104,7 +104,7 @@ def prepare_application(project_path: Path, application_id: str, *, interactive:
             _attach_documents(page, fields, project_path, document)
             career = load_career(project_path / "career.yml")
             job = load_job(project_path / "jobs" / f"{document.job_id}.yml")
-            saved_answers = _saved_answers_for_seniority(career.answers, job.seniority)
+            saved_answers = _saved_answers_for_job(career.answers, job.seniority, job.language)
             questions = _questions_for(
                 fields, document, filled, include_optional=ai_assisted,
                 saved_answers=saved_answers,
@@ -137,16 +137,28 @@ def _fill_known(page: Any, fields: list[BrowserField], project_path: Path, docum
     return filled
 
 
-def _saved_answers_for_seniority(
-    answers: list[SavedAnswer], seniority: str
+def _saved_answers_for_job(
+    answers: list[SavedAnswer], seniority: str, language: str
 ) -> dict[str, tuple[str, list[str], bool]]:
-    """Offer saved answers only for their matching role scope and later review."""
+    """Offer saved answers only for matching role and language scopes, for review."""
     normalized_seniority = seniority.casefold()
+    normalized_language = _normalized_language_scope(language)
     return {
         item.prompt.casefold(): (item.answer, item.evidence_ids, item.sensitive)
         for item in answers
-        if not item.role_scope or normalized_seniority in item.role_scope
+        if (not item.role_scope or normalized_seniority in item.role_scope)
+        and (not item.language_scope or normalized_language in item.language_scope)
     }
+
+
+def _normalized_language_scope(language: str) -> str:
+    """Map a job's declared language to the stable answer-scope identifier."""
+    normalized = language.strip().casefold()
+    aliases = {
+        "en": "en", "english": "en",
+        "pt": "pt", "pt-br": "pt", "portuguese": "pt", "português": "pt",
+    }
+    return aliases.get(normalized, normalized)
 
 
 def _attach_documents(page: Any, fields: list[BrowserField], project_path: Path, document: ApplicationDocument) -> None:

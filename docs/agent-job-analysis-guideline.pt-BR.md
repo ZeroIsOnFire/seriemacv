@@ -47,8 +47,10 @@ não envia candidatura.
    empresa, Levels.fyi, Glassdoor/Indeed, vagas históricas e agregadores. Informe
    país, moeda, vínculo, data e fonte. Nunca apresente faixa de terceiros como
    oficial nem reutilize pretensão salarial sem nova revisão da pessoa usuária. Ao
-   salvá-la, restrinja-a à senioridade aplicável (por exemplo, `staff`) quando a
-   pessoa usuária fornecer essa condição.
+   salvá-la, restrinja-a à senioridade aplicável (por exemplo, `staff`) e ao idioma
+   da candidatura (por exemplo, `en`) quando a pessoa usuária fornecer essas
+   condições. Uma resposta `staff` + `en` não pode ser proposta para candidatura
+   Senior ou em português.
 7. **Pesquise a empresa proporcionalmente.** Resuma produto, modelo de negócio,
    localidade, estágio/funding, sinais de estabilidade, notícias recentes, trabalho
    remoto e preocupações públicas recorrentes. Em consultoria ou staffing, procure

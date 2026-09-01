@@ -204,6 +204,7 @@ def apply_answer(
     save_answer_id: str | None = None,
     save_prompt: str | None = None,
     save_role_scope: list[str] | None = None,
+    save_language_scope: list[str] | None = None,
 ) -> ApplicationDocument:
     document = load_application(project_path, application_id)
     question = next((item for item in document.questions if item.id == question_id), None)
@@ -220,6 +221,7 @@ def apply_answer(
             "evidence_ids": question.proposed_evidence_ids,
             "sensitive": question.sensitive,
             "role_scope": save_role_scope or [],
+            "language_scope": save_language_scope or [],
         })
     record = ApplicationAnswer(field_id=question.field_id, answer=resolved, saved_answer_id=save_answer_id, sensitive=question.sensitive, confirmed_for_application=True)
     answers = [item for item in document.answers if item.field_id != question.field_id] + [record]

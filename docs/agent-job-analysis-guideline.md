@@ -50,7 +50,9 @@ submit an application.
    then aggregators. State country, currency, employment model, date, and source.
    Never represent a third-party range as employer-confirmed or reuse an expected
    salary without a fresh user review. When saving it, scope it to the applicable
-   seniority (for example, `staff`) when the user provides that constraint.
+   seniority (for example, `staff`) and application language (for example, `en`)
+   when the user provides those constraints. A `staff` + `en` answer must not be
+   proposed for a Senior or Portuguese-language application.
 7. **Research the company proportionately.** Summarize product, business model,
    location, stage/funding, stability signals, recent news, remote model, and
    recurring public concerns. For consulting or staffing roles, identify the final

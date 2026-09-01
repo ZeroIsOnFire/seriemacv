@@ -27,11 +27,11 @@ from seriemacv.applications import (
 from seriemacv.browser import (
     BrowserField,
     _questions_for,
-    _saved_answers_for_seniority,
+    _saved_answers_for_job,
     _wait_for_form_controls,
     browser_profile_path,
 )
-from seriemacv.career import SavedAnswer
+from seriemacv.career import SavedAnswer, load_career
 from seriemacv.cli import main
 from seriemacv.project import create_project
 
@@ -68,8 +68,13 @@ class ApplicationTests(unittest.TestCase):
         completed = apply_answer(
             self.project, "role-application", "question-why", "Because the work fits.",
             save_answer_id="why-role",
+            save_role_scope=["staff"],
+            save_language_scope=["en"],
         )
         self.assertEqual(completed.status, "ready_for_review")
+        career = load_career(self.project / "career.yml")
+        self.assertEqual(career.answers[0].role_scope, ["staff"])
+        self.assertEqual(career.answers[0].language_scope, ["en"])
         self.assertEqual(completed.answers[0].answer, "Because the work fits.")
         self.assertEqual(load_application(self.project, "role-application").answers[0].saved_answer_id, "why-role")
         with self.assertRaisesRegex(ValueError, "invalid status transition"):
@@ -100,26 +105,29 @@ class ApplicationTests(unittest.TestCase):
         self.assertEqual(questions[0].proposed_answer, "https://example.invalid/work")
         self.assertEqual(questions[0].proposed_evidence_ids, ["verified-work"])
 
-    def test_saved_salary_is_proposed_only_for_its_staff_scope(self) -> None:
+    def test_saved_salary_is_proposed_only_for_its_staff_english_scope(self) -> None:
         answer = SavedAnswer(
             id="staff-salary",
             prompt="Expected salary?",
             answer="USD 8,000-10,000 monthly gross",
             sensitive=True,
             role_scope=["staff"],
+            language_scope=["en"],
         )
 
-        staff_answers = _saved_answers_for_seniority([answer], "Staff")
-        senior_answers = _saved_answers_for_seniority([answer], "Senior")
+        staff_english_answers = _saved_answers_for_job([answer], "Staff", "English")
+        senior_english_answers = _saved_answers_for_job([answer], "Senior", "English")
+        staff_portuguese_answers = _saved_answers_for_job([answer], "Staff", "Portuguese")
 
-        self.assertIn("expected salary?", staff_answers)
-        self.assertNotIn("expected salary?", senior_answers)
+        self.assertIn("expected salary?", staff_english_answers)
+        self.assertNotIn("expected salary?", senior_english_answers)
+        self.assertNotIn("expected salary?", staff_portuguese_answers)
         create_application(self.project, ApplicationDocument(id="role-application", job_id="role"))
         questions = _questions_for(
             [BrowserField("salary", 0, "Expected salary?", True, "text", True)],
             load_application(self.project, "role-application"),
             set(),
-            saved_answers=staff_answers,
+            saved_answers=staff_english_answers,
         )
         self.assertEqual(questions[0].proposed_answer, "USD 8,000-10,000 monthly gross")
 

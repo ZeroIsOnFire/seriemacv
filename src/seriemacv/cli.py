@@ -220,6 +220,7 @@ def build_parser() -> argparse.ArgumentParser:
     application_answer.add_argument("--save-answer-id")
     application_answer.add_argument("--save-prompt")
     application_answer.add_argument("--save-role-scope", action="append", default=[])
+    application_answer.add_argument("--save-language-scope", action="append", default=[])
     application_browser = applications_subparsers.add_parser("clear-browser-profile", help="Delete the isolated browser profile for this project")
     application_browser.add_argument("path", type=Path)
     application_ai_request = applications_subparsers.add_parser("ai-request", help="Write a minimal AI assistance request for detected form fields")
@@ -729,6 +730,7 @@ def _run_applications_command(args: argparse.Namespace) -> int:
                 project_path, args.id, args.question_id, args.answer,
                 save_answer_id=args.save_answer_id, save_prompt=args.save_prompt,
                 save_role_scope=args.save_role_scope,
+                save_language_scope=args.save_language_scope,
             )), end="")
             return 0
         if args.applications_command == "prepare":
