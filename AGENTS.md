@@ -25,6 +25,10 @@ future standalone GUI may reuse the same core without requiring an agent.
   clearly distinguish facts from pending information.
 - Every match must be explainable: each job requirement shows its classification and
   corresponding evidence, including when no evidence exists.
+- When asked to import a job, also validate its document, analyze the announced
+  requirements, generate the explainable compatibility report, and research a
+  salary expectation. Salary findings must state their source or uncertainty,
+  remain a reviewable proposal, and never overwrite sensitive profile data.
 - External actions (applications, form submissions, messages, or profile updates)
   require explicit human approval by default.
 - Preserve a useful progression: structured manual builder → AI assistance → agents
