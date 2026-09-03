@@ -7,6 +7,37 @@ nem inventa fatos de carreira. Informe o local do projeto quando necessário e d
 resultado desejado explícito. Revise toda mudança canônica proposta e toda resposta
 sensível de candidatura.
 
+## Iniciar um projeto a partir de um currículo existente
+
+Peça ao agente para criar o workspace local e depois anexe ou forneça o currículo:
+
+```text
+Crie um projeto Seriema em .\minha-carreira, em português, com o estilo clean.
+Vou anexar meu currículo atual. Extraia somente os fatos presentes nele para uma
+proposta de career.yml, liste as informações faltantes e aguarde minha revisão antes
+de salvar qualquer coisa.
+```
+
+O agente pode transformar o currículo em uma proposta YAML revisável, mas não pode
+inferir datas, empresas, habilidades, métricas ou credenciais que não estejam na
+fonte. O `career.yml` só se torna canônico depois que você aceitar explicitamente os
+fatos propostos.
+
+## Verificar evidências antes de usá-las
+
+As evidências sustentam os relatórios de compatibilidade, o texto personalizado e as
+respostas de candidatura. Revise-as antes de importar vagas ou adaptar o currículo:
+
+```text
+Mostre minhas evidências de carreira e identifique as afirmações que precisam de
+verificação. Marque como verificadas apenas as que eu confirmar; deixe pendentes as
+afirmações inferidas ou sem suporte.
+```
+
+Somente evidências verificadas podem sustentar um match positivo ou uma afirmação
+factual em currículo adaptado. Um item ausente ou não verificado continua sendo uma
+lacuna, nunca uma habilidade presumida.
+
 ## Importar e avaliar uma vaga
 
 ```text

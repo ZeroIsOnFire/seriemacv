@@ -7,6 +7,33 @@ career facts up. Give it the project location when needed and make the outcome
 explicit. Review every proposed canonical change and any sensitive application
 answer.
 
+## Start a project from an existing resume
+
+Ask the agent to create the local workspace, then attach or provide the resume:
+
+```text
+Create a Seriema project at .\my-career in English using the clean style.
+I will attach my current resume. Extract only the facts stated in it into a proposed
+career.yml, list missing information, and wait for my review before saving anything.
+```
+
+The agent may turn the resume into a reviewable YAML proposal, but it must not infer
+dates, employers, skills, metrics, or credentials that are not present in the source.
+`career.yml` becomes canonical only after you explicitly accept the proposed facts.
+
+## Verify evidence before using it
+
+Evidence powers compatibility reports, tailored wording, and application answers.
+Review it before importing jobs or tailoring a resume:
+
+```text
+Show my career evidence and identify statements that need verification. Mark only the
+items I confirm as verified; leave inferred or unsupported claims pending.
+```
+
+Only verified evidence can support a positive match or a factual claim in a tailored
+resume. A missing or unverified item remains a gap rather than an assumed skill.
+
 ## Import and evaluate a role
 
 ```text

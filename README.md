@@ -24,6 +24,11 @@ troubleshooting.
 Use an AI agent with the local project path and a clear request. For example:
 
 ```text
+Create a Seriema project at .\my-career. I will attach my resume; extract only its
+stated facts into a proposed career.yml and wait for my review before saving it.
+```
+
+```text
 Import this job: https://careers.example.com/jobs/123.
 Validate it, analyze compatibility with my career, and research a salary expectation.
 ```

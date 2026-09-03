@@ -25,6 +25,11 @@ templates e solução de problemas.
 Use um agente de IA com o caminho do projeto local e um pedido claro. Por exemplo:
 
 ```text
+Crie um projeto Seriema em .\minha-carreira. Vou anexar meu currículo; extraia apenas
+os fatos presentes nele para uma proposta de career.yml e aguarde minha revisão antes de salvar.
+```
+
+```text
 Importe esta vaga: https://careers.example.com/jobs/123.
 Valide-a, analise a compatibilidade com a minha carreira e pesquise a pretensão salarial.
 ```
