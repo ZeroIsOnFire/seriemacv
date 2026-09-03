@@ -174,6 +174,21 @@ def add_questions(project_path: Path, application_id: str, questions: list[Appli
     return updated
 
 
+def replace_questions(project_path: Path, application_id: str, questions: list[ApplicationQuestion]) -> ApplicationDocument:
+    """Refresh browser-detected questions without retaining stale optional fields."""
+    document = load_application(project_path, application_id)
+    answered = {item.field_id for item in document.answers}
+    pending = [item for item in questions if item.field_id not in answered]
+    status: ApplicationStatus = "needs_user_input" if pending else "ready_for_review"
+    updated = document.model_copy(update={
+        "questions": pending,
+        "status": status,
+        "audit": [*document.audit, _audit("questions_refreshed", str(len(pending)))],
+    })
+    _write(application_path(project_path, application_id), updated)
+    return updated
+
+
 def propose_answer(project_path: Path, application_id: str, question_id: str, answer: str, evidence_ids: list[str] | None = None) -> ApplicationDocument:
     document = load_application(project_path, application_id)
     evidence_ids = evidence_ids or []

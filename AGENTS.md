@@ -31,6 +31,11 @@ future standalone GUI may reuse the same core without requiring an agent.
   remain a reviewable proposal, and never overwrite sensitive profile data.
 - External actions (applications, form submissions, messages, or profile updates)
   require explicit human approval by default.
+- When asked to apply for a job, first confirm that its imported document has a
+  current compatibility analysis; run the analysis before preparation when it is
+  missing. After the reviewed answers and attachments are prepared, open the
+  application with Playwright for the user to complete or explicitly authorize
+  submission.
 - Preserve a useful progression: structured manual builder → AI assistance → agents
   → browser automation. Advanced features cannot be prerequisites.
 

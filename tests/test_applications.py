@@ -5,6 +5,8 @@ import unittest
 from contextlib import redirect_stdout
 from io import StringIO
 from pathlib import Path
+from types import SimpleNamespace
+from unittest.mock import patch
 
 from seriemacv.application_ai import (
     ApplicationAiAnswer,
@@ -16,20 +18,28 @@ from seriemacv.application_ai import (
     validate_ai_response,
 )
 from seriemacv.applications import (
+    ApplicationAnswer,
     ApplicationDocument,
     ApplicationQuestion,
     add_questions,
     apply_answer,
     create_application,
     load_application,
+    replace_questions,
     update_status,
 )
 from seriemacv.browser import (
     BrowserField,
+    _attach_documents,
+    _greenhouse_confirmed_answers,
+    _greenhouse_profile_values,
+    _is_greenhouse_application,
+    _profile_value_for_field,
     _questions_for,
     _saved_answers_for_job,
     _wait_for_form_controls,
     browser_profile_path,
+    discover_fields,
 )
 from seriemacv.career import SavedAnswer, load_career
 from seriemacv.cli import main
@@ -143,6 +153,34 @@ class ApplicationTests(unittest.TestCase):
         self.assertFalse(questions[0].required)
         self.assertTrue(questions[0].sensitive)
 
+    def test_refreshing_greenhouse_questions_removes_optional_stale_fields(self) -> None:
+        create_application(self.project, ApplicationDocument(id="role-application", job_id="role"))
+        update_status(self.project, "role-application", "preparing")
+        add_questions(self.project, "role-application", [
+            ApplicationQuestion(id="question-demographic", field_id="demographic", label="Demographic", required=False, sensitive=True),
+        ])
+
+        refreshed = replace_questions(self.project, "role-application", [
+            ApplicationQuestion(id="question-why", field_id="why", label="Why this role?"),
+        ])
+
+        self.assertEqual(refreshed.status, "needs_user_input")
+        self.assertEqual([question.id for question in refreshed.questions], ["question-why"])
+
+    def test_refreshing_questions_keeps_current_unanswered_field_detected(self) -> None:
+        create_application(self.project, ApplicationDocument(id="role-application", job_id="role"))
+        add_questions(self.project, "role-application", [
+            ApplicationQuestion(id="question-why", field_id="why", label="Why this role?"),
+        ])
+
+        detected = _questions_for(
+            [BrowserField("why", 0, "Why this role?", True, "text", False)],
+            load_application(self.project, "role-application"),
+            set(),
+        )
+
+        self.assertEqual([question.id for question in detected], ["question-why"])
+
     def test_browser_profile_is_scoped_to_its_project(self) -> None:
         other_project = Path(self.temporary.name) / "other-career"
         create_project(other_project, project_name="Other career")
@@ -150,6 +188,111 @@ class ApplicationTests(unittest.TestCase):
         self.assertEqual(browser_profile_path(self.project), self.project / ".seriemacv" / "browser")
         self.assertEqual(browser_profile_path(other_project), other_project / ".seriemacv" / "browser")
         self.assertNotEqual(browser_profile_path(self.project), browser_profile_path(other_project))
+
+    def test_greenhouse_name_fields_use_first_and_last_name_parts(self) -> None:
+        career = load_career(self.project / "career.yml")
+        career.profile.name = "Example Person"
+
+        self.assertEqual(_profile_value_for_field("First Name", career), "Example")
+        self.assertEqual(_profile_value_for_field("Last Name", career), "Person")
+        self.assertEqual(_profile_value_for_field("Full Name", career), "Example Person")
+        self.assertEqual(_profile_value_for_field("Email", career), "example@example.invalid")
+
+    def test_greenhouse_hidden_required_mirror_is_not_discovered_as_a_question(self) -> None:
+        class Locator:
+            def evaluate_all(self, _: str) -> list[dict[str, object]]:
+                return [
+                    {"id": "country", "label": "Country", "required": True, "type": "text", "hidden": False},
+                    {"id": "country-required", "label": "", "required": True, "type": "text", "hidden": True},
+                ]
+
+        class Page:
+            def locator(self, _: str) -> Locator:
+                return Locator()
+
+        fields = discover_fields(Page())
+
+        self.assertEqual([(item.field_id, item.label) for item in fields], [("country", "Country")])
+
+    def test_greenhouse_adapter_uses_dedicated_fields_for_location_and_linkedin(self) -> None:
+        career = load_career(self.project / "career.yml")
+        career.profile.name = "Example Person"
+        career.profile.linkedin = "https://www.linkedin.com/in/example"
+
+        values = _greenhouse_profile_values(career.profile, "Mogi Mirim, São Paulo, Brazil")
+
+        self.assertTrue(_is_greenhouse_application("https://job-boards.greenhouse.io/example/jobs/1"))
+        self.assertEqual(values["#first_name"], "Example")
+        self.assertEqual(values["#last_name"], "Person")
+        self.assertEqual(values["#country"], "Brazil")
+        self.assertEqual(values["#candidate-location"], "Mogi Mirim, Sao Paulo, Brazil")
+        self.assertEqual(
+            values["#question_12689993007, input[name='question_12689993007']"],
+            "https://www.linkedin.com/in/example",
+        )
+
+    def test_greenhouse_adapter_maps_answers_to_their_exact_controls(self) -> None:
+        document = ApplicationDocument(
+            id="role-application",
+            job_id="role",
+            answers=[
+                ApplicationAnswer(field_id="question-12689994007", answer="Interest", confirmed_for_application=True),
+                ApplicationAnswer(field_id="question-12689995007", answer="AI tools", confirmed_for_application=True),
+                ApplicationAnswer(field_id="question-12689996007", answer="Ruby work", confirmed_for_application=True),
+                ApplicationAnswer(field_id="question-12689997007", answer="Yes", sensitive=True, confirmed_for_application=True),
+                ApplicationAnswer(field_id="question-12689998007", answer="LinkedIn", sensitive=True, confirmed_for_application=True),
+                ApplicationAnswer(field_id="question-12690001007", answer="No", sensitive=True, confirmed_for_application=True),
+            ],
+        )
+
+        answers = _greenhouse_confirmed_answers(document)
+
+        self.assertEqual(answers["question-12689994007"], ("Interest", False))
+        self.assertEqual(answers["question-12689995007"], ("AI tools", False))
+        self.assertEqual(answers["question-12689996007"], ("Ruby work", False))
+        self.assertEqual(answers["question-12689997007"], ("Yes", True))
+        self.assertEqual(answers["question-12689998007"], ("LinkedIn", True))
+        self.assertEqual(answers["question-12690001007"], ("No", True))
+
+    def test_greenhouse_adapter_attaches_english_resume_to_resume_field_only(self) -> None:
+        create_application(self.project, ApplicationDocument(id="role-application", job_id="role"))
+
+        class Locator:
+            def __init__(self) -> None:
+                self.files: list[str] = []
+
+            @property
+            def first(self) -> "Locator":
+                return self
+
+            def count(self) -> int:
+                return 1
+
+            def set_input_files(self, files: list[str]) -> None:
+                self.files = files
+
+        class Page:
+            def __init__(self) -> None:
+                self.selector = ""
+                self.field = Locator()
+
+            def locator(self, selector: str) -> Locator:
+                self.selector = selector
+                return self.field
+
+        page = Page()
+        expected_resume = self.project / "exports" / "resume.en.pdf"
+        with (
+            patch("seriemacv.browser.load_localized_career", return_value=SimpleNamespace()),
+            patch("seriemacv.browser.write_resume", return_value=expected_resume),
+        ):
+            _attach_documents(
+                page, [], self.project, load_application(self.project, "role-application"),
+                job=SimpleNamespace(language="English"), greenhouse=True,
+            )
+
+        self.assertEqual(page.selector, "input#resume, input[name='resume']")
+        self.assertEqual(page.field.files, [str(expected_resume)])
 
     def test_browser_preparation_waits_for_client_rendered_form_controls(self) -> None:
         class Page:
