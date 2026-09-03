@@ -64,6 +64,28 @@ não envia candidatura.
    `skip`; explique trade-offs e riscos bloqueadores. Não reduza a decisão a
    porcentagem de palavras-chave nem sobrescreva o score determinístico.
 
+## Resposta obrigatória da análise
+
+Apresente a análise para a pessoa usuária sempre nesta ordem. Cite fontes públicas
+junto de achados factuais externos e declare claramente o que for desconhecido.
+
+1. **Resumo da vaga** — empresa, cargo, senioridade, localidade ou política remota,
+   contrato e idioma.
+2. **Elegibilidade** — país, fuso, presencialidade, autorização de trabalho, visto e
+   condições bloqueadoras.
+3. **Compatibilidade** — score determinístico, classificações dos requisitos,
+   evidências verificadas e lacunas.
+4. **Senioridade e riscos** — aderência de escopo, riscos prováveis de triagem e
+   bloqueios.
+5. **Remuneração** — faixa publicada, estimativa de mercado, pretensão recomendada,
+   fontes e incertezas.
+6. **Empresa e oportunidade** — produto, sinais de estabilidade, modelo de trabalho
+   e trade-offs de carreira.
+7. **Recomendação** — `maximum`, `high`, `medium`, `low` ou `skip`, com justificativa
+   clara.
+8. **Próximos passos** — dados pendentes, ajustes no currículo e decisão de
+   candidatura.
+
 ## Formato obrigatório da proposta
 
 Retorne uma proposta YAML ou JSON neste formato. Não a adicione ao schema estrito de

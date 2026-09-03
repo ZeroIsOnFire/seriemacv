@@ -32,6 +32,27 @@ When the user asks to import a job, always do all of the following:
 Ask the user before persisting a proposed job, altering canonical career facts, or
 using a sensitive answer.
 
+## Required analysis response
+
+Present every job analysis in this order. Keep unknown information explicit and cite
+the source beside each external factual finding.
+
+1. **Job summary** — company, title, seniority, location or remote policy, contract,
+   and language.
+2. **Eligibility** — country, timezone, onsite requirements, work authorization,
+   visa, and any blocking condition.
+3. **Compatibility** — deterministic score, requirement classifications, supporting
+   verified evidence, and gaps.
+4. **Seniority and risks** — scope alignment, likely screening risks, and blockers.
+5. **Compensation** — published range, market estimate, recommended expectation,
+   sources, and uncertainty.
+6. **Company and opportunity** — product, stability signals, work model, and career
+   trade-offs.
+7. **Recommendation** — `maximum`, `high`, `medium`, `low`, or `skip`, with the
+   rationale.
+8. **Next steps** — pending user input, resume adjustments, and the application
+   decision.
+
 ## Application workflow
 
 When the user asks to apply:

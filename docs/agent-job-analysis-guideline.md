@@ -66,6 +66,27 @@ submit an application.
    or `skip`; explain trade-offs and blocking risks. Do not reduce this decision to
    a keyword percentage or overwrite the deterministic match score.
 
+## Required analysis response
+
+Present the user-facing analysis in this fixed order. Cite public sources next to
+external factual findings and state unknowns plainly.
+
+1. **Job summary** — company, title, seniority, location or remote policy, contract,
+   and language.
+2. **Eligibility** — country, timezone, onsite requirements, work authorization,
+   visa, and blocking conditions.
+3. **Compatibility** — deterministic score, requirement classifications, verified
+   evidence, and gaps.
+4. **Seniority and risks** — scope alignment, likely screening risks, and blockers.
+5. **Compensation** — published range, market estimate, recommended expectation,
+   sources, and uncertainty.
+6. **Company and opportunity** — product, stability signals, work model, and career
+   trade-offs.
+7. **Recommendation** — `maximum`, `high`, `medium`, `low`, or `skip`, with a clear
+   rationale.
+8. **Next steps** — pending user input, resume adjustments, and the application
+   decision.
+
 ## Required proposal shape
 
 Return a YAML or JSON proposal in this shape. Do not add it to the strict job
