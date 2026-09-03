@@ -20,7 +20,26 @@ Consulte o [guia completo de uso](docs/manual/pt-BR/index.md) para instalação,
 configuração de projetos, todos os comandos do Career Builder, formatos de currículo,
 templates e solução de problemas.
 
-## Career Builder
+## Seriema com IA
+
+Use um agente de IA com o caminho do projeto local e um pedido claro. Por exemplo:
+
+```text
+Importe esta vaga: https://careers.example.com/jobs/123.
+Valide-a, analise a compatibilidade com a minha carreira e pesquise a pretensão salarial.
+```
+
+```text
+Vamos nos inscrever em platform-engineer. Minha pretensão é R$ 20.000.
+Primeiro confirme a análise de compatibilidade, prepare o currículo e as respostas
+corretos e abra a candidatura no Playwright para eu revisar.
+```
+
+O agente deve fundamentar afirmações em evidências verificadas, pedir revisão antes
+de usar respostas sensíveis e nunca enviar sem autorização explícita. Veja [Usar o
+Seriema com IA](docs/manual/pt-BR/uso-com-ia.md) para exemplos completos.
+
+## Seriema CLI
 
 ```powershell
 seriemacv init .\minha-carreira --name "Minha carreira" --language pt-BR --style modern

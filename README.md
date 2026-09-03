@@ -19,7 +19,26 @@ See the [complete usage guide](docs/manual/en/index.md) for installation, projec
 configuration, every Career Builder command, resume formats, templates, and
 troubleshooting.
 
-## Career Builder
+## Seriema with AI
+
+Use an AI agent with the local project path and a clear request. For example:
+
+```text
+Import this job: https://careers.example.com/jobs/123.
+Validate it, analyze compatibility with my career, and research a salary expectation.
+```
+
+```text
+Let's apply to platform-engineer. My expectation is BRL 20,000.
+Confirm the compatibility analysis first, prepare the correct resume and answers,
+then open the application in Playwright for me to review.
+```
+
+The agent must ground claims in verified career evidence, ask before using sensitive
+answers, and never submit without explicit authorization. See [Using Seriema with
+an AI agent](docs/manual/en/using-ai.md) for complete examples.
+
+## Seriema CLI
 
 ```powershell
 seriemacv init .\my-career --name "My career" --language en --style modern
