@@ -332,6 +332,15 @@ class MarkdownRendererTests(unittest.TestCase):
 
                 self.assertNotIn("border", header_rule)
 
+    def test_compact_keeps_contact_information_below_the_full_width_name(self) -> None:
+        for style_id in ("compact", "compact-alt"):
+            with self.subTest(style=style_id):
+                html = render_html(self._career(), "en", style_id)
+                header_rule = html.split("header {", 1)[1].split("}", 1)[0]
+
+                self.assertIn("display: block", header_rule)
+                self.assertNotIn("grid-template-columns", header_rule)
+
     def test_timeline_is_photo_free_and_places_each_date_in_the_rail(self) -> None:
         html = render_html(self._career(), "en", "timeline")
         document = Document(BytesIO(render_docx(self._career(), "en", "timeline")))
