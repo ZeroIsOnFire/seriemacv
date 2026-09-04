@@ -112,7 +112,7 @@ class Experience(DatedRecord):
     location: str = ""
     employment_type: str = ""
     bullets: list[str] = Field(default_factory=list)
-    highlights: list[str] = Field(default_factory=list)
+    highlights: list[str] = Field(default_factory=list, max_length=1)
 
 
 class Education(DatedRecord):
@@ -364,7 +364,7 @@ class LocalizedExperience(StrictModel):
     location: str = ""
     employment_type: str = ""
     bullets: list[str] = Field(default_factory=list)
-    highlights: list[str] = Field(default_factory=list)
+    highlights: list[str] = Field(default_factory=list, max_length=1)
 
 
 class LocalizedEducation(StrictModel):

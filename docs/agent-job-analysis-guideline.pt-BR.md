@@ -30,7 +30,10 @@ incluindo certificações e ferramentas nomeadas na seção de habilidades. Crie
 evidências revisáveis e não verificadas a partir de afirmações distintas do currículo,
 ligando-as à experiência correspondente quando isso estiver claro. Não verifique nem
 invente fatos: o usuário precisa revisar as evidências antes que elas sustentem um
-match.
+match. Mantenha no máximo um `highlight` por experiência. Se a fonte destacar várias
+realizações na mesma experiência, escolha a mais relevante como highlight e preserve
+todas as demais como bullets comuns. Não crie um highlight quando ele não existir no
+currículo de origem.
 
 1. **Valide a vaga.** Registre empresa, cargo, senioridade, localidade, modelo de
    trabalho, países elegíveis, contrato, idioma, responsabilidades, benefícios,

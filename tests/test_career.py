@@ -18,6 +18,32 @@ from seriemacv.project import create_project
 
 
 class CareerSchemaTests(unittest.TestCase):
+    def test_experience_allows_only_one_highlight(self) -> None:
+        with self.assertRaisesRegex(ValueError, "at most 1 item"):
+            CareerDocument.model_validate({
+                "schema_version": 2,
+                "experience": [{
+                    "id": "example",
+                    "company": "Example",
+                    "title": "Engineer",
+                    "start_date": "2024-01",
+                    "highlights": ["Primary achievement.", "Secondary achievement."],
+                }],
+            })
+
+        career = CareerDocument.model_validate({
+            "schema_version": 2,
+            "experience": [{
+                "id": "example",
+                "company": "Example",
+                "title": "Engineer",
+                "start_date": "2024-01",
+                "bullets": ["Secondary achievement."],
+                "highlights": ["Primary achievement."],
+            }],
+        })
+        self.assertEqual(career.experience[0].highlights, ["Primary achievement."])
+
     def test_example_is_a_complete_valid_career_document(self) -> None:
         with tempfile.TemporaryDirectory() as temporary_directory:
             project_path = _create_project(temporary_directory)

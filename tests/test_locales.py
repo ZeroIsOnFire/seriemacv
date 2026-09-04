@@ -4,7 +4,11 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from seriemacv.career import load_localized_career, validate_locale
+from seriemacv.career import (
+    CareerLocaleDocument,
+    load_localized_career,
+    validate_locale,
+)
 from seriemacv.cli import main
 from seriemacv.project import create_project
 
@@ -37,6 +41,19 @@ date_format: '{month} {year}'
 
 
 class LocalizedCareerTests(unittest.TestCase):
+    def test_locale_experience_allows_only_one_highlight(self) -> None:
+        with self.assertRaisesRegex(ValueError, "at most 1 item"):
+            CareerLocaleDocument.model_validate({
+                "schema_version": 1,
+                "locale": "en",
+                "experience": {
+                    "example": {
+                        "title": "Engineer",
+                        "highlights": ["Primary achievement.", "Secondary achievement."],
+                    }
+                },
+            })
+
     def test_composes_facts_and_renders_multiple_formats(self) -> None:
         with tempfile.TemporaryDirectory() as temporary_directory:
             project_path = Path(temporary_directory) / "career"

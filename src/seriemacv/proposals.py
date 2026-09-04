@@ -61,7 +61,7 @@ class ProposalExperienceContext(StrictModel):
     id: str
     company: str
     title: str
-    highlights: list[str] = Field(default_factory=list)
+    highlights: list[str] = Field(default_factory=list, max_length=1)
 
 
 class ProposalEducationContext(StrictModel):

@@ -29,7 +29,10 @@ When extracting a resume, retain every explicitly stated skill, including
 certifications and named tools listed in a skills section. Create reviewable,
 unverified evidence records from distinct resume claims, with the corresponding
 experience ID whenever it is clear. Do not verify or invent facts; the user must
-review the proposed evidence before it can support a match.
+review the proposed evidence before it can support a match. Keep at most one
+`highlight` per experience. If the source emphasizes several achievements for the
+same experience, choose the strongest as its highlight and preserve every other
+achievement as a regular bullet. Do not create a highlight when the source has none.
 
 1. **Validate the role.** Capture company, title, seniority, location, work model,
    eligible countries, contract type, language, responsibilities, benefits,

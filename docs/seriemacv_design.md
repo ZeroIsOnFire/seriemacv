@@ -380,9 +380,10 @@ experience:
   - company: Example Corp
     title: Senior Software Engineer
     start_date: 2025-01
+    bullets:
+      - Reduced ...
     highlights:
       - Built ...
-      - Reduced ...
 skills: [Ruby, Rails, PostgreSQL, AWS]
 ~~~
 

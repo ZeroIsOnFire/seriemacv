@@ -25,7 +25,11 @@ certifications and named tools grouped under a skills heading. Create one or mor
 reviewable `evidence` records for each distinct work claim the AI can ground in the
 resume, linked to its matching experience where available. Mark AI-extracted
 evidence `verified: false` until the user reviews it; never infer missing skills,
-metrics, credentials, or evidence.
+metrics, credentials, or evidence. Each experience may contain at most one
+`highlight`. If the source emphasizes several achievements in the same experience,
+select the strongest one as its `highlight` and preserve every remaining achievement
+as a regular `bullet`. Do not create a highlight for an experience that has none in
+the source resume.
 
 When the user asks to import a job, always do all of the following:
 

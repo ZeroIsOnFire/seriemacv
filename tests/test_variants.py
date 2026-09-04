@@ -10,6 +10,7 @@ from seriemacv.cli import main
 from seriemacv.jobs import JobImportPayload, JobSource, create_job
 from seriemacv.project import create_project
 from seriemacv.variants import (
+    ResumeVariantLocale,
     list_variants,
     load_variant_career,
     validate_variant,
@@ -18,6 +19,18 @@ from seriemacv.variants import (
 
 
 class ResumeVariantTests(unittest.TestCase):
+    def test_variant_experience_allows_only_one_highlight(self) -> None:
+        with self.assertRaisesRegex(ValueError, "at most 1 item"):
+            ResumeVariantLocale.model_validate({
+                "schema_version": 1,
+                "locale": "en",
+                "experience": {
+                    "example": {
+                        "highlights": ["Primary achievement.", "Secondary achievement."]
+                    }
+                },
+            })
+
     def test_variant_selects_reorders_and_overrides_localized_content(self) -> None:
         with tempfile.TemporaryDirectory() as temporary_directory:
             project_path = _complete_project(temporary_directory)

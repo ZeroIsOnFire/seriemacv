@@ -90,7 +90,7 @@ class VariantExperienceOverride(StrictModel):
     location: str | None = None
     employment_type: str | None = None
     bullets: list[str] | None = None
-    highlights: list[str] | None = None
+    highlights: list[str] | None = Field(default=None, max_length=1)
 
 
 class VariantEducationOverride(StrictModel):
