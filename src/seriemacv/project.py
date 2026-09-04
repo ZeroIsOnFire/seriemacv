@@ -66,13 +66,13 @@ PROJECT_ARTIFACTS = {
     ),
     "i18n/pt-BR.yml": (
         "schema_version: 1\nlocale: pt-BR\n"
-        "labels: {summary: Resumo, experience: Experiência profissional, education: Formação acadêmica, skills: Habilidades, languages: Idiomas, current: Atual, other: Outras, level.beginner: Iniciante, level.intermediate: Intermediário, level.advanced: Avançado, level.expert: Especialista}\n"
+        "labels: {summary: Resumo, experience: Experiência profissional, education: Formação acadêmica, skills: Habilidades, languages: Idiomas, highlight: Destaque, current: Atual, other: Outras, level.beginner: Iniciante, level.intermediate: Intermediário, level.advanced: Avançado, level.expert: Especialista}\n"
         "months: [Jan., Fev., Mar., Abr., Mai., Jun., Jul., Ago., Set., Out., Nov., Dez.]\n"
         "date_format: '{month} de {year}'\n"
     ),
     "i18n/en.yml": (
         "schema_version: 1\nlocale: en\n"
-        "labels: {summary: Summary, experience: Professional Experience, education: Education, skills: Skills, languages: Languages, current: Present, other: Other, level.beginner: Beginner, level.intermediate: Intermediate, level.advanced: Advanced, level.expert: Expert}\n"
+        "labels: {summary: Summary, experience: Professional Experience, education: Education, skills: Skills, languages: Languages, highlight: Highlight, current: Present, other: Other, level.beginner: Beginner, level.intermediate: Intermediate, level.advanced: Advanced, level.expert: Expert}\n"
         "months: [Jan, Feb, Mar, Apr, May, Jun, Jul, Aug, Sep, Oct, Nov, Dec]\n"
         "date_format: '{month} {year}'\n"
     ),
@@ -186,13 +186,13 @@ PROJECT_EXAMPLES = {
     ),
     "i18n/pt-BR.yml.example": (
         "schema_version: 1\nlocale: pt-BR\n"
-        "labels: {summary: Resumo, experience: Experiência profissional, education: Formação acadêmica, skills: Habilidades, languages: Idiomas, current: Atual, other: Outras, level.beginner: Iniciante, level.intermediate: Intermediário, level.advanced: Avançado, level.expert: Especialista}\n"
+        "labels: {summary: Resumo, experience: Experiência profissional, education: Formação acadêmica, skills: Habilidades, languages: Idiomas, highlight: Destaque, current: Atual, other: Outras, level.beginner: Iniciante, level.intermediate: Intermediário, level.advanced: Avançado, level.expert: Especialista}\n"
         "months: [Jan., Fev., Mar., Abr., Mai., Jun., Jul., Ago., Set., Out., Nov., Dez.]\n"
         "date_format: '{month} de {year}'\n"
     ),
     "i18n/en.yml.example": (
         "schema_version: 1\nlocale: en\n"
-        "labels: {summary: Summary, experience: Professional Experience, education: Education, skills: Skills, languages: Languages, current: Present, other: Other, level.beginner: Beginner, level.intermediate: Intermediate, level.advanced: Advanced, level.expert: Expert}\n"
+        "labels: {summary: Summary, experience: Professional Experience, education: Education, skills: Skills, languages: Languages, highlight: Highlight, current: Present, other: Other, level.beginner: Beginner, level.intermediate: Intermediate, level.advanced: Advanced, level.expert: Expert}\n"
         "months: [Jan, Feb, Mar, Apr, May, Jun, Jul, Aug, Sep, Oct, Nov, Dec]\n"
         "date_format: '{month} {year}'\n"
     ),

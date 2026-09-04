@@ -200,7 +200,12 @@ def render_docx(
             document,
             presentation,
             style,
-            include_contacts=style.ats_safe or style.id.startswith("contact-band"),
+            include_contacts=(
+                style.ats_safe
+                or style.id.startswith("contact-band")
+                or style.id.startswith("compact-executive")
+            ),
+            inline_top_items=style.id.startswith("compact-executive"),
         )
     if style.layout == "two-column" and not style.id.startswith("left-rail"):
         _docx_sidebar_layout(document, presentation, style)
@@ -412,7 +417,11 @@ def _md_records(
                 [
                     heading_text,
                     _details(record, labels, experience),
-                    *[f"- {highlight}" for highlight in record.highlights],
+                    *[f"- {bullet}" for bullet in getattr(record, "bullets", [])],
+                    *[
+                        f"- **{labels['highlight']}:** {highlight}"
+                        for highlight in record.highlights
+                    ],
                 ]
             )
         )
@@ -455,7 +464,18 @@ def _html_parts(
         f"<h1>{escape(profile.name)}</h1>",
         f'<p class="title">{escape(profile.title)}</p>',
     ]
-    if style.layout == "single-column":
+    if style.id.startswith("compact-executive"):
+        top_items = [escape(item) for item in presentation.contacts] + [
+            f'<a href="{escape(url, quote=True)}">{escape(name)}</a>'
+            for name, url in presentation.links
+        ]
+        if top_items:
+            header_parts.append(
+                '<p class="top-items">'
+                + '<span class="top-separator">●</span>'.join(top_items)
+                + "</p>"
+            )
+    elif style.layout == "single-column":
         header_parts.extend((f"<p>{contact}</p>", f"<p>{links}</p>"))
     elif style.id.startswith("contact-band"):
         header_parts.append(
@@ -608,7 +628,8 @@ def _html_timeline_records(
             f'<div class="timeline-date">{escape(_date_range(record, labels))}</div>'
             f"<article><h3>{escape(_record_heading(record, experience))}</h3>"
             f"<p>{escape(_details_without_dates(record, experience))}</p>"
-            f"{_html_list(record.highlights) if record.highlights else ''}</article>"
+            f"{_html_list(record.bullets) if getattr(record, 'bullets', []) else ''}"
+            f"{_html_highlights(record.highlights, labels) if record.highlights else ''}</article>"
             "</div>"
         )
     return _html_section(title, "".join(rows))
@@ -616,6 +637,13 @@ def _html_timeline_records(
 
 def _html_list(values: list[str]) -> str:
     return "<ul>" + "".join(f"<li>{escape(item)}</li>" for item in values) + "</ul>"
+
+
+def _html_highlights(values: list[str], labels: dict[str, str]) -> str:
+    return "<ul>" + "".join(
+        f"<li><strong>{escape(labels['highlight'])}:</strong> {escape(value)}</li>"
+        for value in values
+    ) + "</ul>"
 
 
 def _html_section(title: str, content: str) -> str:
@@ -633,7 +661,8 @@ def _html_records(
         articles.append(
             f"<article><h3>{escape(_record_heading(record, experience))}</h3>"
             f"<p>{escape(_details(record, labels, experience))}</p>"
-            f"{_html_list(record.highlights) if record.highlights else ''}</article>"
+            f"{_html_list(record.bullets) if getattr(record, 'bullets', []) else ''}"
+            f"{_html_highlights(record.highlights, labels) if record.highlights else ''}</article>"
         )
     return _html_section(title, "".join(articles))
 
@@ -692,6 +721,7 @@ def _docx_header(
     *,
     include_contacts: bool,
     compact_link_labels: bool = False,
+    inline_top_items: bool = False,
 ) -> None:
     profile = presentation.career.profile
     alignment = (
@@ -709,10 +739,21 @@ def _docx_header(
     title = document.add_paragraph(profile.title)
     title.alignment = alignment
     title.paragraph_format.space_after = Pt(2)
-    if include_contacts and presentation.contacts:
+    if include_contacts and inline_top_items:
+        paragraph = document.add_paragraph()
+        for index, item in enumerate(presentation.contacts):
+            if index:
+                paragraph.add_run("  ●  ")
+            paragraph.add_run(item)
+        for label, url in presentation.links:
+            if paragraph.runs:
+                paragraph.add_run("  ●  ")
+            _docx_hyperlink(paragraph, label, url)
+        paragraph.alignment = alignment
+    elif include_contacts and presentation.contacts:
         paragraph = document.add_paragraph(" | ".join(presentation.contacts))
         paragraph.alignment = alignment
-    if include_contacts:
+    if include_contacts and not inline_top_items:
         for label, url in presentation.links:
             paragraph = document.add_paragraph()
             if compact_link_labels:
@@ -953,8 +994,10 @@ def _docx_timeline_records(
         details = _details_without_dates(record, experience)
         if details:
             content.add_paragraph(details)
+        for bullet in getattr(record, "bullets", []):
+            _docx_plain_bullet(content, bullet)
         for highlight in record.highlights:
-            _docx_plain_bullet(content, highlight)
+            _docx_highlight_bullet(content, labels['highlight'], highlight)
         _remove_empty_leading_paragraph(content)
 
 
@@ -1004,8 +1047,10 @@ def _docx_records(
         name_run.bold = True
         name_run.font.size = Pt(style.tokens.record_size_pt)
         container.add_paragraph(_details(record, labels, experience))
+        for bullet in getattr(record, "bullets", []):
+            _docx_plain_bullet(container, bullet)
         for highlight in record.highlights:
-            _docx_plain_bullet(container, highlight)
+            _docx_highlight_bullet(container, labels['highlight'], highlight)
 
 
 def _docx_plain_bullet(container: Any, value: str) -> None:
@@ -1013,6 +1058,16 @@ def _docx_plain_bullet(container: Any, value: str) -> None:
     paragraph = container.add_paragraph(f"- {value}")
     paragraph.paragraph_format.left_indent = Mm(4.5)
     paragraph.paragraph_format.first_line_indent = Mm(-3)
+
+
+def _docx_highlight_bullet(container: Any, label: str, value: str) -> None:
+    paragraph = container.add_paragraph()
+    paragraph.paragraph_format.left_indent = Mm(4.5)
+    paragraph.paragraph_format.first_line_indent = Mm(-3)
+    paragraph.add_run("- ")
+    prefix = paragraph.add_run(f"{label}:")
+    prefix.bold = True
+    paragraph.add_run(f" {value}")
 
 
 def _set_table_borders_none(table: Any) -> None:
@@ -1056,6 +1111,7 @@ def _labels(locale: str) -> dict[str, str]:
             "education",
             "skills",
             "languages",
+            "highlight",
             "current",
             "other",
             "level.beginner",

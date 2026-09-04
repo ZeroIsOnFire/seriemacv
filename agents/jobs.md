@@ -20,6 +20,13 @@ the reviewable analysis format.
 
 ## Import and analysis workflow
 
+When importing a resume, extract every stated skill into `skills`, including
+certifications and named tools grouped under a skills heading. Create one or more
+reviewable `evidence` records for each distinct work claim the AI can ground in the
+resume, linked to its matching experience where available. Mark AI-extracted
+evidence `verified: false` until the user reviews it; never infer missing skills,
+metrics, credentials, or evidence.
+
 When the user asks to import a job, always do all of the following:
 
 1. Import and validate the job document from the most authoritative available source.

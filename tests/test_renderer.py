@@ -51,12 +51,26 @@ class MarkdownRendererTests(unittest.TestCase):
                     markdown = render_markdown(self._career(), locale, style_id)
                     html = render_html(self._career(), locale, style_id)
                     document = Document(BytesIO(render_docx(self._career(), locale, style_id)))
+                    highlight_label = (
+                        "Destaque"
+                        if locale == "pt-BR"
+                        else "Highlight"
+                    )
+                    highlight = f"{highlight_label}: Built reliable tools."
 
                     self.assertIn("Seriema Example", markdown)
+                    self.assertIn(f"**{highlight_label}:** Built reliable tools.", markdown)
                     self.assertIn(f'data-style="{style_id}"', html)
+                    self.assertIn(
+                        f"<strong>{highlight_label}:</strong> Built reliable tools.", html
+                    )
                     self.assertNotIn("{{", html)
                     self.assertIn(
                         "Seriema Example",
+                        "\n".join(p.text for p in _docx_all_paragraphs(document)),
+                    )
+                    self.assertIn(
+                        highlight,
                         "\n".join(p.text for p in _docx_all_paragraphs(document)),
                     )
                     self.assertEqual(len(document.inline_shapes), 0)
@@ -368,7 +382,7 @@ class MarkdownRendererTests(unittest.TestCase):
         self.assertEqual(document.tables, [])
         self.assertEqual(len(document.inline_shapes), 0)
         self.assertNotIn("List Bullet", [paragraph.style.name for paragraph in document.paragraphs])
-        self.assertIn("- Built reliable tools.", texts)
+        self.assertIn("- Highlight: Built reliable tools.", texts)
         self.assertNotIn(chr(0xFFFD), "\n".join(texts))
         self.assertTrue(any("w:pBdr" in paragraph._p.xml for paragraph in document.paragraphs if paragraph.text == "Summary"))
         self.assertEqual(document.paragraphs[0].runs[0].font.size, Pt(22))

@@ -89,6 +89,7 @@ class VariantExperienceOverride(StrictModel):
     title: str | None = None
     location: str | None = None
     employment_type: str | None = None
+    bullets: list[str] | None = None
     highlights: list[str] | None = None
 
 

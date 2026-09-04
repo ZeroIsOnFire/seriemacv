@@ -23,14 +23,14 @@ LOCALE = '''schema_version: 1
 locale: en
 profile: {title: Engineer, location: Remote}
 summary: Localized summary.
-experience: {example: {title: Developer}}
+experience: {example: {title: Developer, highlights: [Built a localized feature.]}}
 education: {}
 skills: {}
 '''
 
 I18N = '''schema_version: 1
 locale: en
-labels: {summary: Summary, experience: Experience, education: Education, skills: Skills, languages: Languages, current: Present, other: Other, level.beginner: Beginner, level.intermediate: Intermediate, level.advanced: Advanced, level.expert: Expert}
+labels: {summary: Summary, experience: Experience, education: Education, skills: Skills, languages: Languages, highlight: Highlight, current: Present, other: Other, level.beginner: Beginner, level.intermediate: Intermediate, level.advanced: Advanced, level.expert: Expert}
 months: [Jan, Feb, Mar, Apr, May, Jun, Jul, Aug, Sep, Oct, Nov, Dec]
 date_format: '{month} {year}'
 '''
@@ -49,6 +49,7 @@ class LocalizedCareerTests(unittest.TestCase):
 
             self.assertEqual(career.profile.title, "Engineer")
             self.assertEqual(career.experience[0].title, "Developer")
+            self.assertEqual(career.experience[0].highlights, ["Built a localized feature."])
             self.assertEqual(main(["resume", "render", str(project_path), "--format", "markdown", "--format", "html"]), 0)
             self.assertTrue((project_path / "exports" / "resume.en.md").is_file())
             self.assertTrue((project_path / "exports" / "resume.en.html").is_file())
@@ -89,7 +90,13 @@ class LocalizedCareerTests(unittest.TestCase):
             project_path = Path(temporary_directory) / "career"
             create_project(project_path, project_name="Career")
             (project_path / "career.yml").write_text(FACTS, encoding="utf-8")
-            (project_path / "career.locales" / "en.yml").write_text(LOCALE.replace("experience: {example: {title: Developer}}", "experience: {}"), encoding="utf-8")
+            (project_path / "career.locales" / "en.yml").write_text(
+                LOCALE.replace(
+                    "experience: {example: {title: Developer, highlights: [Built a localized feature.]}}",
+                    "experience: {}",
+                ),
+                encoding="utf-8",
+            )
             (project_path / "i18n" / "en.yml").write_text(I18N, encoding="utf-8")
 
             self.assertTrue(validate_locale(project_path, "en"))

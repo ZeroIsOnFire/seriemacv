@@ -23,6 +23,15 @@ não envia candidatura.
 
 ## Fluxo de trabalho
 
+### Importação de currículo
+
+Ao extrair um currículo, mantenha toda competência declarada explicitamente,
+incluindo certificações e ferramentas nomeadas na seção de habilidades. Crie
+evidências revisáveis e não verificadas a partir de afirmações distintas do currículo,
+ligando-as à experiência correspondente quando isso estiver claro. Não verifique nem
+invente fatos: o usuário precisa revisar as evidências antes que elas sustentem um
+match.
+
 1. **Valide a vaga.** Registre empresa, cargo, senioridade, localidade, modelo de
    trabalho, países elegíveis, contrato, idioma, responsabilidades, benefícios,
    salário publicado e restrições de visto/autorização. Confirme que o ATS pertence

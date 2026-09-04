@@ -23,6 +23,14 @@ submit an application.
 
 ## Workflow
 
+### Resume import
+
+When extracting a resume, retain every explicitly stated skill, including
+certifications and named tools listed in a skills section. Create reviewable,
+unverified evidence records from distinct resume claims, with the corresponding
+experience ID whenever it is clear. Do not verify or invent facts; the user must
+review the proposed evidence before it can support a match.
+
 1. **Validate the role.** Capture company, title, seniority, location, work model,
    eligible countries, contract type, language, responsibilities, benefits,
    published pay, and stated visa or authorization restrictions. Confirm that the

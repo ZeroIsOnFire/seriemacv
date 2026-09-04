@@ -22,6 +22,8 @@ from ruamel.yaml import YAML
 from ruamel.yaml.comments import CommentedMap
 from ruamel.yaml.error import YAMLError
 
+from seriemacv.i18n import translate
+
 CAREER_FILE = "career.yml"
 LOCALES_DIRECTORY = "career.locales"
 I18N_DIRECTORY = "i18n"
@@ -109,6 +111,7 @@ class Experience(DatedRecord):
     title: str = Field(min_length=1)
     location: str = ""
     employment_type: str = ""
+    bullets: list[str] = Field(default_factory=list)
     highlights: list[str] = Field(default_factory=list)
 
 
@@ -360,6 +363,7 @@ class LocalizedExperience(StrictModel):
     title: str = ""
     location: str = ""
     employment_type: str = ""
+    bullets: list[str] = Field(default_factory=list)
     highlights: list[str] = Field(default_factory=list)
 
 
@@ -522,6 +526,12 @@ def load_localized_career(project_path: Path, locale: str) -> CareerDocument:
         raise ValueError(f"locale document declares '{translated.locale}', expected '{locale}'")
     _ensure_locale_references(facts, translated)
     catalog = load_i18n_catalog(project_path, locale)
+    labels = dict(catalog.labels)
+    labels.setdefault(
+        "highlight",
+        translate(locale, "highlight") if locale in {"pt-BR", "en"} else "Highlight",
+    )
+    catalog = catalog.model_copy(update={"labels": labels})
     return CareerDocument.model_validate({
         "schema_version": 2,
         "profile": {**facts.profile.model_dump(), **translated.profile.model_dump()},
