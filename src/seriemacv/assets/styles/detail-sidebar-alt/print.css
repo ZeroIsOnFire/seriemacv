@@ -4,12 +4,15 @@
 body { margin: 0; color: #263441; font: {{body_size_pt}}pt {{font_family}}, Arial, sans-serif; line-height: {{line_spacing}}; }
 main { width: 210mm; }
 header { background: {{primary_color}}; color: white; padding: {{margins_mm}}mm; margin: 0 0 10pt; }
-h1 { margin: 0; font-size: {{name_size_pt}}pt; }
+h1 { margin: 0; font-size: {{name_size_pt}}pt; white-space: nowrap; }
+header .title { white-space: nowrap; }
 header p, p { margin: 2pt 0; }
 .resume-layout { display: grid; grid-template-columns: minmax(0, 1fr) {{sidebar_width_mm}}mm; gap: 7mm; padding: 0 {{margins_mm}}mm; }
 .sidebar { background: #f1f3f5; padding: 10pt; }
 h2 { color: {{primary_color}}; margin: {{section_spacing_pt}}pt 0 4pt; font-size: {{section_size_pt}}pt; }
 h3 { margin: 7pt 0 1pt; font-size: {{record_size_pt}}pt; }
-ul { margin: 2pt 0 5pt; padding-left: 15pt; }
-article { break-inside: avoid; }
+ul { margin: 2pt 0 5pt; padding-left: 15pt; break-inside: avoid; }
+li { break-inside: avoid; overflow-wrap: anywhere; }
+h2, h3 { break-after: avoid; }
+article { break-inside: avoid; overflow-wrap: anywhere; }
 a { color: {{primary_color}}; overflow-wrap: anywhere; }

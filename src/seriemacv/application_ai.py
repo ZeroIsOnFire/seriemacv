@@ -107,12 +107,18 @@ class ApplicationAiDiff:
     evidence_ids: list[str]
 
 
-def create_ai_request(project_path: Path, request_id: str, application_id: str) -> ApplicationAiRequest:
+def create_ai_request(
+    project_path: Path, request_id: str, application_id: str
+) -> ApplicationAiRequest:
     application = load_application(project_path, application_id)
     if not _ID.fullmatch(request_id):
         raise ValueError("request id must use lowercase kebab-case")
     job = load_job(project_path / "jobs" / f"{application.job_id}.yml")
-    evidence = [_evidence(item) for item in load_career(project_path / "career.yml").evidence if item.verified]
+    evidence = [
+        _evidence(item)
+        for item in load_career(project_path / "career.yml").evidence
+        if item.verified
+    ]
     return ApplicationAiRequest(
         id=request_id,
         application_id=application.id,
@@ -128,12 +134,20 @@ def create_ai_request(project_path: Path, request_id: str, application_id: str) 
     )
 
 
-def validate_ai_response(project_path: Path, request: ApplicationAiRequest, response: ApplicationAiResponse) -> list[ApplicationAiDiff]:
+def validate_ai_response(
+    project_path: Path, request: ApplicationAiRequest, response: ApplicationAiResponse
+) -> list[ApplicationAiDiff]:
     if response.request_id != request.id:
-        raise ValueError(f"response declares '{response.request_id}', expected '{request.id}'")
+        raise ValueError(
+            f"response declares '{response.request_id}', expected '{request.id}'"
+        )
     application = load_application(project_path, request.application_id)
     questions = {item.id: item for item in application.questions}
-    verified = {item.id for item in load_career(project_path / "career.yml").evidence if item.verified}
+    verified = {
+        item.id
+        for item in load_career(project_path / "career.yml").evidence
+        if item.verified
+    }
     seen: set[str] = set()
     diffs: list[ApplicationAiDiff] = []
     for item in response.answers:
@@ -142,20 +156,47 @@ def validate_ai_response(project_path: Path, request: ApplicationAiRequest, resp
         seen.add(item.question_id)
         question = questions.get(item.question_id)
         if question is None:
-            raise ValueError(f"response references unknown question: {item.question_id}")
+            raise ValueError(
+                f"response references unknown question: {item.question_id}"
+            )
         if question.sensitive:
-            raise ValueError(f"AI cannot propose a sensitive question: {item.question_id}")
+            raise ValueError(
+                f"AI cannot propose a sensitive question: {item.question_id}"
+            )
         _ensure_evidence(item.evidence_ids, verified)
-        diffs.append(ApplicationAiDiff(item.id, "answer", item.question_id, item.confidence, item.pending_information, item.evidence_ids))
+        diffs.append(
+            ApplicationAiDiff(
+                item.id,
+                "answer",
+                item.question_id,
+                item.confidence,
+                item.pending_information,
+                item.evidence_ids,
+            )
+        )
     if response.cover_letter:
         _ensure_evidence(response.cover_letter.evidence_ids, verified)
         if not response.cover_letter.evidence_ids:
             raise ValueError("cover letter requires verified evidence ids")
-        diffs.append(ApplicationAiDiff(response.cover_letter.id, "cover_letter", None, response.cover_letter.confidence, response.cover_letter.pending_information, response.cover_letter.evidence_ids))
+        diffs.append(
+            ApplicationAiDiff(
+                response.cover_letter.id,
+                "cover_letter",
+                None,
+                response.cover_letter.confidence,
+                response.cover_letter.pending_information,
+                response.cover_letter.evidence_ids,
+            )
+        )
     return diffs
 
 
-def apply_ai_response(project_path: Path, request: ApplicationAiRequest, response: ApplicationAiResponse, accepted_ids: list[str]) -> ApplicationDocument:
+def apply_ai_response(
+    project_path: Path,
+    request: ApplicationAiRequest,
+    response: ApplicationAiResponse,
+    accepted_ids: list[str],
+) -> ApplicationDocument:
     diffs = validate_ai_response(project_path, request, response)
     known = {item.id for item in diffs}
     unknown = set(accepted_ids) - known
@@ -163,9 +204,19 @@ def apply_ai_response(project_path: Path, request: ApplicationAiRequest, respons
         raise ValueError(f"unknown accepted item ids: {', '.join(sorted(unknown))}")
     for item in response.answers:
         if item.id in accepted_ids:
-            propose_answer(project_path, request.application_id, item.question_id, item.answer, item.evidence_ids)
+            propose_answer(
+                project_path,
+                request.application_id,
+                item.question_id,
+                item.answer,
+                item.evidence_ids,
+            )
     if response.cover_letter and response.cover_letter.id in accepted_ids:
-        path = application_path(project_path, request.application_id).parent / request.application_id / "cover-letter.md"
+        path = (
+            application_path(project_path, request.application_id).parent
+            / request.application_id
+            / "cover-letter.md"
+        )
         path.parent.mkdir(parents=True, exist_ok=True)
         _atomic_write(path, response.cover_letter.body + "\n")
         relative = path.relative_to(project_path).as_posix()
@@ -175,7 +226,10 @@ def apply_ai_response(project_path: Path, request: ApplicationAiRequest, respons
 
 def dump_ai(value: Any) -> str:
     stream = StringIO()
-    YAML().dump(value.model_dump(mode="python") if hasattr(value, "model_dump") else value, stream)
+    YAML().dump(
+        value.model_dump(mode="python") if hasattr(value, "model_dump") else value,
+        stream,
+    )
     return stream.getvalue()
 
 
@@ -192,16 +246,26 @@ def write_ai_request(path: Path, request: ApplicationAiRequest) -> None:
 
 
 def _question(value: ApplicationQuestion) -> AiQuestion:
-    return AiQuestion(id=value.id, label=value.label, context=value.context, required=value.required, sensitive=value.sensitive)
+    return AiQuestion(
+        id=value.id,
+        label=value.label,
+        context=value.context,
+        required=value.required,
+        sensitive=value.sensitive,
+    )
 
 
 def _evidence(value: CareerEvidence) -> AiEvidence:
-    return AiEvidence(id=value.id, statement=value.statement, tags=value.tags, details=value.details)
+    return AiEvidence(
+        id=value.id, statement=value.statement, tags=value.tags, details=value.details
+    )
 
 
 def _ensure_evidence(ids: list[str], verified: set[str]) -> None:
     if unknown := set(ids) - verified:
-        raise ValueError(f"response references unverified or unknown evidence: {', '.join(sorted(unknown))}")
+        raise ValueError(
+            f"response references unverified or unknown evidence: {', '.join(sorted(unknown))}"
+        )
 
 
 def _load(path: Path) -> CommentedMap:
@@ -213,7 +277,9 @@ def _load(path: Path) -> CommentedMap:
 
 def _atomic_write(path: Path, content: str) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
-    descriptor, temporary = tempfile.mkstemp(dir=path.parent, prefix=f".{path.name}.", suffix=".tmp", text=True)
+    descriptor, temporary = tempfile.mkstemp(
+        dir=path.parent, prefix=f".{path.name}.", suffix=".tmp", text=True
+    )
     try:
         with os.fdopen(descriptor, "w", encoding="utf-8", newline="\n") as output:
             output.write(content)

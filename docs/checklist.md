@@ -11,7 +11,7 @@ registrada.
 - [x] Criar e validar um projeto de carreira local.
 - [x] Criar diretórios e artefatos canônicos iniciais.
 - [x] Usar escrita atômica para arquivos gerados.
-- [x] Criar índice SQLite local com migração inicial.
+- [x] Manter busca lexical direta no YAML, sem índice SQLite.
 - [x] Abrir um projeto validado por uma API tipada.
 - [x] Validar `seriemacv.yml` com YAML seguro e schema estrito.
 - [x] Impedir sobrescrita de um projeto existente.
@@ -48,6 +48,8 @@ currículo, com vagas, match e tailoring locais disponíveis.
 - [x] Gerar currículo Markdown a partir do YAML.
 - [x] Renderizar currículo em HTML.
 - [x] Exportar PDF por renderizador local de navegador.
+- [x] Reutilizar PDF canônico por cache de conteúdo e invalidá-lo quando dados,
+  idioma, estilo, cor ou assets mudarem; manter variantes fora do cache canônico.
 - [x] Exportar DOCX por renderer próprio, sem converter do PDF.
 - [x] Manter `.doc` fora do produto; a compatibilidade editável termina em DOCX.
 - [x] Adicionar CLI para editar dados estruturados, validar e renderizar currículo.
@@ -114,5 +116,12 @@ mesmo núcleo e preservam a carreira canônica.
 - [x] Garantir que diagnósticos não exportem artefatos pessoais por padrão.
 - [x] Adicionar formatter, linter e análise de tipos compatíveis com a stack.
 - [x] Configurar CI para testes e verificações estáticas.
+- [x] Unificar compilação, lint, formatação, tipagem incremental e testes num gate
+  local reproduzível, usado integralmente pelo CI em Python 3.11 e 3.12.
+- [ ] Eliminar os 66 erros da dívida inicial de tipagem em `career`, `jobs`,
+  `variants`, `applications`, `proposals`, `renderer` e `cli`, adicionando cada
+  módulo ao gate conforme ficar limpo.
+- [x] Documentar guard rails contra prompt injection, duplicidade de candidatura,
+  retries sem limite, inferência de controles e bypass de CAPTCHA.
 - [x] Documentar instalação, uso local e comandos oficiais em guia bilíngue por funcionalidade.
 - [x] Revisar dependências e políticas de atualização.

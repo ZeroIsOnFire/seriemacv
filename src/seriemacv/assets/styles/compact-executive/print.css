@@ -1,0 +1,19 @@
+@page { size: A4; margin: {{margins_mm}}mm; }
+* { box-sizing: border-box; }
+body { margin: 0; color: #333; font: {{body_size_pt}}pt {{font_family}}, Arial, sans-serif; line-height: {{line_spacing}}; }
+main { max-width: {{content_width_mm}}mm; margin: auto; }
+header { margin-bottom: 8pt; padding-bottom: 7pt; }
+h1 { color: {{primary_color}}; margin: 0; font-size: {{name_size_pt}}pt; }
+header .title { color: #545454; font-weight: 600; }
+header p { color: #545454; font-size: 8.5pt; margin: 3pt 0 0; }
+.top-items { display: block; }
+.top-separator { color: {{accent_color}}; font-size: 5pt; margin: 0 2pt; }
+h2 { color: {{primary_color}}; font-size: {{section_size_pt}}pt; margin: {{section_spacing_pt}}pt 0 4pt; border-bottom: 1px solid {{accent_color}}; padding-bottom: 2pt; text-transform: uppercase; letter-spacing: .2pt; }
+h3 { color: {{primary_color}}; font-size: {{record_size_pt}}pt; margin: 7pt 0 1pt; }
+p { margin: 1pt 0 3pt; }
+ul { margin: 2pt 0 5pt; padding-left: 15pt; break-inside: avoid; }
+li { break-inside: avoid; overflow-wrap: anywhere; }
+li::marker { color: {{accent_color}}; }
+h2, h3 { break-after: avoid; }
+article { break-inside: avoid; overflow-wrap: anywhere; }
+a { color: {{accent_color}}; overflow-wrap: anywhere; }

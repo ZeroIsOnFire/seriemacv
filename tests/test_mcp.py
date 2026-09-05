@@ -23,7 +23,16 @@ class McpTests(unittest.TestCase):
         self.assertEqual(listed["result"]["tools"], TOOLS)
         self.assertEqual(
             [item["name"] for item in TOOLS],
-            ["search_career_evidence", "list_jobs", "get_match_report", "propose_resume_tailoring", "list_applications", "get_application_questions", "propose_application_answer", "prepare_application_ai_assistance"],
+            [
+                "search_career_evidence",
+                "list_jobs",
+                "get_match_report",
+                "propose_resume_tailoring",
+                "list_applications",
+                "get_application_questions",
+                "propose_application_answer",
+                "prepare_application_ai_assistance",
+            ],
         )
 
     def test_unknown_method_returns_json_rpc_error(self) -> None:
@@ -36,16 +45,23 @@ class McpTests(unittest.TestCase):
             project_path = Path(temporary_directory) / "career"
             create_project(project_path, project_name="Career")
 
-            response = _handle({
-                "jsonrpc": "2.0",
-                "id": 4,
-                "method": "tools/call",
-                "params": {"name": "list_jobs", "arguments": {"project_path": str(project_path)}},
-            })
+            response = _handle(
+                {
+                    "jsonrpc": "2.0",
+                    "id": 4,
+                    "method": "tools/call",
+                    "params": {
+                        "name": "list_jobs",
+                        "arguments": {"project_path": str(project_path)},
+                    },
+                }
+            )
 
             self.assertEqual(response["result"]["content"][0]["text"], "[]\n")
 
-    def test_application_tools_return_read_only_question_proposal_envelope(self) -> None:
+    def test_application_tools_return_read_only_question_proposal_envelope(
+        self,
+    ) -> None:
         with tempfile.TemporaryDirectory() as temporary_directory:
             project_path = Path(temporary_directory) / "career"
             create_project(project_path, project_name="Career")
@@ -53,9 +69,29 @@ class McpTests(unittest.TestCase):
                 "schema_version: 1\nid: role\ntitle: Role\nsource: {format: manual, content: Role}\n",
                 encoding="utf-8",
             )
-            create_application(project_path, ApplicationDocument(id="role-application", job_id="role"))
-            add_questions(project_path, "role-application", [ApplicationQuestion(id="question-why", field_id="why", label="Why?")])
-            response = _handle({"jsonrpc": "2.0", "id": 5, "method": "tools/call", "params": {"name": "propose_application_answer", "arguments": {"project_path": str(project_path), "application_id": "role-application", "question_id": "question-why"}}})
+            create_application(
+                project_path, ApplicationDocument(id="role-application", job_id="role")
+            )
+            add_questions(
+                project_path,
+                "role-application",
+                [ApplicationQuestion(id="question-why", field_id="why", label="Why?")],
+            )
+            response = _handle(
+                {
+                    "jsonrpc": "2.0",
+                    "id": 5,
+                    "method": "tools/call",
+                    "params": {
+                        "name": "propose_application_answer",
+                        "arguments": {
+                            "project_path": str(project_path),
+                            "application_id": "role-application",
+                            "question_id": "question-why",
+                        },
+                    },
+                }
+            )
             text = response["result"]["content"][0]["text"]
             self.assertIn("question-why", text)
             self.assertIn("explicit user", text)

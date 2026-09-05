@@ -1,10 +1,8 @@
 from __future__ import annotations
 
 import os
-import sqlite3
 import tempfile
 from collections.abc import Collection
-from contextlib import closing
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Literal
@@ -29,7 +27,6 @@ PROJECT_DIRECTORIES = (
     "exports",
     ".seriemacv/cache",
     ".seriemacv/browser",
-    ".seriemacv/index",
 )
 LEGACY_PROJECT_DIRECTORIES = (
     "resume",
@@ -42,7 +39,6 @@ LEGACY_PROJECT_DIRECTORIES = (
     "exports",
     ".seriemacv/cache",
     ".seriemacv/browser",
-    ".seriemacv/index",
 )
 PROJECT_ARTIFACTS = {
     "career.yml": (
@@ -70,13 +66,13 @@ PROJECT_ARTIFACTS = {
     ),
     "i18n/pt-BR.yml": (
         "schema_version: 1\nlocale: pt-BR\n"
-        "labels: {summary: Resumo, experience: Experiência profissional, education: Formação acadêmica, skills: Habilidades, languages: Idiomas, current: Atual, other: Outras, level.beginner: Iniciante, level.intermediate: Intermediário, level.advanced: Avançado, level.expert: Especialista}\n"
+        "labels: {summary: Resumo, experience: Experiência profissional, education: Formação acadêmica, skills: Habilidades, languages: Idiomas, highlight: Destaque, current: Atual, other: Outras, level.beginner: Iniciante, level.intermediate: Intermediário, level.advanced: Avançado, level.expert: Especialista}\n"
         "months: [Jan., Fev., Mar., Abr., Mai., Jun., Jul., Ago., Set., Out., Nov., Dez.]\n"
         "date_format: '{month} de {year}'\n"
     ),
     "i18n/en.yml": (
         "schema_version: 1\nlocale: en\n"
-        "labels: {summary: Summary, experience: Professional Experience, education: Education, skills: Skills, languages: Languages, current: Present, other: Other, level.beginner: Beginner, level.intermediate: Intermediate, level.advanced: Advanced, level.expert: Expert}\n"
+        "labels: {summary: Summary, experience: Professional Experience, education: Education, skills: Skills, languages: Languages, highlight: Highlight, current: Present, other: Other, level.beginner: Beginner, level.intermediate: Intermediate, level.advanced: Advanced, level.expert: Expert}\n"
         "months: [Jan, Feb, Mar, Apr, May, Jun, Jul, Aug, Sep, Oct, Nov, Dec]\n"
         "date_format: '{month} {year}'\n"
     ),
@@ -190,18 +186,17 @@ PROJECT_EXAMPLES = {
     ),
     "i18n/pt-BR.yml.example": (
         "schema_version: 1\nlocale: pt-BR\n"
-        "labels: {summary: Resumo, experience: Experiência profissional, education: Formação acadêmica, skills: Habilidades, languages: Idiomas, current: Atual, other: Outras, level.beginner: Iniciante, level.intermediate: Intermediário, level.advanced: Avançado, level.expert: Especialista}\n"
+        "labels: {summary: Resumo, experience: Experiência profissional, education: Formação acadêmica, skills: Habilidades, languages: Idiomas, highlight: Destaque, current: Atual, other: Outras, level.beginner: Iniciante, level.intermediate: Intermediário, level.advanced: Avançado, level.expert: Especialista}\n"
         "months: [Jan., Fev., Mar., Abr., Mai., Jun., Jul., Ago., Set., Out., Nov., Dez.]\n"
         "date_format: '{month} de {year}'\n"
     ),
     "i18n/en.yml.example": (
         "schema_version: 1\nlocale: en\n"
-        "labels: {summary: Summary, experience: Professional Experience, education: Education, skills: Skills, languages: Languages, current: Present, other: Other, level.beginner: Beginner, level.intermediate: Intermediate, level.advanced: Advanced, level.expert: Expert}\n"
+        "labels: {summary: Summary, experience: Professional Experience, education: Education, skills: Skills, languages: Languages, highlight: Highlight, current: Present, other: Other, level.beginner: Beginner, level.intermediate: Intermediate, level.advanced: Advanced, level.expert: Expert}\n"
         "months: [Jan, Feb, Mar, Apr, May, Jun, Jul, Aug, Sep, Oct, Nov, Dec]\n"
         "date_format: '{month} {year}'\n"
     ),
 }
-DATABASE_RELATIVE_PATH = Path(".seriemacv/index/seriemacv.db")
 
 
 class ProjectAlreadyExistsError(FileExistsError):
@@ -214,14 +209,12 @@ class InvalidProjectError(ValueError):
 
 @dataclass(frozen=True)
 class CareerProject:
-    """Validated local project and its private SQLite index."""
+    """Validated local project with canonical career data in YAML."""
 
     path: Path
     name: str
     resume_language: str
     resume_style: ResumeStyleId
-    database_path: Path
-    database_schema_version: int
 
 
 class ProjectConfiguration(BaseModel):
@@ -247,6 +240,7 @@ class ProjectConfiguration(BaseModel):
     @classmethod
     def resume_language_is_locale(cls, value: str) -> str:
         import re
+
         if not re.fullmatch(r"[A-Za-z]{2,8}(?:-[A-Za-z0-9]{2,8})*", value):
             raise ValueError("must be a BCP 47 locale identifier")
         return value
@@ -302,7 +296,6 @@ def create_project(
         'resume_color: "#647D74"\n'
     )
     _atomic_write(project_path / CONFIG_FILE, config)
-    _initialize_database(project_path / DATABASE_RELATIVE_PATH)
     return project_path
 
 
@@ -326,15 +319,11 @@ def open_project(path: Path) -> CareerProject:
         raise InvalidProjectError("; ".join(errors))
 
     configuration = _read_project_configuration(project_path / CONFIG_FILE)
-    database_path = project_path / DATABASE_RELATIVE_PATH
-    _initialize_database(database_path)
     return CareerProject(
         path=project_path,
         name=configuration.project_name,
         resume_language=configuration.resume_language,
         resume_style=configuration.resume_style,
-        database_path=database_path,
-        database_schema_version=_database_schema_version(database_path),
     )
 
 
@@ -356,12 +345,6 @@ def validate_project(path: Path) -> list[str]:
     for relative_path in artifacts:
         if not (project_path / relative_path).is_file():
             errors.append(f"Required file is missing: {relative_path}")
-
-    database_path = project_path / DATABASE_RELATIVE_PATH
-    if not database_path.is_file():
-        errors.append(f"Required file is missing: {DATABASE_RELATIVE_PATH.as_posix()}")
-    elif not _is_valid_database(database_path):
-        errors.append("Invalid local SQLite index")
 
     return errors
 
@@ -415,56 +398,3 @@ def _atomic_write(path: Path, content: str) -> None:
     except BaseException:
         Path(temporary_path).unlink(missing_ok=True)
         raise
-
-
-def _initialize_database(database_path: Path) -> None:
-    with closing(sqlite3.connect(database_path)) as connection:
-        with connection:
-            connection.execute(
-                """
-                CREATE TABLE IF NOT EXISTS schema_migrations (
-                    version INTEGER PRIMARY KEY,
-                    applied_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
-                )
-                """
-            )
-            connection.execute(
-                """
-                CREATE TABLE IF NOT EXISTS project_metadata (
-                    key TEXT PRIMARY KEY,
-                    value TEXT NOT NULL
-                )
-                """
-            )
-            connection.execute(
-                "INSERT OR IGNORE INTO schema_migrations (version) VALUES (1)"
-            )
-            connection.execute(
-                """
-                CREATE VIRTUAL TABLE IF NOT EXISTS evidence_fts USING fts5(
-                    evidence_id UNINDEXED,
-                    statement,
-                    tags,
-                    details,
-                    experience_id UNINDEXED
-                )
-                """
-            )
-            connection.execute(
-                "INSERT OR IGNORE INTO schema_migrations (version) VALUES (2)"
-            )
-
-
-def _database_schema_version(database_path: Path) -> int:
-    with closing(
-        sqlite3.connect(f"file:{database_path}?mode=ro", uri=True)
-    ) as connection:
-        row = connection.execute("SELECT MAX(version) FROM schema_migrations").fetchone()
-    return int(row[0] or 0)
-
-
-def _is_valid_database(database_path: Path) -> bool:
-    try:
-        return _database_schema_version(database_path) >= 1
-    except sqlite3.Error:
-        return False

@@ -14,6 +14,7 @@ from seriemacv.career import CareerDocument
 from seriemacv.cli import main
 from seriemacv.project import create_project
 from seriemacv.renderer import (
+    is_resume_current,
     render_docx,
     render_html,
     render_markdown,
@@ -50,13 +51,28 @@ class MarkdownRendererTests(unittest.TestCase):
                 with self.subTest(style=style_id, locale=locale):
                     markdown = render_markdown(self._career(), locale, style_id)
                     html = render_html(self._career(), locale, style_id)
-                    document = Document(BytesIO(render_docx(self._career(), locale, style_id)))
+                    document = Document(
+                        BytesIO(render_docx(self._career(), locale, style_id))
+                    )
+                    highlight_label = "Destaque" if locale == "pt-BR" else "Highlight"
+                    highlight = f"{highlight_label}: Built reliable tools."
 
                     self.assertIn("Seriema Example", markdown)
+                    self.assertIn(
+                        f"**{highlight_label}:** Built reliable tools.", markdown
+                    )
                     self.assertIn(f'data-style="{style_id}"', html)
+                    self.assertIn(
+                        f"<strong>{highlight_label}:</strong> Built reliable tools.",
+                        html,
+                    )
                     self.assertNotIn("{{", html)
                     self.assertIn(
                         "Seriema Example",
+                        "\n".join(p.text for p in _docx_all_paragraphs(document)),
+                    )
+                    self.assertIn(
+                        highlight,
                         "\n".join(p.text for p in _docx_all_paragraphs(document)),
                     )
                     self.assertEqual(len(document.inline_shapes), 0)
@@ -80,7 +96,9 @@ class MarkdownRendererTests(unittest.TestCase):
                             ("left-rail", "detail-sidebar", "sidebar", "split-header")
                         ):
                             self.assertIn("Portfolio", table_text)
-                            self.assertNotIn("https://example.invalid/seriema", table_text)
+                            self.assertNotIn(
+                                "https://example.invalid/seriema", table_text
+                            )
                         else:
                             self.assertIn(
                                 "Portfolio: https://example.invalid/seriema", table_text
@@ -148,10 +166,12 @@ class MarkdownRendererTests(unittest.TestCase):
                 continue
             with self.subTest(style=style_id):
                 html = render_html(self._career(), "en", style_id, "Aa12Bc")
-                document = Document(BytesIO(render_docx(self._career(), "en", style_id, "AA12BC")))
+                document = Document(
+                    BytesIO(render_docx(self._career(), "en", style_id, "AA12BC"))
+                )
 
                 self.assertIn("#aa12bc", html)
-                self.assertIn('AA12BC', document.element.xml)
+                self.assertIn("AA12BC", document.element.xml)
 
     def test_modern_and_clean_executive_keep_body_text_neutral(self) -> None:
         for style_id, body_color in (
@@ -252,7 +272,9 @@ class MarkdownRendererTests(unittest.TestCase):
 
                 self.assertIn("@page { size: A4; margin: 0; }", html)
                 self.assertIn('class="page-frame" role="presentation"', html)
-                self.assertIn(".page-frame > thead, .page-frame > tfoot { height: 14mm; }", html)
+                self.assertIn(
+                    ".page-frame > thead, .page-frame > tfoot { height: 14mm; }", html
+                )
                 self.assertNotIn("@page:first", html)
                 self.assertNotIn("margin: -", html)
         contact_band = render_html(self._career(), "en", "contact-band")
@@ -318,6 +340,15 @@ class MarkdownRendererTests(unittest.TestCase):
 
                 self.assertNotIn("border", header_rule)
 
+    def test_compact_keeps_contact_information_below_the_full_width_name(self) -> None:
+        for style_id in ("compact", "compact-alt"):
+            with self.subTest(style=style_id):
+                html = render_html(self._career(), "en", style_id)
+                header_rule = html.split("header {", 1)[1].split("}", 1)[0]
+
+                self.assertIn("display: block", header_rule)
+                self.assertNotIn("grid-template-columns", header_rule)
+
     def test_timeline_is_photo_free_and_places_each_date_in_the_rail(self) -> None:
         html = render_html(self._career(), "en", "timeline")
         document = Document(BytesIO(render_docx(self._career(), "en", "timeline")))
@@ -328,9 +359,7 @@ class MarkdownRendererTests(unittest.TestCase):
             for paragraph in cell.paragraphs
         )
 
-        self.assertIn(
-            '<div class="timeline-date">Jan 2024 - Present</div>', html
-        )
+        self.assertIn('<div class="timeline-date">Jan 2024 - Present</div>', html)
         self.assertEqual(html.count("Jan 2024 - Present"), 1)
         self.assertNotIn("<img", html)
         self.assertNotIn("<svg", html)
@@ -342,7 +371,12 @@ class MarkdownRendererTests(unittest.TestCase):
         career_data = self._career().model_dump()
         career_data["skills"] = [
             {"id": "python", "name": "Python", "category": "Languages", "core": True},
-            {"id": "yaml", "name": "YAML", "category": "Languages", "level": "advanced"},
+            {
+                "id": "yaml",
+                "name": "YAML",
+                "category": "Languages",
+                "level": "advanced",
+            },
         ]
         career_data["experience"][0]["title"] = f"Build {chr(0x2014)} Systems"
         career = CareerDocument.model_validate(career_data)
@@ -364,13 +398,28 @@ class MarkdownRendererTests(unittest.TestCase):
         self.assertIn("Present", "\n".join(texts))
         self.assertIn("Portfolio: https://example.invalid/seriema", texts)
         self.assertIn("Advanced", "\n".join(texts))
-        self.assertTrue(any(run.bold for paragraph in document.paragraphs for run in paragraph.runs if run.text == "Python"))
+        self.assertTrue(
+            any(
+                run.bold
+                for paragraph in document.paragraphs
+                for run in paragraph.runs
+                if run.text == "Python"
+            )
+        )
         self.assertEqual(document.tables, [])
         self.assertEqual(len(document.inline_shapes), 0)
-        self.assertNotIn("List Bullet", [paragraph.style.name for paragraph in document.paragraphs])
-        self.assertIn("- Built reliable tools.", texts)
+        self.assertNotIn(
+            "List Bullet", [paragraph.style.name for paragraph in document.paragraphs]
+        )
+        self.assertIn("- Highlight: Built reliable tools.", texts)
         self.assertNotIn(chr(0xFFFD), "\n".join(texts))
-        self.assertTrue(any("w:pBdr" in paragraph._p.xml for paragraph in document.paragraphs if paragraph.text == "Summary"))
+        self.assertTrue(
+            any(
+                "w:pBdr" in paragraph._p.xml
+                for paragraph in document.paragraphs
+                if paragraph.text == "Summary"
+            )
+        )
         self.assertEqual(document.paragraphs[0].runs[0].font.size, Pt(22))
 
     def test_docx_localizes_headings_and_omits_empty_sections(self) -> None:
@@ -384,7 +433,11 @@ class MarkdownRendererTests(unittest.TestCase):
         career = CareerDocument.model_validate(
             {
                 "schema_version": 1,
-                "profile": {"name": "Seriema", "title": "Engineer", "email": "seriema@example.invalid"},
+                "profile": {
+                    "name": "Seriema",
+                    "title": "Engineer",
+                    "email": "seriema@example.invalid",
+                },
             }
         )
 
@@ -424,6 +477,139 @@ class MarkdownRendererTests(unittest.TestCase):
             self.assertIn("Professional Experience", fake.html)
             self.assertFalse((project_path / "exports/resume.html").exists())
 
+    def test_pdf_reuses_cache_when_render_inputs_are_unchanged(self) -> None:
+        class FakePdf:
+            def __init__(self) -> None:
+                self.calls = 0
+
+            def render(self, html: str) -> bytes:
+                self.calls += 1
+                return f"%PDF-fake-{self.calls}".encode()
+
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            project_path = Path(temporary_directory)
+            fake = FakePdf()
+            career = self._career()
+
+            first = write_resume(project_path, career, "en", "pdf", fake)
+            second = write_resume(project_path, career, "en", "pdf", fake)
+
+            self.assertEqual(first, second)
+            self.assertEqual(fake.calls, 1)
+            self.assertEqual(second.read_bytes(), b"%PDF-fake-1")
+            self.assertTrue(is_resume_current(project_path, career, "en", "pdf"))
+
+    def test_pdf_cache_is_invalidated_when_career_data_changes(self) -> None:
+        class FakePdf:
+            def __init__(self) -> None:
+                self.calls = 0
+
+            def render(self, html: str) -> bytes:
+                self.calls += 1
+                return f"%PDF-fake-{self.calls}".encode()
+
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            project_path = Path(temporary_directory)
+            fake = FakePdf()
+            career = self._career()
+            updated = career.model_copy(update={"summary": "Updated summary."})
+
+            write_resume(project_path, career, "en", "pdf", fake)
+            output = write_resume(project_path, updated, "en", "pdf", fake)
+
+            self.assertEqual(fake.calls, 2)
+            self.assertEqual(output.read_bytes(), b"%PDF-fake-2")
+
+    def test_pdf_cache_is_invalidated_when_artifact_is_changed_externally(self) -> None:
+        class FakePdf:
+            def __init__(self) -> None:
+                self.calls = 0
+
+            def render(self, html: str) -> bytes:
+                self.calls += 1
+                return f"%PDF-fake-{self.calls}".encode()
+
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            project_path = Path(temporary_directory)
+            fake = FakePdf()
+            career = self._career()
+            output = write_resume(project_path, career, "en", "pdf", fake)
+            output.write_bytes(b"externally changed")
+
+            self.assertFalse(is_resume_current(project_path, career, "en", "pdf"))
+            write_resume(project_path, career, "en", "pdf", fake)
+
+            self.assertEqual(fake.calls, 2)
+            self.assertEqual(output.read_bytes(), b"%PDF-fake-2")
+
+    def test_pdf_cache_is_invalidated_when_presentation_changes(self) -> None:
+        class FakePdf:
+            def __init__(self) -> None:
+                self.calls = 0
+
+            def render(self, html: str) -> bytes:
+                self.calls += 1
+                return f"%PDF-fake-{self.calls}".encode()
+
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            project_path = Path(temporary_directory)
+            fake = FakePdf()
+            career = self._career()
+
+            write_resume(
+                project_path,
+                career,
+                "en",
+                "pdf",
+                fake,
+                style_id="modern",
+                resume_color="#647D74",
+            )
+            write_resume(
+                project_path,
+                career,
+                "en",
+                "pdf",
+                fake,
+                style_id="modern",
+                resume_color="#112233",
+            )
+
+            self.assertEqual(fake.calls, 2)
+
+    def test_variant_pdf_always_renders_instead_of_using_canonical_cache(self) -> None:
+        class FakePdf:
+            def __init__(self) -> None:
+                self.calls = 0
+
+            def render(self, html: str) -> bytes:
+                self.calls += 1
+                return f"%PDF-variant-{self.calls}".encode()
+
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            project_path = Path(temporary_directory)
+            fake = FakePdf()
+            career = self._career()
+
+            write_resume(
+                project_path, career, "en", "pdf", fake, variant_id="backend-role"
+            )
+            output = write_resume(
+                project_path, career, "en", "pdf", fake, variant_id="backend-role"
+            )
+
+            self.assertEqual(fake.calls, 2)
+            self.assertEqual(output.read_bytes(), b"%PDF-variant-2")
+            self.assertFalse(
+                is_resume_current(
+                    project_path,
+                    career,
+                    "en",
+                    "pdf",
+                    variant_id="backend-role",
+                )
+            )
+
     def test_style_failure_does_not_overwrite_an_existing_artifact(self) -> None:
         with tempfile.TemporaryDirectory() as temporary_directory:
             project_path = Path(temporary_directory)
@@ -441,7 +627,9 @@ class MarkdownRendererTests(unittest.TestCase):
                     style_id="unknown",
                 )
 
-            self.assertEqual(output_path.read_text(encoding="utf-8"), "previous artifact")
+            self.assertEqual(
+                output_path.read_text(encoding="utf-8"), "previous artifact"
+            )
 
     def test_renders_localized_headings_and_preserves_user_content(self) -> None:
         career = self._career()
@@ -521,7 +709,9 @@ class MarkdownRendererTests(unittest.TestCase):
             )
             self.assertEqual(list(exports_path.glob(".resume.md.*.tmp")), [])
 
-    def test_docx_atomic_write_keeps_existing_artifact_when_replacement_fails(self) -> None:
+    def test_docx_atomic_write_keeps_existing_artifact_when_replacement_fails(
+        self,
+    ) -> None:
         with tempfile.TemporaryDirectory() as temporary_directory:
             project_path = Path(temporary_directory)
             exports_path = project_path / "exports"
@@ -596,6 +786,44 @@ class MarkdownRendererTests(unittest.TestCase):
 
 
 class ResumeRenderCliTests(unittest.TestCase):
+    def test_cli_reports_and_reuses_a_current_pdf_cache(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            project_path = Path(temporary_directory) / "career-project"
+            create_project(
+                project_path, project_name="Career Project", resume_language="en"
+            )
+            self._write_complete_career(project_path)
+
+            with patch(
+                "seriemacv.renderer.PlaywrightPdfRenderer.render",
+                return_value=b"%PDF-cached",
+            ) as render_pdf:
+                with redirect_stdout(StringIO()) as first_output:
+                    first = main(
+                        [
+                            "resume",
+                            "render",
+                            str(project_path),
+                            "--format",
+                            "pdf",
+                        ]
+                    )
+                with redirect_stdout(StringIO()) as second_output:
+                    second = main(
+                        [
+                            "resume",
+                            "render",
+                            str(project_path),
+                            "--format",
+                            "pdf",
+                        ]
+                    )
+
+            self.assertEqual((first, second), (0, 0))
+            self.assertEqual(render_pdf.call_count, 1)
+            self.assertIn("PDF (rendered)", first_output.getvalue())
+            self.assertIn("PDF (cached)", second_output.getvalue())
+
     def test_cli_uses_configured_style_and_allows_a_one_off_override(self) -> None:
         with tempfile.TemporaryDirectory() as temporary_directory:
             project_path = Path(temporary_directory) / "career-project"
@@ -608,21 +836,38 @@ class ResumeRenderCliTests(unittest.TestCase):
             self._write_complete_career(project_path)
 
             with redirect_stdout(StringIO()):
-                result = main([
-                    "resume", "render", str(project_path), "--format", "html",
-                ])
+                result = main(
+                    [
+                        "resume",
+                        "render",
+                        str(project_path),
+                        "--format",
+                        "html",
+                    ]
+                )
             self.assertEqual(result, 0)
             output_path = project_path / "exports/resume.en.html"
-            self.assertIn('data-style="modern"', output_path.read_text(encoding="utf-8"))
+            self.assertIn(
+                'data-style="modern"', output_path.read_text(encoding="utf-8")
+            )
             self.assertIn("#647d74", output_path.read_text(encoding="utf-8"))
 
             with redirect_stdout(StringIO()):
-                result = main([
-                    "resume", "render", str(project_path), "--format", "html",
-                    "--style", "compact-alt",
-                ])
+                result = main(
+                    [
+                        "resume",
+                        "render",
+                        str(project_path),
+                        "--format",
+                        "html",
+                        "--style",
+                        "compact-alt",
+                    ]
+                )
             self.assertEqual(result, 0)
-            self.assertIn('data-style="compact-alt"', output_path.read_text(encoding="utf-8"))
+            self.assertIn(
+                'data-style="compact-alt"', output_path.read_text(encoding="utf-8")
+            )
             self.assertIn(
                 "resume_style: modern",
                 (project_path / "seriemacv.yml").read_text(encoding="utf-8"),
@@ -651,16 +896,28 @@ class ResumeRenderCliTests(unittest.TestCase):
             self.assertTrue(output_path.exists())
             self.assertIn("## Summary", output_path.read_text(encoding="utf-8"))
 
-            result = main([
-                "resume", "render", str(project_path), "--format", "html",
-            ])
+            result = main(
+                [
+                    "resume",
+                    "render",
+                    str(project_path),
+                    "--format",
+                    "html",
+                ]
+            )
 
             self.assertEqual(result, 0)
             self.assertTrue((project_path / "exports/resume.en.html").exists())
 
-            result = main([
-                "resume", "render", str(project_path), "--format", "docx",
-            ])
+            result = main(
+                [
+                    "resume",
+                    "render",
+                    str(project_path),
+                    "--format",
+                    "docx",
+                ]
+            )
 
             self.assertEqual(result, 0)
             self.assertTrue((project_path / "exports/resume.en.docx").exists())
@@ -698,9 +955,15 @@ class ResumeRenderCliTests(unittest.TestCase):
             output_path.write_bytes(b"previous DOCX artifact")
 
             with redirect_stderr(StringIO()):
-                result = main([
-                    "resume", "render", str(project_path), "--format", "docx",
-                ])
+                result = main(
+                    [
+                        "resume",
+                        "render",
+                        str(project_path),
+                        "--format",
+                        "docx",
+                    ]
+                )
 
             self.assertEqual(result, 1)
             self.assertEqual(output_path.read_bytes(), b"previous DOCX artifact")
@@ -748,7 +1011,9 @@ stories: []
     def test_cli_does_not_overwrite_artifact_for_invalid_resume_color(self) -> None:
         with tempfile.TemporaryDirectory() as temporary_directory:
             project_path = Path(temporary_directory) / "career-project"
-            create_project(project_path, project_name="Career Project", resume_language="en")
+            create_project(
+                project_path, project_name="Career Project", resume_language="en"
+            )
             self._write_complete_career(project_path)
             output_path = project_path / "exports/resume.en.html"
             output_path.write_text("previous artifact", encoding="utf-8")
@@ -758,10 +1023,14 @@ stories: []
             )
 
             with redirect_stderr(StringIO()):
-                result = main(["resume", "render", str(project_path), "--format", "html"])
+                result = main(
+                    ["resume", "render", str(project_path), "--format", "html"]
+                )
 
             self.assertEqual(result, 1)
-            self.assertEqual(output_path.read_text(encoding="utf-8"), "previous artifact")
+            self.assertEqual(
+                output_path.read_text(encoding="utf-8"), "previous artifact"
+            )
 
     @staticmethod
     def _write_complete_career(project_path: Path) -> None:

@@ -27,6 +27,10 @@ The YAML report contains every requirement, its official classification, verifie
 career evidence can support a positive or conflicting conclusion. `NO_EVIDENCE` has
 no evidence IDs and never increases the score.
 
+AI agents that enrich this report with eligibility, compensation, company research,
+or opportunity priority must follow the [AI job-analysis guideline](../../agent-job-analysis-guideline.md).
+Those findings are advisory and do not alter the canonical job or career data.
+
 The default dimension weights are configurable in `seriemacv.yml`:
 
 ```yaml

@@ -1,0 +1,25 @@
+schema_version: 1
+id: split-header-clean
+name: Split header clean
+description: Clean technical resume with a compact skills sidebar and configurable project color.
+layout: two-column
+page_size: A4
+ats_safe: false
+supported_sections: [summary, experience, education, skills, languages]
+supported_formats: [markdown, html, pdf, docx]
+markdown_variant: standard
+color_customizable: true
+tokens:
+  font_family: Arial
+  body_size_pt: 9.5
+  name_size_pt: 24
+  section_size_pt: 12.5
+  record_size_pt: 10.5
+  margins_mm: 12
+  line_spacing: 1.2
+  section_spacing_pt: 11
+  primary_color: "396A71"
+  accent_color: "396A71"
+  header_alignment: left
+  section_divider: accent
+  sidebar_width_mm: 58

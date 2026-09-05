@@ -11,6 +11,8 @@ YAML de origem permanece sempre sob controle do usuário.
 | Funcionalidade | O que faz | Guia |
 | --- | --- | --- |
 | Instalação | Instala a CLI e o Chromium opcional necessário para PDF | [Instalação](instalacao.md) |
+| Usar o Seriema com IA | Delega tarefas de carreira revisáveis e baseadas em evidências | [Usar o Seriema com IA](uso-com-ia.md) |
+| Usar o Seriema CLI | Executa os mesmos fluxos locais diretamente no PowerShell | [Usar o Seriema CLI](uso-cli.md) |
 | Projetos de carreira | Cria, configura e valida o workspace local | [Projetos e configuração](projetos.md) |
 | Career Builder | Mantém fatos canônicos e textos de carreira localizados | [Career Builder](career-builder.md) |
 | Geração de currículo | Lista estilos e gera Markdown, HTML, PDF e DOCX | [Currículos e estilos](renderizacao.md) |
@@ -20,23 +22,11 @@ YAML de origem permanece sempre sob controle do usuário.
 | Candidaturas assistidas | Prepara candidaturas locais revisáveis sem enviá-las | [Candidaturas assistidas](candidaturas.md) |
 | Diagnósticos | Explica erros de validação, navegador, arquivos e Python | [Solução de problemas](solucao-de-problemas.md) |
 
-## Primeiro fluxo recomendado
+## Escolha sua interface
 
-```powershell
-python -m pip install -e .
-seriemacv init .\minha-carreira --name "Minha carreira" --language pt-BR --style clean
-seriemacv career set-profile .\minha-carreira --name "Seu Nome" --email voce@example.com
-seriemacv career add-experience .\minha-carreira --id cargo-atual --company "Empresa" --start-date 2024-01
-# Adicione o cargo do perfil e o texto de cargo-atual em career.locales/pt-BR.yml.
-seriemacv career validate .\minha-carreira
-seriemacv career locale validate .\minha-carreira --language pt-BR
-seriemacv resume render .\minha-carreira --format docx
-```
-
-Use `seriemacv validate .\minha-carreira` para verificar a estrutura do projeto. Use
-`seriemacv career validate .\minha-carreira` para verificar o conteúdo profissional
-canônico. Use `career locale validate` para verificar o texto de carreira selecionado
-junto com seu catálogo i18n antes da renderização.
+Use [Usar o Seriema com IA](uso-com-ia.md) para delegar trabalho revisável a um agente
+de IA ou [Usar o Seriema CLI](uso-cli.md) para executar os comandos diretamente. Os
+dois caminhos usam o mesmo projeto local e mantêm o YAML sob seu controle.
 
 ## Escopo atual
 

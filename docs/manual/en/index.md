@@ -11,6 +11,8 @@ remains under the user's control.
 | Feature | What it does | Guide |
 | --- | --- | --- |
 | Installation | Installs the CLI and the optional Chromium runtime for PDF | [Installation](installation.md) |
+| Using Seriema with AI | Gives an AI agent reviewable, evidence-grounded career tasks | [Using Seriema with AI](using-ai.md) |
+| Using Seriema CLI | Runs the same local workflows directly in PowerShell | [Using Seriema CLI](using-cli.md) |
 | Career projects | Creates, configures, and validates the local workspace | [Projects and configuration](projects.md) |
 | Career Builder | Maintains canonical facts and localized career wording | [Career Builder](career-builder.md) |
 | Resume generation | Lists styles and renders Markdown, HTML, PDF, and DOCX | [Resumes and styles](resume-rendering.md) |
@@ -20,23 +22,11 @@ remains under the user's control.
 | Templates | Exposes the current YAML contract to people and external tools | [Templates and external tools](templates.md) |
 | Diagnostics | Explains validation, browser, filesystem, and Python errors | [Troubleshooting](troubleshooting.md) |
 
-## Recommended first workflow
+## Choose your interface
 
-```powershell
-python -m pip install -e .
-seriemacv init .\my-career --name "My career" --language en --style clean
-seriemacv career set-profile .\my-career --name "Your Name" --email you@example.com
-seriemacv career add-experience .\my-career --id current-role --company "Company" --start-date 2024-01
-# Add the profile title and current-role wording to career.locales/en.yml.
-seriemacv career validate .\my-career
-seriemacv career locale validate .\my-career --language en
-seriemacv resume render .\my-career --format docx
-```
-
-Use `seriemacv validate .\my-career` when you need to check the project structure.
-Use `seriemacv career validate .\my-career` when you need to check the actual career
-facts. Use `career locale validate` to check the selected career wording together
-with its application i18n catalog before rendering.
+Use [Using Seriema with AI](using-ai.md) to delegate reviewable work to an AI agent,
+or [Using Seriema CLI](using-cli.md) to run commands directly. Both paths use the
+same local project and preserve the YAML source under your control.
 
 ## Current scope
 

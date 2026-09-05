@@ -1,5 +1,5 @@
 schema_version: 1
 locale: en
-labels: {summary: Summary, experience: Professional Experience, education: Education, skills: Skills, languages: Languages, current: Present, other: Other, level.beginner: Beginner, level.intermediate: Intermediate, level.advanced: Advanced, level.expert: Expert}
+labels: {summary: Summary, experience: Professional Experience, education: Education, skills: Skills, languages: Languages, highlight: Highlight, current: Present, other: Other, level.beginner: Beginner, level.intermediate: Intermediate, level.advanced: Advanced, level.expert: Expert}
 months: [Jan, Feb, Mar, Apr, May, Jun, Jul, Aug, Sep, Oct, Nov, Dec]
 date_format: '{month} {year}'

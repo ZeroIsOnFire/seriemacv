@@ -29,7 +29,10 @@ class StudioTests(unittest.TestCase):
                 "source: {format: manual, content: Python experience}\n",
                 encoding="utf-8",
             )
-            create_application(project_path, ApplicationDocument(id="platform-application", job_id="platform-role"))
+            create_application(
+                project_path,
+                ApplicationDocument(id="platform-application", job_id="platform-role"),
+            )
             server = create_studio_server(project_path)
             try:
                 import threading
@@ -45,14 +48,21 @@ class StudioTests(unittest.TestCase):
                     page = response.read().decode("utf-8")
                 with urlopen(f"{base_url}/api/applications") as response:
                     applications = json.loads(response.read())
-                with urlopen(f"{base_url}/api/application/platform-application") as response:
+                with urlopen(
+                    f"{base_url}/api/application/platform-application"
+                ) as response:
                     application = json.loads(response.read())
             finally:
                 server.shutdown()
                 server.server_close()
 
-            self.assertEqual(jobs, [{"id": "platform-role", "title": "Platform Engineer", "company": ""}])
-            self.assertEqual(report["requirements"][0]["classification"], "STRONG_MATCH")
+            self.assertEqual(
+                jobs,
+                [{"id": "platform-role", "title": "Platform Engineer", "company": ""}],
+            )
+            self.assertEqual(
+                report["requirements"][0]["classification"], "STRONG_MATCH"
+            )
             self.assertEqual(applications[0]["id"], "platform-application")
             self.assertEqual(application["status"], "saved")
             self.assertIn("seriemaCV Studio", page)
