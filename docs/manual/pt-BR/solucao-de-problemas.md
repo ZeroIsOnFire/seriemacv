@@ -22,9 +22,9 @@ de execução conflitante nas configurações do Windows.
 seriemacv validate .\minha-carreira
 ```
 
-Restaure especificamente o diretório ou artefato indicado. Não recrie o arquivo
-SQLite como texto. Se o projeto for anterior ao layout atual, a validação reconhece
-automaticamente o contrato legado suportado.
+Restaure especificamente o diretório ou artefato indicado. Se o projeto for anterior
+ao layout atual, a validação reconhece automaticamente o contrato legado suportado.
+Uma pasta `.seriemacv/index/` antiga é ignorada e pode ser mantida como backup.
 
 ## A validação da carreira falha
 
@@ -48,8 +48,8 @@ seriemacv diagnostics bundle .\minha-carreira --output .\diagnosticos.zip
 
 O ZIP contém somente `diagnostics.json`, com a versão do seriemaCV e a validação
 redigida da estrutura do projeto. Ele exclui YAML de carreira, registros de vagas e
-candidaturas, exportações, índices SQLite, perfis de navegador e arquivos de pedido
-ou resposta de IA. O seriemaCV não coleta nem envia telemetria.
+candidaturas, exportações, perfis de navegador e arquivos de pedido ou resposta de
+IA. O seriemaCV não coleta nem envia telemetria.
 
 Datas devem usar `YYYY-MM`, como `2024-01`. Registros atuais omitem `end_date`.
 

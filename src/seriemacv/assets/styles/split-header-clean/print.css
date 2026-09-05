@@ -1,0 +1,18 @@
+@page { size: A4; margin: {{margins_mm}}mm; }
+* { box-sizing: border-box; }
+body { margin: 0; color: #263441; font: {{body_size_pt}}pt {{font_family}}, Arial, sans-serif; line-height: {{line_spacing}}; }
+main { max-width: {{content_width_mm}}mm; margin: auto; }
+header { border-left: 6pt solid {{primary_color}}; padding: 3pt 0 9pt 10pt; margin-bottom: 8pt; }
+h1 { color: {{primary_color}}; margin: 0; font-size: {{name_size_pt}}pt; white-space: nowrap; }
+header .title { color: {{accent_color}}; font-weight: 700; white-space: nowrap; }
+header p, p { margin: 2pt 0; }
+.resume-layout { display: grid; grid-template-columns: minmax(0, 1fr) {{sidebar_width_mm}}mm; gap: 7mm; }
+.sidebar { border-left: 2pt solid {{accent_color}}; padding-left: 9pt; }
+h2 { color: {{primary_color}}; margin: {{section_spacing_pt}}pt 0 4pt; border-bottom: 2px solid {{accent_color}}; font-size: {{section_size_pt}}pt; }
+h3 { margin: 7pt 0 1pt; font-size: {{record_size_pt}}pt; }
+ul { margin: 2pt 0 5pt; padding-left: 15pt; break-inside: avoid; }
+li { break-inside: avoid; overflow-wrap: anywhere; }
+li::marker { color: {{accent_color}}; }
+h2, h3 { break-after: avoid; }
+article { break-inside: avoid; overflow-wrap: anywhere; }
+a { color: {{primary_color}}; overflow-wrap: anywhere; }

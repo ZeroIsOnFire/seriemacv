@@ -10,7 +10,7 @@ resumes never write changes back to either file.
 | Canonical section | Facts in `career.yml` | Wording in `career.locales/<locale>.yml` |
 | --- | --- | --- |
 | `profile` | Name, contact, links | Title, location, languages, work wording |
-| `experience` | ID, employer, dates | Role, location, employment type, highlights |
+| `experience` | ID, employer, dates | Role, location, employment type, bullets, and at most one highlight |
 | `education` | ID, institution, dates | Degree, field, location, highlights |
 | `skills` | ID, level, tags, editorial priority | Display name, category |
 | `evidence` | Traceable support for professional statements | Not localized or printed |
@@ -77,7 +77,8 @@ seriemacv career add-experience .\my-career `
 
 `--id`, `--company`, and `--start-date` are required. Omit `--end-date` for the
 current role. Then add the same ID under `experience` in each required career locale
-with its role title and factual highlights.
+with its role title, regular bullets, and at most one factual highlight. If no source
+achievement is explicitly emphasized, omit `highlights`.
 
 ## Add education
 
@@ -156,10 +157,10 @@ seriemacv career search-evidence .\my-career reliability
 seriemacv career search-evidence .\my-career --tag python --experience-id example-company-senior
 ```
 
-The local lexical index is rebuilt from `career.yml` before every search. Searches
-only return evidence marked `verified: true`; pending evidence is never included in
-results. Provide text, one or more `--tag` filters, or `--experience-id`. Repeated
-tags are combined, and the output is validated YAML.
+Search reads `career.yml` directly. It only returns evidence marked `verified: true`;
+pending evidence is never included in results. Provide text, one or more `--tag`
+filters, or `--experience-id`. Repeated tags are combined, and the output is
+validated YAML.
 
 ## Inspect sections
 

@@ -10,6 +10,7 @@ from seriemacv.cli import main
 from seriemacv.jobs import JobImportPayload, JobSource, create_job
 from seriemacv.project import create_project
 from seriemacv.variants import (
+    ResumeVariantLocale,
     list_variants,
     load_variant_career,
     validate_variant,
@@ -18,6 +19,23 @@ from seriemacv.variants import (
 
 
 class ResumeVariantTests(unittest.TestCase):
+    def test_variant_experience_allows_only_one_highlight(self) -> None:
+        with self.assertRaisesRegex(ValueError, "at most 1 item"):
+            ResumeVariantLocale.model_validate(
+                {
+                    "schema_version": 1,
+                    "locale": "en",
+                    "experience": {
+                        "example": {
+                            "highlights": [
+                                "Primary achievement.",
+                                "Secondary achievement.",
+                            ]
+                        }
+                    },
+                }
+            )
+
     def test_variant_selects_reorders_and_overrides_localized_content(self) -> None:
         with tempfile.TemporaryDirectory() as temporary_directory:
             project_path = _complete_project(temporary_directory)
@@ -27,7 +45,9 @@ class ResumeVariantTests(unittest.TestCase):
 
             self.assertEqual(variant.job_id, "platform-role")
             self.assertEqual(variant.style, "compact")
-            self.assertEqual([item.id for item in career.experience], ["older", "current"])
+            self.assertEqual(
+                [item.id for item in career.experience], ["older", "current"]
+            )
             self.assertEqual([item.id for item in career.education], [])
             self.assertEqual([item.id for item in career.skills], ["python"])
             self.assertEqual(career.summary, "Backend engineer for reliable platforms.")
@@ -50,7 +70,9 @@ class ResumeVariantTests(unittest.TestCase):
             self.assertEqual(career.profile.title, "Software Engineer")
             self.assertEqual([item.id for item in career.skills], ["python"])
 
-    def test_validation_rejects_unknown_career_job_and_evidence_references(self) -> None:
+    def test_validation_rejects_unknown_career_job_and_evidence_references(
+        self,
+    ) -> None:
         with tempfile.TemporaryDirectory() as temporary_directory:
             project_path = _complete_project(temporary_directory)
             _write_variant(project_path)
@@ -155,7 +177,9 @@ class ResumeVariantTests(unittest.TestCase):
             _write_variant(project_path)
             (project_path / "resume/variants/notes").mkdir()
 
-            self.assertEqual([item.id for item in list_variants(project_path)], ["backend-role"])
+            self.assertEqual(
+                [item.id for item in list_variants(project_path)], ["backend-role"]
+            )
             self.assertEqual(validate_variants(project_path), [])
 
 
@@ -172,7 +196,14 @@ class ResumeVariantCliTests(unittest.TestCase):
 
             with redirect_stdout(StringIO()):
                 result = main(
-                    ["resume", "variants", "validate", str(project_path), "--id", "backend-role"]
+                    [
+                        "resume",
+                        "variants",
+                        "validate",
+                        str(project_path),
+                        "--id",
+                        "backend-role",
+                    ]
                 )
             self.assertEqual(result, 0)
 
@@ -237,7 +268,9 @@ class ResumeVariantCliTests(unittest.TestCase):
             self.assertEqual(result, 0)
             self.assertIn('data-style="clean"', html_path.read_text(encoding="utf-8"))
 
-    def test_cli_does_not_overwrite_variant_artifact_when_variant_is_invalid(self) -> None:
+    def test_cli_does_not_overwrite_variant_artifact_when_variant_is_invalid(
+        self,
+    ) -> None:
         with tempfile.TemporaryDirectory() as temporary_directory:
             project_path = _complete_project(temporary_directory)
             _write_variant(project_path)
@@ -265,7 +298,9 @@ class ResumeVariantCliTests(unittest.TestCase):
                 )
 
             self.assertEqual(result, 1)
-            self.assertEqual(output_path.read_text(encoding="utf-8"), "previous artifact")
+            self.assertEqual(
+                output_path.read_text(encoding="utf-8"), "previous artifact"
+            )
 
 
 def _complete_project(temporary_directory: str) -> Path:
@@ -326,7 +361,9 @@ skills:
     )
     create_job(
         project_path,
-        JobImportPayload(schema_version=1, id="platform-role", title="Platform Engineer"),
+        JobImportPayload(
+            schema_version=1, id="platform-role", title="Platform Engineer"
+        ),
         JobSource(format="manual", content="Build reliable platforms."),
     )
     return project_path

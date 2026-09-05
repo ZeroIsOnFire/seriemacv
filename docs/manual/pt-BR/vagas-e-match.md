@@ -27,6 +27,10 @@ lacunas, conflitos, notas de entrevista e score ponderado. Somente evidências
 verificadas sustentam conclusões positivas ou conflitos. `NO_EVIDENCE` não tem IDs e
 nunca aumenta o score.
 
+Agentes de IA que complementem esse relatório com elegibilidade, remuneração,
+pesquisa de empresa ou prioridade devem seguir a [diretriz de análise de vagas](../../agent-job-analysis-guideline.pt-BR.md).
+Essas conclusões são consultivas e não alteram os dados canônicos de vaga ou carreira.
+
 Os pesos ficam em `seriemacv.yml`, são não negativos e devem totalizar 100:
 
 ```yaml

@@ -1,0 +1,24 @@
+schema_version: 1
+id: compact-executive
+name: Compact executive
+description: Compact executive single-column resume inspired by the supplied technical resume.
+layout: single-column
+page_size: A4
+ats_safe: false
+supported_sections: [summary, experience, education, skills, languages]
+supported_formats: [markdown, html, pdf, docx]
+markdown_variant: clean-executive
+color_customizable: true
+tokens:
+  font_family: Calibri
+  body_size_pt: 9.5
+  name_size_pt: 19
+  section_size_pt: 11.5
+  record_size_pt: 10
+  margins_mm: 13
+  line_spacing: 1.14
+  section_spacing_pt: 9
+  primary_color: "1A1A2E"
+  accent_color: "2B5E8A"
+  header_alignment: left
+  section_divider: line

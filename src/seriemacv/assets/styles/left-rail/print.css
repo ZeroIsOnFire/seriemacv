@@ -17,6 +17,8 @@ header p, p { margin: 2pt 0; }
 h2 { color: {{primary_color}}; margin: {{section_spacing_pt}}pt 0 4pt; border-bottom: 1px solid {{accent_color}}; font-size: {{section_size_pt}}pt; }
 .sidebar h2 { color: white; border-color: white; }
 h3 { margin: 7pt 0 1pt; font-size: {{record_size_pt}}pt; }
-ul { margin: 2pt 0 5pt; padding-left: 15pt; }
-article { break-inside: avoid; }
+ul { margin: 2pt 0 5pt; padding-left: 15pt; break-inside: avoid; }
+li { break-inside: avoid; overflow-wrap: anywhere; }
+h2, h3 { break-after: avoid; }
+article { break-inside: avoid; overflow-wrap: anywhere; }
 a { color: {{primary_color}}; }

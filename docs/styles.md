@@ -50,6 +50,9 @@ colors, columns, or the Timeline date rail.
 | `left-rail-alt` | <img src="../examples/styles/left-rail-alt/preview.png" width="180" alt="Left rail Alt resume preview"> | Left rail without dividers, not ATS-safe | [PDF](../examples/styles/left-rail-alt/resume.pdf) |
 | `detail-sidebar` | <img src="../examples/styles/detail-sidebar/preview.png" width="180" alt="Detail sidebar resume preview"> | Wide header and details sidebar, not ATS-safe | [PDF](../examples/styles/detail-sidebar/resume.pdf) |
 | `detail-sidebar-alt` | <img src="../examples/styles/detail-sidebar-alt/preview.png" width="180" alt="Detail sidebar Alt resume preview"> | Detail sidebar without dividers, not ATS-safe | [PDF](../examples/styles/detail-sidebar-alt/resume.pdf) |
+| `split-header-clean` | <img src="../examples/styles/split-header-clean/preview.png" width="180" alt="Split header clean resume preview"> | Clean technical two-column layout with configurable project color, not ATS-safe | [PDF](../examples/styles/split-header-clean/resume.pdf) |
+| `compact-executive` | <img src="../examples/styles/compact-executive/preview.png" width="180" alt="Compact executive resume preview"> | Compact single-column executive layout based on the supplied resume, not ATS-safe | [PDF](../examples/styles/compact-executive/resume.pdf) |
+| `compact-executive-alt` | <img src="../examples/styles/compact-executive-alt/preview.png" width="180" alt="Compact executive Alt resume preview"> | Compact executive layout without section dividers, not ATS-safe | [PDF](../examples/styles/compact-executive-alt/resume.pdf) |
 
 ## Design basis
 

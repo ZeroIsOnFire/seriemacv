@@ -32,10 +32,12 @@ def create_studio_server(
                 if path == "/":
                     self._html(_PAGE)
                 elif path == "/api/jobs":
-                    self._json([
-                        {"id": job.id, "title": job.title, "company": job.company}
-                        for job in load_jobs(resolved_path)
-                    ])
+                    self._json(
+                        [
+                            {"id": job.id, "title": job.title, "company": job.company}
+                            for job in load_jobs(resolved_path)
+                        ]
+                    )
                 elif path.startswith("/api/match/"):
                     job_id = unquote(path.removeprefix("/api/match/"))
                     job = load_job(resolved_path / "jobs" / f"{job_id}.yml")
@@ -46,21 +48,41 @@ def create_studio_server(
                     )
                     self._json(report.model_dump(mode="json"))
                 elif path == "/api/applications":
-                    self._json([
-                        {"id": item.id, "job_id": item.job_id, "status": item.status,
-                         "pending_questions": len(item.questions)}
-                        for item in list_applications(resolved_path)
-                    ])
+                    self._json(
+                        [
+                            {
+                                "id": item.id,
+                                "job_id": item.job_id,
+                                "status": item.status,
+                                "pending_questions": len(item.questions),
+                            }
+                            for item in list_applications(resolved_path)
+                        ]
+                    )
                 elif path.startswith("/api/application/"):
                     application_id = unquote(path.removeprefix("/api/application/"))
-                    self._json(load_application(resolved_path, application_id).model_dump(mode="json"))
+                    self._json(
+                        load_application(resolved_path, application_id).model_dump(
+                            mode="json"
+                        )
+                    )
                 elif path.startswith("/api/application-questions/"):
-                    application_id = unquote(path.removeprefix("/api/application-questions/"))
-                    self._json([item.model_dump(mode="json") for item in pending_questions(resolved_path, application_id)])
+                    application_id = unquote(
+                        path.removeprefix("/api/application-questions/")
+                    )
+                    self._json(
+                        [
+                            item.model_dump(mode="json")
+                            for item in pending_questions(resolved_path, application_id)
+                        ]
+                    )
                 else:
                     self.send_error(HTTPStatus.NOT_FOUND, "Not found")
             except (OSError, ValueError) as error:
-                self._json({"error": redact_sensitive_text(error)}, status=HTTPStatus.BAD_REQUEST)
+                self._json(
+                    {"error": redact_sensitive_text(error)},
+                    status=HTTPStatus.BAD_REQUEST,
+                )
 
         def _html(self, content: str) -> None:
             encoded = content.encode("utf-8")
