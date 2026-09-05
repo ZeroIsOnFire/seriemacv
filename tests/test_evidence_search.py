@@ -19,7 +19,8 @@ class EvidenceSearchTests(unittest.TestCase):
 
             results = search_verified_evidence(project_path, tags=["PYTHON"])
             self.assertEqual(
-                [item.id for item in results], ["alpha-python", "beta-python", "reliable-service"]
+                [item.id for item in results],
+                ["alpha-python", "beta-python", "reliable-service"],
             )
 
             results = search_verified_evidence(
@@ -33,7 +34,12 @@ class EvidenceSearchTests(unittest.TestCase):
             career_path = project_path / "career.yml"
 
             self.assertEqual(
-                [item.id for item in search_verified_evidence(project_path, query="reliability")],
+                [
+                    item.id
+                    for item in search_verified_evidence(
+                        project_path, query="reliability"
+                    )
+                ],
                 ["reliable-service"],
             )
             career_path.write_text(
@@ -44,10 +50,15 @@ class EvidenceSearchTests(unittest.TestCase):
             )
 
             self.assertEqual(
-                [item.id for item in search_verified_evidence(project_path, query="incident")],
+                [
+                    item.id
+                    for item in search_verified_evidence(project_path, query="incident")
+                ],
                 ["reliable-service"],
             )
-            self.assertEqual(search_verified_evidence(project_path, query="reliability"), [])
+            self.assertEqual(
+                search_verified_evidence(project_path, query="reliability"), []
+            )
 
     def test_excludes_unverified_evidence_and_orders_ties_by_id(self) -> None:
         with tempfile.TemporaryDirectory() as temporary_directory:
@@ -56,12 +67,15 @@ class EvidenceSearchTests(unittest.TestCase):
             results = search_verified_evidence(project_path, tags=["python"])
 
             self.assertEqual(
-                [item.id for item in results], ["alpha-python", "beta-python", "reliable-service"]
+                [item.id for item in results],
+                ["alpha-python", "beta-python", "reliable-service"],
             )
             self.assertNotIn("pending-python", [item.id for item in results])
 
             results = search_verified_evidence(project_path, query="shared")
-            self.assertEqual([item.id for item in results], ["alpha-python", "beta-python"])
+            self.assertEqual(
+                [item.id for item in results], ["alpha-python", "beta-python"]
+            )
 
     def test_rejects_missing_criteria_and_invalid_career(self) -> None:
         with tempfile.TemporaryDirectory() as temporary_directory:
@@ -78,9 +92,16 @@ class EvidenceSearchTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temporary_directory:
             project_path = _create_project(temporary_directory)
             with redirect_stdout(StringIO()) as output:
-                result = main([
-                    "career", "search-evidence", str(project_path), "python", "--tag", "reliability",
-                ])
+                result = main(
+                    [
+                        "career",
+                        "search-evidence",
+                        str(project_path),
+                        "python",
+                        "--tag",
+                        "reliability",
+                    ]
+                )
             self.assertEqual(result, 0)
             self.assertIn("id: reliable-service", output.getvalue())
 

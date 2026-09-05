@@ -116,5 +116,12 @@ mesmo núcleo e preservam a carreira canônica.
 - [x] Garantir que diagnósticos não exportem artefatos pessoais por padrão.
 - [x] Adicionar formatter, linter e análise de tipos compatíveis com a stack.
 - [x] Configurar CI para testes e verificações estáticas.
+- [x] Unificar compilação, lint, formatação, tipagem incremental e testes num gate
+  local reproduzível, usado integralmente pelo CI em Python 3.11 e 3.12.
+- [ ] Eliminar os 66 erros da dívida inicial de tipagem em `career`, `jobs`,
+  `variants`, `applications`, `proposals`, `renderer` e `cli`, adicionando cada
+  módulo ao gate conforme ficar limpo.
+- [x] Documentar guard rails contra prompt injection, duplicidade de candidatura,
+  retries sem limite, inferência de controles e bypass de CAPTCHA.
 - [x] Documentar instalação, uso local e comandos oficiais em guia bilíngue por funcionalidade.
 - [x] Revisar dependências e políticas de atualização.

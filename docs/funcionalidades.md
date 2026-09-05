@@ -56,6 +56,10 @@ estruturados. Nenhuma interface conhece detalhes de caminhos ou serialização.
   descartável; arquivos permanecem a fonte de verdade para conteúdo pertencente ao
   usuário.
 - Definir uma abstração de filesystem para testes sem disco real.
+- Manter um único gate de qualidade reproduzível em `scripts/check_quality.py`,
+  compartilhado entre desenvolvimento local e CI. O gate cobre compilação, lint,
+  formatação integral, baseline incremental de tipagem e testes; o CI acrescenta a
+  validação das dependências instaladas numa matriz de versões suportadas do Python.
 
 **Depende de:** nada.
 

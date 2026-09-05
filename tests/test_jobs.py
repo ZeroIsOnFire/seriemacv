@@ -29,19 +29,23 @@ class JobSchemaTests(unittest.TestCase):
             JobDocument.model_validate({"schema_version": 1, "id": "missing-title"})
 
         with self.assertRaises(ValueError):
-            JobImportPayload.model_validate({
-                "schema_version": 1,
-                "id": "example-role",
-                "title": "Engineer",
-                "unexpected": True,
-            })
+            JobImportPayload.model_validate(
+                {
+                    "schema_version": 1,
+                    "id": "example-role",
+                    "title": "Engineer",
+                    "unexpected": True,
+                }
+            )
 
         with self.assertRaises(ValueError):
-            JobImportPayload.model_validate({
-                "schema_version": 1,
-                "id": "blank-title",
-                "title": "   ",
-            })
+            JobImportPayload.model_validate(
+                {
+                    "schema_version": 1,
+                    "id": "blank-title",
+                    "title": "   ",
+                }
+            )
 
     def test_job_document_rejects_duplicate_ids_and_invalid_priority(self) -> None:
         base = {
@@ -115,8 +119,7 @@ class DormantJobDomainTests(unittest.TestCase):
             "    priority: required\n"
         )
         json_text = (
-            '{"schema_version": 1, "id": "data-engineer", '
-            '"title": "Data Engineer"}'
+            '{"schema_version": 1, "id": "data-engineer", "title": "Data Engineer"}'
         )
 
         yaml_payload = load_yaml_payload(yaml_text)
@@ -135,12 +138,16 @@ class DormantJobDomainTests(unittest.TestCase):
             archive_path = Path(temporary_directory) / "jobs.zip"
             with zipfile.ZipFile(archive_path, "w") as archive:
                 archive.writestr("first.yaml", _job_yaml("first-role", "First Role"))
-                archive.writestr("nested/second.yml", _job_yaml("second-role", "Second Role"))
+                archive.writestr(
+                    "nested/second.yml", _job_yaml("second-role", "Second Role")
+                )
                 archive.writestr("README.md", "Ignored")
 
             paths = import_jobs(project_path, archive_path)
 
-            self.assertEqual([path.name for path in paths], ["first-role.yml", "second-role.yml"])
+            self.assertEqual(
+                [path.name for path in paths], ["first-role.yml", "second-role.yml"]
+            )
             self.assertEqual(validate_job(paths[0]), [])
             self.assertEqual(load_job(paths[0]).source.filename, "jobs.zip!first.yaml")
             with self.assertRaisesRegex(FileExistsError, "already exist"):

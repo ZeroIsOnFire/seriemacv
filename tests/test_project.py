@@ -48,7 +48,9 @@ class CreateProjectTests(unittest.TestCase):
                 "resume_style: clean",
                 (project_path / "seriemacv.yml.example").read_text(encoding="utf-8"),
             )
-            job_template = (project_path / "job.yml.example").read_text(encoding="utf-8")
+            job_template = (project_path / "job.yml.example").read_text(
+                encoding="utf-8"
+            )
             job = load_yaml_payload(job_template)
             self.assertEqual(job.id, "example-platform-engineer")
             self.assertTrue(job.description)
@@ -85,9 +87,9 @@ class CreateProjectTests(unittest.TestCase):
             career_locale = (
                 repository_path / "examples" / f"career.locales.{locale}.yml"
             ).read_text(encoding="utf-8")
-            i18n = (
-                repository_path / "examples" / f"i18n.{locale}.yml"
-            ).read_text(encoding="utf-8")
+            i18n = (repository_path / "examples" / f"i18n.{locale}.yml").read_text(
+                encoding="utf-8"
+            )
             self.assertEqual(
                 career_locale,
                 PROJECT_EXAMPLES[f"career.locales/{locale}.yml.example"],
@@ -95,9 +97,7 @@ class CreateProjectTests(unittest.TestCase):
             self.assertEqual(i18n, PROJECT_EXAMPLES[f"i18n/{locale}.yml.example"])
             CareerLocaleDocument.model_validate(yaml.load(career_locale))
             I18nDocument.model_validate(yaml.load(i18n))
-        ResumeVariant.model_validate(
-            yaml.load(PROJECT_EXAMPLES["variant.yml.example"])
-        )
+        ResumeVariant.model_validate(yaml.load(PROJECT_EXAMPLES["variant.yml.example"]))
         ResumeVariantLocale.model_validate(
             yaml.load(PROJECT_EXAMPLES["variant-locale.yml.example"])
         )
@@ -126,7 +126,9 @@ class CreateProjectTests(unittest.TestCase):
             self.assertIn("resume_style: modern", config)
             self.assertIn('resume_color: "#647D74"', config)
 
-    def test_normalizes_resume_color_and_rejects_invalid_hexadecimal_value(self) -> None:
+    def test_normalizes_resume_color_and_rejects_invalid_hexadecimal_value(
+        self,
+    ) -> None:
         with tempfile.TemporaryDirectory() as temporary_directory:
             project_path = Path(temporary_directory) / "my-career"
             create_project(project_path, project_name="My Career")
@@ -136,13 +138,17 @@ class CreateProjectTests(unittest.TestCase):
                 encoding="utf-8",
             )
 
-            self.assertEqual(load_project_configuration(project_path).resume_color, "AB12CD")
+            self.assertEqual(
+                load_project_configuration(project_path).resume_color, "AB12CD"
+            )
 
             config_path.write_text(
                 "schema_version: 2\nproject_name: My Career\nresume_color: blue\n",
                 encoding="utf-8",
             )
-            self.assertTrue(any("hexadecimal" in error for error in validate_project(project_path)))
+            self.assertTrue(
+                any("hexadecimal" in error for error in validate_project(project_path))
+            )
 
     def test_legacy_configuration_defaults_to_clean_style(self) -> None:
         with tempfile.TemporaryDirectory() as temporary_directory:

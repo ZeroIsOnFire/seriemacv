@@ -135,7 +135,8 @@ class ResumeVariantLocale(StrictModel):
     def tailored_claims_have_evidence(self) -> "ResumeVariantLocale":
         has_summary = self.summary is not None and bool(self.summary.strip())
         has_highlights = any(
-            item.highlights for item in (*self.experience.values(), *self.education.values())
+            item.highlights
+            for item in (*self.experience.values(), *self.education.values())
         )
         if (has_summary or has_highlights) and not self.evidence_ids:
             raise ValueError(
@@ -218,7 +219,8 @@ def validate_variant(project_path: Path, variant_id: str) -> list[VariantDiagnos
         variant = ResumeVariant.model_validate(document)
     except ValidationError as error:
         return [
-            _diagnostic_from_error(manifest_path, document, item) for item in error.errors()
+            _diagnostic_from_error(manifest_path, document, item)
+            for item in error.errors()
         ]
 
     diagnostics: list[VariantDiagnostic] = []
@@ -263,9 +265,7 @@ def validate_variant(project_path: Path, variant_id: str) -> list[VariantDiagnos
 
     locales_directory = directory / "locales"
     locale_files = (
-        sorted(locales_directory.glob("*.yml"))
-        if locales_directory.is_dir()
-        else []
+        sorted(locales_directory.glob("*.yml")) if locales_directory.is_dir() else []
     )
     for locale_file in locale_files:
         locale = locale_file.stem
@@ -288,7 +288,9 @@ def validate_variant(project_path: Path, variant_id: str) -> list[VariantDiagnos
                     item.column,
                 )
             )
-        diagnostics.extend(_validate_variant_locale(project_path, variant, facts, locale))
+        diagnostics.extend(
+            _validate_variant_locale(project_path, variant, facts, locale)
+        )
     return diagnostics
 
 
@@ -300,7 +302,9 @@ def load_variant_career(
         raise ValueError(diagnostics[0].format())
     variant = load_variant(project_path, variant_id)
     career = load_localized_career(project_path, locale)
-    override_path = variant_directory(project_path, variant_id) / "locales" / f"{locale}.yml"
+    override_path = (
+        variant_directory(project_path, variant_id) / "locales" / f"{locale}.yml"
+    )
     override = (
         ResumeVariantLocale.model_validate(_load_yaml(override_path))
         if override_path.is_file()
@@ -320,7 +324,9 @@ def _compose_variant(
     profile = career.profile
     summary = career.summary
     if override is not None:
-        profile = profile.model_copy(update=override.profile.model_dump(exclude_none=True))
+        profile = profile.model_copy(
+            update=override.profile.model_dump(exclude_none=True)
+        )
         if override.summary is not None:
             summary = override.summary
         experience = _apply_record_overrides(experience, override.experience)
@@ -467,7 +473,9 @@ def _diagnostic_from_error(
     current = document
     for part in location:
         try:
-            position = current.lc.item(part) if isinstance(part, int) else current.lc.key(part)
+            position = (
+                current.lc.item(part) if isinstance(part, int) else current.lc.key(part)
+            )
             if position is not None:
                 line, column = position[0] + 1, position[1] + 1
             current = current[part]

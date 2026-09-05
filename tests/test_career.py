@@ -20,28 +20,39 @@ from seriemacv.project import create_project
 class CareerSchemaTests(unittest.TestCase):
     def test_experience_allows_only_one_highlight(self) -> None:
         with self.assertRaisesRegex(ValueError, "at most 1 item"):
-            CareerDocument.model_validate({
-                "schema_version": 2,
-                "experience": [{
-                    "id": "example",
-                    "company": "Example",
-                    "title": "Engineer",
-                    "start_date": "2024-01",
-                    "highlights": ["Primary achievement.", "Secondary achievement."],
-                }],
-            })
+            CareerDocument.model_validate(
+                {
+                    "schema_version": 2,
+                    "experience": [
+                        {
+                            "id": "example",
+                            "company": "Example",
+                            "title": "Engineer",
+                            "start_date": "2024-01",
+                            "highlights": [
+                                "Primary achievement.",
+                                "Secondary achievement.",
+                            ],
+                        }
+                    ],
+                }
+            )
 
-        career = CareerDocument.model_validate({
-            "schema_version": 2,
-            "experience": [{
-                "id": "example",
-                "company": "Example",
-                "title": "Engineer",
-                "start_date": "2024-01",
-                "bullets": ["Secondary achievement."],
-                "highlights": ["Primary achievement."],
-            }],
-        })
+        career = CareerDocument.model_validate(
+            {
+                "schema_version": 2,
+                "experience": [
+                    {
+                        "id": "example",
+                        "company": "Example",
+                        "title": "Engineer",
+                        "start_date": "2024-01",
+                        "bullets": ["Secondary achievement."],
+                        "highlights": ["Primary achievement."],
+                    }
+                ],
+            }
+        )
         self.assertEqual(career.experience[0].highlights, ["Primary achievement."])
 
     def test_example_is_a_complete_valid_career_document(self) -> None:
@@ -60,9 +71,9 @@ class CareerSchemaTests(unittest.TestCase):
 
             diagnostics = validate_career(project_path / "career.yml")
 
-            self.assertEqual({item.path for item in diagnostics}, {
-                "profile.name", "profile.email"
-            })
+            self.assertEqual(
+                {item.path for item in diagnostics}, {"profile.name", "profile.email"}
+            )
             self.assertTrue(all(item.line is not None for item in diagnostics))
 
     def test_rejects_unknown_fields_and_invalid_dates(self) -> None:
@@ -78,8 +89,12 @@ class CareerSchemaTests(unittest.TestCase):
 
             diagnostics = validate_career(career_path)
 
-            self.assertTrue(any(item.path.endswith("start_date") for item in diagnostics))
-            self.assertTrue(any(item.path.endswith("unexpected") for item in diagnostics))
+            self.assertTrue(
+                any(item.path.endswith("start_date") for item in diagnostics)
+            )
+            self.assertTrue(
+                any(item.path.endswith("unexpected") for item in diagnostics)
+            )
 
     def test_rejects_duplicate_ids_and_unknown_evidence_reference(self) -> None:
         with tempfile.TemporaryDirectory() as temporary_directory:
@@ -111,7 +126,9 @@ class CareerSchemaTests(unittest.TestCase):
 
             diagnostics = validate_career(career_path)
 
-            self.assertTrue(any("unknown experience_id" in item.message for item in diagnostics))
+            self.assertTrue(
+                any("unknown experience_id" in item.message for item in diagnostics)
+            )
 
     def test_add_record_is_atomic_when_validation_fails(self) -> None:
         with tempfile.TemporaryDirectory() as temporary_directory:
@@ -120,14 +137,22 @@ class CareerSchemaTests(unittest.TestCase):
             original = career_path.read_text(encoding="utf-8")
 
             with self.assertRaises(ValueError):
-                add_record(career_path, "experience", {
-                    "id": "bad date", "company": "Example", "title": "Engineer",
-                    "start_date": "2024-01",
-                })
+                add_record(
+                    career_path,
+                    "experience",
+                    {
+                        "id": "bad date",
+                        "company": "Example",
+                        "title": "Engineer",
+                        "start_date": "2024-01",
+                    },
+                )
 
             self.assertEqual(career_path.read_text(encoding="utf-8"), original)
 
-    def test_answers_and_stories_require_unique_verified_evidence_references(self) -> None:
+    def test_answers_and_stories_require_unique_verified_evidence_references(
+        self,
+    ) -> None:
         with tempfile.TemporaryDirectory() as temporary_directory:
             project_path = _create_project(temporary_directory)
             career_path = project_path / "career.yml"
@@ -153,42 +178,84 @@ stories:
                 encoding="utf-8",
             )
             self.assertEqual(
-                [item.message for item in validate_career(career_path) if "evidence_ids" in item.message],
+                [
+                    item.message
+                    for item in validate_career(career_path)
+                    if "evidence_ids" in item.message
+                ],
                 [],
             )
 
             original = career_path.read_text(encoding="utf-8")
-            with self.assertRaisesRegex(ValueError, "unverified evidence_ids: pending-proof"):
-                add_record(career_path, "answers", {
-                    "id": "invalid-answer", "prompt": "Question?", "answer": "Answer.",
-                    "evidence_ids": ["pending-proof"],
-                })
+            with self.assertRaisesRegex(
+                ValueError, "unverified evidence_ids: pending-proof"
+            ):
+                add_record(
+                    career_path,
+                    "answers",
+                    {
+                        "id": "invalid-answer",
+                        "prompt": "Question?",
+                        "answer": "Answer.",
+                        "evidence_ids": ["pending-proof"],
+                    },
+                )
             self.assertEqual(career_path.read_text(encoding="utf-8"), original)
 
-            with self.assertRaisesRegex(ValueError, "unknown evidence_ids: missing-proof"):
-                add_record(career_path, "answers", {
-                    "id": "missing-answer", "prompt": "Question?", "answer": "Answer.",
-                    "evidence_ids": ["missing-proof"],
-                })
+            with self.assertRaisesRegex(
+                ValueError, "unknown evidence_ids: missing-proof"
+            ):
+                add_record(
+                    career_path,
+                    "answers",
+                    {
+                        "id": "missing-answer",
+                        "prompt": "Question?",
+                        "answer": "Answer.",
+                        "evidence_ids": ["missing-proof"],
+                    },
+                )
             self.assertEqual(career_path.read_text(encoding="utf-8"), original)
 
             with self.assertRaisesRegex(ValueError, "contains duplicate ids"):
-                add_record(career_path, "stories", {
-                    "id": "invalid-story", "title": "Story", "evidence_ids": ["verified-proof", "verified-proof"],
-                })
+                add_record(
+                    career_path,
+                    "stories",
+                    {
+                        "id": "invalid-story",
+                        "title": "Story",
+                        "evidence_ids": ["verified-proof", "verified-proof"],
+                    },
+                )
 
-            with self.assertRaisesRegex(ValueError, "unverified evidence_ids: pending-proof"):
-                CareerDocument.model_validate({
-                    "schema_version": 2,
-                    "evidence": [{"id": "pending-proof", "statement": "Pending fact"}],
-                    "stories": [{"id": "story", "title": "Story", "evidence_ids": ["pending-proof"]}],
-                })
+            with self.assertRaisesRegex(
+                ValueError, "unverified evidence_ids: pending-proof"
+            ):
+                CareerDocument.model_validate(
+                    {
+                        "schema_version": 2,
+                        "evidence": [
+                            {"id": "pending-proof", "statement": "Pending fact"}
+                        ],
+                        "stories": [
+                            {
+                                "id": "story",
+                                "title": "Story",
+                                "evidence_ids": ["pending-proof"],
+                            }
+                        ],
+                    }
+                )
 
     def test_legacy_saved_answer_without_evidence_ids_is_valid(self) -> None:
-        career = CareerDocument.model_validate({
-            "schema_version": 2,
-            "answers": [{"id": "legacy-answer", "prompt": "Question?", "answer": "Answer."}],
-        })
+        career = CareerDocument.model_validate(
+            {
+                "schema_version": 2,
+                "answers": [
+                    {"id": "legacy-answer", "prompt": "Question?", "answer": "Answer."}
+                ],
+            }
+        )
 
         self.assertEqual(career.answers[0].evidence_ids, [])
 
@@ -202,9 +269,7 @@ stories:
             )
 
             set_profile(career_path, {"name": "Seriema"})
-            add_record(career_path, "skills", {
-                "id": "python", "tags": []
-            })
+            add_record(career_path, "skills", {"id": "python", "tags": []})
 
             updated = career_path.read_text(encoding="utf-8")
             self.assertIn("# Keep this comment", updated)
@@ -216,18 +281,35 @@ class CareerCliTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temporary_directory:
             project_path = _create_project(temporary_directory)
             with redirect_stdout(StringIO()):
-                result = main([
-                    "career", "set-profile", str(project_path), "--name", "Seriema",
-                    "--email", "seriema@example.invalid",
-                    "--link", "github=https://github.com/seriema",
-                ])
+                result = main(
+                    [
+                        "career",
+                        "set-profile",
+                        str(project_path),
+                        "--name",
+                        "Seriema",
+                        "--email",
+                        "seriema@example.invalid",
+                        "--link",
+                        "github=https://github.com/seriema",
+                    ]
+                )
             self.assertEqual(result, 0)
 
             with redirect_stdout(StringIO()):
-                result = main([
-                    "career", "add-experience", str(project_path), "--id", "example-job",
-                    "--company", "Example", "--start-date", "2024-01",
-                ])
+                result = main(
+                    [
+                        "career",
+                        "add-experience",
+                        str(project_path),
+                        "--id",
+                        "example-job",
+                        "--company",
+                        "Example",
+                        "--start-date",
+                        "2024-01",
+                    ]
+                )
             self.assertEqual(result, 0)
 
             with redirect_stdout(StringIO()) as output:
@@ -254,15 +336,26 @@ class CareerCliTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temporary_directory:
             project_path = _create_project(temporary_directory)
             with redirect_stdout(StringIO()):
-                main([
-                    "career", "set-profile", str(project_path), "--link",
-                    "github=https://github.com/seriema", "--link",
-                    "linkedin=https://linkedin.com/in/seriema",
-                ])
-                result = main([
-                    "career", "set-profile", str(project_path), "--link",
-                    "portfolio=https://example.com",
-                ])
+                main(
+                    [
+                        "career",
+                        "set-profile",
+                        str(project_path),
+                        "--link",
+                        "github=https://github.com/seriema",
+                        "--link",
+                        "linkedin=https://linkedin.com/in/seriema",
+                    ]
+                )
+                result = main(
+                    [
+                        "career",
+                        "set-profile",
+                        str(project_path),
+                        "--link",
+                        "portfolio=https://example.com",
+                    ]
+                )
 
             self.assertEqual(result, 0)
             profile = load_career(project_path / "career.yml").profile
@@ -272,21 +365,54 @@ class CareerCliTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temporary_directory:
             project_path = _create_project(temporary_directory)
             with redirect_stdout(StringIO()):
-                main([
-                    "career", "add-evidence", str(project_path), "--id", "proof",
-                    "--statement", "Verified fact", "--verified",
-                ])
-                answer_result = main([
-                    "career", "add-answer", str(project_path), "--id", "availability",
-                    "--prompt", "When can you start?", "--answer", "Immediately.",
-                    "--tag", "availability", "--evidence-id", "proof",
-                ])
-                story_result = main([
-                    "career", "add-story", str(project_path), "--id", "delivery",
-                    "--title", "Delivery", "--situation", "A need existed.",
-                    "--action", "Delivered it.", "--result", "Released.",
-                    "--evidence-id", "proof",
-                ])
+                main(
+                    [
+                        "career",
+                        "add-evidence",
+                        str(project_path),
+                        "--id",
+                        "proof",
+                        "--statement",
+                        "Verified fact",
+                        "--verified",
+                    ]
+                )
+                answer_result = main(
+                    [
+                        "career",
+                        "add-answer",
+                        str(project_path),
+                        "--id",
+                        "availability",
+                        "--prompt",
+                        "When can you start?",
+                        "--answer",
+                        "Immediately.",
+                        "--tag",
+                        "availability",
+                        "--evidence-id",
+                        "proof",
+                    ]
+                )
+                story_result = main(
+                    [
+                        "career",
+                        "add-story",
+                        str(project_path),
+                        "--id",
+                        "delivery",
+                        "--title",
+                        "Delivery",
+                        "--situation",
+                        "A need existed.",
+                        "--action",
+                        "Delivered it.",
+                        "--result",
+                        "Released.",
+                        "--evidence-id",
+                        "proof",
+                    ]
+                )
             self.assertEqual(answer_result, 0)
             self.assertEqual(story_result, 0)
 
@@ -305,9 +431,15 @@ class CareerCliTests(unittest.TestCase):
             stderr = StringIO()
 
             with redirect_stderr(stderr):
-                result = main([
-                    "career", "set-profile", str(project_path), "--name", "Seriema",
-                ])
+                result = main(
+                    [
+                        "career",
+                        "set-profile",
+                        str(project_path),
+                        "--name",
+                        "Seriema",
+                    ]
+                )
 
             self.assertEqual(result, 1)
             self.assertIn("expected", stderr.getvalue().lower())

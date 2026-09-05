@@ -62,7 +62,11 @@ class CareerProfile(StrictModel):
     def http_links(cls, value: dict[str, str]) -> dict[str, str]:
         for name, url in value.items():
             parsed = urlparse(url)
-            if not name.strip() or parsed.scheme not in {"http", "https"} or not parsed.netloc:
+            if (
+                not name.strip()
+                or parsed.scheme not in {"http", "https"}
+                or not parsed.netloc
+            ):
                 raise ValueError("must contain named http(s) URLs")
         return value
 
@@ -236,7 +240,11 @@ class CareerFactsProfile(StrictModel):
     def http_links(cls, value: dict[str, str]) -> dict[str, str]:
         for name, url in value.items():
             parsed = urlparse(url)
-            if not name.strip() or parsed.scheme not in {"http", "https"} or not parsed.netloc:
+            if (
+                not name.strip()
+                or parsed.scheme not in {"http", "https"}
+                or not parsed.netloc
+            ):
                 raise ValueError("must contain named http(s) URLs")
         return value
 
@@ -289,7 +297,9 @@ class CareerFactsDocument(StrictModel):
         evidence_ids = {record.id for record in self.evidence}
         for record in self.evidence:
             if record.experience_id and record.experience_id not in experience_ids:
-                raise ValueError(f"evidence '{record.id}' references unknown experience_id '{record.experience_id}'")
+                raise ValueError(
+                    f"evidence '{record.id}' references unknown experience_id '{record.experience_id}'"
+                )
         _ensure_verified_evidence_references(
             self.answers, self.stories, self.evidence, evidence_ids
         )
@@ -327,10 +337,24 @@ class LocaleCatalog(StrictModel):
 
     @model_validator(mode="after")
     def complete_labels_and_date_format(self) -> "LocaleCatalog":
-        required = {"summary", "experience", "education", "skills", "languages", "current", "other", "level.beginner", "level.intermediate", "level.advanced", "level.expert"}
+        required = {
+            "summary",
+            "experience",
+            "education",
+            "skills",
+            "languages",
+            "current",
+            "other",
+            "level.beginner",
+            "level.intermediate",
+            "level.advanced",
+            "level.expert",
+        }
         missing = required - set(self.labels)
         if missing:
-            raise ValueError(f"labels is missing required keys: {', '.join(sorted(missing))}")
+            raise ValueError(
+                f"labels is missing required keys: {', '.join(sorted(missing))}"
+            )
         if "{month}" not in self.date_format or "{year}" not in self.date_format:
             raise ValueError("date_format must contain {month} and {year}")
         return self
@@ -462,7 +486,14 @@ def set_profile(path: Path, values: dict[str, Any]) -> None:
 
 
 def add_record(path: Path, section: str, values: dict[str, Any]) -> None:
-    if section not in {"experience", "education", "skills", "evidence", "answers", "stories"}:
+    if section not in {
+        "experience",
+        "education",
+        "skills",
+        "evidence",
+        "answers",
+        "stories",
+    }:
         raise ValueError(f"Unsupported editable section: {section}")
     document = _load_yaml(path)
     records = document.setdefault(section, [])
@@ -490,7 +521,11 @@ def list_locales(project_path: Path) -> list[str]:
     directory = project_path / LOCALES_DIRECTORY
     if not directory.is_dir():
         return []
-    return sorted(path.stem for path in directory.glob("*.yml") if _LOCALE_PATTERN.fullmatch(path.stem))
+    return sorted(
+        path.stem
+        for path in directory.glob("*.yml")
+        if _LOCALE_PATTERN.fullmatch(path.stem)
+    )
 
 
 def i18n_path(project_path: Path, locale: str) -> Path:
@@ -520,10 +555,14 @@ def load_localized_career(project_path: Path, locale: str) -> CareerDocument:
     facts = CareerFactsDocument.model_validate(_load_yaml(project_path / CAREER_FILE))
     path = locale_path(project_path, locale)
     if not path.is_file():
-        raise ValueError(f"Locale document is missing: {path.relative_to(project_path)}")
+        raise ValueError(
+            f"Locale document is missing: {path.relative_to(project_path)}"
+        )
     translated = CareerLocaleDocument.model_validate(_load_yaml(path))
     if translated.locale != locale:
-        raise ValueError(f"locale document declares '{translated.locale}', expected '{locale}'")
+        raise ValueError(
+            f"locale document declares '{translated.locale}', expected '{locale}'"
+        )
     _ensure_locale_references(facts, translated)
     catalog = load_i18n_catalog(project_path, locale)
     labels = dict(catalog.labels)
@@ -532,27 +571,32 @@ def load_localized_career(project_path: Path, locale: str) -> CareerDocument:
         translate(locale, "highlight") if locale in {"pt-BR", "en"} else "Highlight",
     )
     catalog = catalog.model_copy(update={"labels": labels})
-    return CareerDocument.model_validate({
-        "schema_version": 2,
-        "profile": {**facts.profile.model_dump(), **translated.profile.model_dump()},
-        "summary": translated.summary,
-        "experience": [
-            {**item.model_dump(), **translated.experience[item.id].model_dump()}
-            for item in facts.experience
-        ],
-        "education": [
-            {**item.model_dump(), **translated.education[item.id].model_dump()}
-            for item in facts.education
-        ],
-        "skills": [
-            {**item.model_dump(), **translated.skills[item.id].model_dump()}
-            for item in facts.skills
-        ],
-        "evidence": [item.model_dump() for item in facts.evidence],
-        "answers": [item.model_dump() for item in facts.answers],
-        "stories": [item.model_dump() for item in facts.stories],
-        "catalog": catalog.model_dump(),
-    })
+    return CareerDocument.model_validate(
+        {
+            "schema_version": 2,
+            "profile": {
+                **facts.profile.model_dump(),
+                **translated.profile.model_dump(),
+            },
+            "summary": translated.summary,
+            "experience": [
+                {**item.model_dump(), **translated.experience[item.id].model_dump()}
+                for item in facts.experience
+            ],
+            "education": [
+                {**item.model_dump(), **translated.education[item.id].model_dump()}
+                for item in facts.education
+            ],
+            "skills": [
+                {**item.model_dump(), **translated.skills[item.id].model_dump()}
+                for item in facts.skills
+            ],
+            "evidence": [item.model_dump() for item in facts.evidence],
+            "answers": [item.model_dump() for item in facts.answers],
+            "stories": [item.model_dump() for item in facts.stories],
+            "catalog": catalog.model_dump(),
+        }
+    )
 
 
 def validate_locale(project_path: Path, locale: str) -> list[CareerDiagnostic]:
@@ -563,7 +607,9 @@ def validate_locale(project_path: Path, locale: str) -> list[CareerDiagnostic]:
     return []
 
 
-def _ensure_locale_references(facts: CareerFactsDocument, locale: CareerLocaleDocument) -> None:
+def _ensure_locale_references(
+    facts: CareerFactsDocument, locale: CareerLocaleDocument
+) -> None:
     for name, source, translated in (
         ("experience", facts.experience, locale.experience),
         ("education", facts.education, locale.education),
@@ -573,17 +619,25 @@ def _ensure_locale_references(facts: CareerFactsDocument, locale: CareerLocaleDo
         unknown = set(translated) - source_ids
         missing = source_ids - set(translated)
         if unknown:
-            raise ValueError(f"locale {name} references unknown ids: {', '.join(sorted(unknown))}")
+            raise ValueError(
+                f"locale {name} references unknown ids: {', '.join(sorted(unknown))}"
+            )
         if missing:
-            raise ValueError(f"locale {name} is missing ids: {', '.join(sorted(missing))}")
+            raise ValueError(
+                f"locale {name} is missing ids: {', '.join(sorted(missing))}"
+            )
     if not locale.profile.title.strip():
         raise ValueError("profile.title is required in every locale")
     for item in facts.experience:
         if not locale.experience[item.id].title.strip():
-            raise ValueError(f"experience '{item.id}' title is required in every locale")
+            raise ValueError(
+                f"experience '{item.id}' title is required in every locale"
+            )
     for item in facts.education:
         if not locale.education[item.id].degree.strip():
-            raise ValueError(f"education '{item.id}' degree is required in every locale")
+            raise ValueError(
+                f"education '{item.id}' degree is required in every locale"
+            )
     for item in facts.skills:
         if not locale.skills[item.id].name.strip():
             raise ValueError(f"skill '{item.id}' name is required in every locale")
@@ -649,9 +703,7 @@ def _diagnostic_for_path(
     for part in location:
         try:
             position = (
-                current.lc.item(part)
-                if isinstance(part, int)
-                else current.lc.key(part)
+                current.lc.item(part) if isinstance(part, int) else current.lc.key(part)
             )
             if position is not None:
                 line, column = position[0] + 1, position[1] + 1

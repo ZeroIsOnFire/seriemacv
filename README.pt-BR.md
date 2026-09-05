@@ -139,12 +139,13 @@ HTTP(S) explícitas em `linkedin` e `portfolio`.
 ## Verificação local
 
 ```powershell
-$env:PYTHONPATH = 'src'
-python -m unittest discover -s tests -v
-python -m ruff check src tests scripts
+python scripts/check_quality.py
 ```
 
 Instale as ferramentas de desenvolvimento com `python -m pip install -e ".[dev]"`.
+O gate compila o código, verifica lint e formatação, analisa a baseline de módulos
+tipados e executa toda a suíte unitária. O CI também roda `python -m pip check` numa
+matriz limpa com Python 3.11 e 3.12.
 
 ## Licença
 

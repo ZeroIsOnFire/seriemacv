@@ -190,7 +190,8 @@ def render_docx(
     document = Document()
     body_color = (
         base_style.tokens.primary_color
-        if resume_color and style.id.startswith(("modern", "clean-executive", "sidebar"))
+        if resume_color
+        and style.id.startswith(("modern", "clean-executive", "sidebar"))
         else None
     )
     _configure_docx(document, style, body_color=body_color)
@@ -289,9 +290,7 @@ def write_resume(
         cache_path.parent.mkdir(parents=True, exist_ok=True)
         metadata = {
             "schema_version": _PDF_CACHE_VERSION,
-            "input_sha256": _pdf_cache_key(
-                career, locale, style_id, resume_color
-            ),
+            "input_sha256": _pdf_cache_key(career, locale, style_id, resume_color),
             "artifact_sha256": hashlib.sha256(content).hexdigest(),
         }
         _atomic_write(
@@ -472,9 +471,7 @@ def _markdown_header(
     return values
 
 
-def _md_section(
-    title: str, content: str, variant: str, show_dividers: bool
-) -> str:
+def _md_section(title: str, content: str, variant: str, show_dividers: bool) -> str:
     if variant == "classic":
         heading = f"{title}\n{'-' * len(title)}" if show_dividers else f"## {title}"
         return f"{heading}\n\n{content}"
@@ -495,9 +492,7 @@ def _md_records(
     values = []
     for record in records:
         heading = _record_heading(record, experience)
-        heading_text = (
-            f"**{heading}**  " if variant == "compact" else f"### {heading}"
-        )
+        heading_text = f"**{heading}**  " if variant == "compact" else f"### {heading}"
         values.append(
             "\n".join(
                 [
@@ -515,9 +510,7 @@ def _md_records(
     return _md_section(title, separator.join(values), variant, show_dividers)
 
 
-def _markdown_skills(
-    skills: list[Skill], labels: dict[str, str], variant: str
-) -> str:
+def _markdown_skills(skills: list[Skill], labels: dict[str, str], variant: str) -> str:
     separator = "\n" if variant == "compact" else "\n\n"
     return separator.join(
         (f"**{category}:** " if category else "")
@@ -528,11 +521,7 @@ def _markdown_skills(
 
 def _markdown_skill(skill: Skill, labels: dict[str, str]) -> str:
     name = f"**{skill.name}**" if skill.core else skill.name
-    return name + (
-        f" ({_level_label(labels, skill.level)})"
-        if skill.level
-        else ""
-    )
+    return name + (f" ({_level_label(labels, skill.level)})" if skill.level else "")
 
 
 def _html_parts(
@@ -634,7 +623,7 @@ def _html_parts(
         else:
             sidebar = (
                 f'<aside class="sidebar"><div class="contact">{sidebar_contact}</div>'
-                f'{"".join(secondary)}</aside>'
+                f"{''.join(secondary)}</aside>"
             )
     return "".join(header_parts), "".join(main_sections), sidebar
 
@@ -726,10 +715,14 @@ def _html_list(values: list[str]) -> str:
 
 
 def _html_highlights(values: list[str], labels: dict[str, str]) -> str:
-    return "<ul>" + "".join(
-        f"<li><strong>{escape(labels['highlight'])}:</strong> {escape(value)}</li>"
-        for value in values
-    ) + "</ul>"
+    return (
+        "<ul>"
+        + "".join(
+            f"<li><strong>{escape(labels['highlight'])}:</strong> {escape(value)}</li>"
+            for value in values
+        )
+        + "</ul>"
+    )
 
 
 def _html_section(title: str, content: str) -> str:
@@ -763,11 +756,7 @@ def _html_skills(skills: list[Skill], labels: dict[str, str]) -> str:
                 if skill.core
                 else escape(skill.name)
             )
-            level = (
-                _level_label(labels, skill.level)
-                if skill.level
-                else ""
-            )
+            level = _level_label(labels, skill.level) if skill.level else ""
             values.append(name + (f" ({escape(level)})" if level else ""))
         category_text = f"<strong>{escape(category)}:</strong> " if category else ""
         groups.append(f"<p>{category_text}{', '.join(values)}</p>")
@@ -1003,9 +992,7 @@ def _docx_timeline_layout(
         content.add_paragraph(career.summary)
         _remove_empty_leading_paragraph(content)
     if presentation.experience:
-        _docx_timeline_heading_row(
-            table, presentation.labels["experience"], style
-        )
+        _docx_timeline_heading_row(table, presentation.labels["experience"], style)
         _docx_timeline_records(
             table,
             presentation.experience,
@@ -1040,9 +1027,7 @@ def _docx_timeline_heading_row(table: Any, title: str, style: StyleManifest) -> 
     _remove_empty_leading_paragraph(content)
 
 
-def _docx_skills(
-    container: Any, skills: list[Skill], labels: dict[str, str]
-) -> None:
+def _docx_skills(container: Any, skills: list[Skill], labels: dict[str, str]) -> None:
     for category, grouped_skills in _skill_groups(skills, labels).items():
         paragraph = container.add_paragraph()
         if category:
@@ -1054,9 +1039,7 @@ def _docx_skills(
             skill_run = paragraph.add_run(skill.name)
             skill_run.bold = skill.core
             if skill.level:
-                paragraph.add_run(
-                    f" ({_level_label(labels, skill.level)})"
-                )
+                paragraph.add_run(f" ({_level_label(labels, skill.level)})")
 
 
 def _docx_timeline_records(
@@ -1083,7 +1066,7 @@ def _docx_timeline_records(
         for bullet in getattr(record, "bullets", []):
             _docx_plain_bullet(content, bullet)
         for highlight in record.highlights:
-            _docx_highlight_bullet(content, labels['highlight'], highlight)
+            _docx_highlight_bullet(content, labels["highlight"], highlight)
         _remove_empty_leading_paragraph(content)
 
 
@@ -1109,9 +1092,7 @@ def _docx_section(container: Any, title: str, style: StyleManifest) -> None:
     borders = OxmlElement("w:pBdr")
     bottom = OxmlElement("w:bottom")
     bottom.set(qn("w:val"), "single")
-    bottom.set(
-        qn("w:sz"), "8" if style.tokens.section_divider == "accent" else "4"
-    )
+    bottom.set(qn("w:sz"), "8" if style.tokens.section_divider == "accent" else "4")
     bottom.set(qn("w:space"), "1")
     bottom.set(qn("w:color"), style.tokens.accent_color)
     borders.append(bottom)
@@ -1136,7 +1117,7 @@ def _docx_records(
         for bullet in getattr(record, "bullets", []):
             _docx_plain_bullet(container, bullet)
         for highlight in record.highlights:
-            _docx_highlight_bullet(container, labels['highlight'], highlight)
+            _docx_highlight_bullet(container, labels["highlight"], highlight)
 
 
 def _docx_plain_bullet(container: Any, value: str) -> None:
@@ -1230,9 +1211,7 @@ def _details(
     return " | ".join(value for value in values if value)
 
 
-def _details_without_dates(
-    record: Experience | Education, experience: bool
-) -> str:
+def _details_without_dates(record: Experience | Education, experience: bool) -> str:
     values = (
         [record.location] if experience else [record.field_of_study, record.location]
     )
@@ -1241,9 +1220,7 @@ def _details_without_dates(
     return " | ".join(value for value in values if value)
 
 
-def _date_range(
-    record: Experience | Education, labels: dict[str, str]
-) -> str:
+def _date_range(record: Experience | Education, labels: dict[str, str]) -> str:
     end = (
         _format_date(record.end_date, labels) if record.end_date else labels["current"]
     )
@@ -1274,7 +1251,20 @@ def _format_date(value: str, labels: dict[str, str]) -> str:
     # previous deterministic formatting path for renderer-only callers.
     names = None
     if labels["current"] == "Atual":
-        names = ("Jan.", "Fev.", "Mar.", "Abr.", "Mai.", "Jun.", "Jul.", "Ago.", "Set.", "Out.", "Nov.", "Dez.")
+        names = (
+            "Jan.",
+            "Fev.",
+            "Mar.",
+            "Abr.",
+            "Mai.",
+            "Jun.",
+            "Jul.",
+            "Ago.",
+            "Set.",
+            "Out.",
+            "Nov.",
+            "Dez.",
+        )
         return f"{names[int(month) - 1]} de {year}"
     return f"{('Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec')[int(month) - 1]} {year}"
 

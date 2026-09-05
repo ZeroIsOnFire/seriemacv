@@ -134,12 +134,13 @@ are localized during rendering. The profile also accepts explicit HTTP(S) URLs i
 ## Local verification
 
 ```powershell
-$env:PYTHONPATH = 'src'
-python -m unittest discover -s tests -v
-python -m ruff check src tests scripts
+python scripts/check_quality.py
 ```
 
-Install development tools with `python -m pip install -e ".[dev]"`.
+Install development tools with `python -m pip install -e ".[dev]"`. The gate compiles
+the source tree, checks lint and formatting, checks the typed module baseline, and
+runs the complete unit suite. CI additionally runs `python -m pip check` in a clean
+Python 3.11 and 3.12 matrix.
 
 ## License
 

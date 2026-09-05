@@ -12,7 +12,7 @@ from seriemacv.career import (
 from seriemacv.cli import main
 from seriemacv.project import create_project
 
-FACTS = '''schema_version: 2
+FACTS = """schema_version: 2
 profile: {name: Example, email: example@example.invalid}
 experience:
   - {id: example, company: Example Co, start_date: 2024-01}
@@ -21,53 +21,75 @@ skills: []
 evidence: []
 answers: []
 stories: []
-'''
+"""
 
-LOCALE = '''schema_version: 1
+LOCALE = """schema_version: 1
 locale: en
 profile: {title: Engineer, location: Remote}
 summary: Localized summary.
 experience: {example: {title: Developer, highlights: [Built a localized feature.]}}
 education: {}
 skills: {}
-'''
+"""
 
-I18N = '''schema_version: 1
+I18N = """schema_version: 1
 locale: en
 labels: {summary: Summary, experience: Experience, education: Education, skills: Skills, languages: Languages, highlight: Highlight, current: Present, other: Other, level.beginner: Beginner, level.intermediate: Intermediate, level.advanced: Advanced, level.expert: Expert}
 months: [Jan, Feb, Mar, Apr, May, Jun, Jul, Aug, Sep, Oct, Nov, Dec]
 date_format: '{month} {year}'
-'''
+"""
 
 
 class LocalizedCareerTests(unittest.TestCase):
     def test_locale_experience_allows_only_one_highlight(self) -> None:
         with self.assertRaisesRegex(ValueError, "at most 1 item"):
-            CareerLocaleDocument.model_validate({
-                "schema_version": 1,
-                "locale": "en",
-                "experience": {
-                    "example": {
-                        "title": "Engineer",
-                        "highlights": ["Primary achievement.", "Secondary achievement."],
-                    }
-                },
-            })
+            CareerLocaleDocument.model_validate(
+                {
+                    "schema_version": 1,
+                    "locale": "en",
+                    "experience": {
+                        "example": {
+                            "title": "Engineer",
+                            "highlights": [
+                                "Primary achievement.",
+                                "Secondary achievement.",
+                            ],
+                        }
+                    },
+                }
+            )
 
     def test_composes_facts_and_renders_multiple_formats(self) -> None:
         with tempfile.TemporaryDirectory() as temporary_directory:
             project_path = Path(temporary_directory) / "career"
             create_project(project_path, project_name="Career", resume_language="en")
             (project_path / "career.yml").write_text(FACTS, encoding="utf-8")
-            (project_path / "career.locales" / "en.yml").write_text(LOCALE, encoding="utf-8")
+            (project_path / "career.locales" / "en.yml").write_text(
+                LOCALE, encoding="utf-8"
+            )
             (project_path / "i18n" / "en.yml").write_text(I18N, encoding="utf-8")
 
             career = load_localized_career(project_path, "en")
 
             self.assertEqual(career.profile.title, "Engineer")
             self.assertEqual(career.experience[0].title, "Developer")
-            self.assertEqual(career.experience[0].highlights, ["Built a localized feature."])
-            self.assertEqual(main(["resume", "render", str(project_path), "--format", "markdown", "--format", "html"]), 0)
+            self.assertEqual(
+                career.experience[0].highlights, ["Built a localized feature."]
+            )
+            self.assertEqual(
+                main(
+                    [
+                        "resume",
+                        "render",
+                        str(project_path),
+                        "--format",
+                        "markdown",
+                        "--format",
+                        "html",
+                    ]
+                ),
+                0,
+            )
             self.assertTrue((project_path / "exports" / "resume.en.md").is_file())
             self.assertTrue((project_path / "exports" / "resume.en.html").is_file())
 

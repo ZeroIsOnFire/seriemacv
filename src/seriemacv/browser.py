@@ -24,21 +24,49 @@ from seriemacv.project import load_project_configuration
 from seriemacv.renderer import ResumeRenderError, write_resume
 from seriemacv.variants import load_variant_career
 
-_SENSITIVE = re.compile(r"salary|compensation|pay|legal|authori[sz](ation|ed)|visa|sponsor(ship)?|work permit|sole proprietor|invoice|demographic|gender|race|ethnicity|disability|veteran|self.ident", re.I)
+_SENSITIVE = re.compile(
+    r"salary|compensation|pay|legal|authori[sz](ation|ed)|visa|sponsor(ship)?|work permit|sole proprietor|invoice|demographic|gender|race|ethnicity|disability|veteran|self.ident",
+    re.I,
+)
 _PROFILE_FIELDS = {
-    "full name": "name", "email": "email", "phone": "phone",
-    "linkedin": "linkedin", "portfolio": "portfolio", "github": "portfolio",
+    "full name": "name",
+    "email": "email",
+    "phone": "phone",
+    "linkedin": "linkedin",
+    "portfolio": "portfolio",
+    "github": "portfolio",
 }
 _FORM_CONTROLS = "input, select, textarea"
 _TEXT_INPUT_TYPES = {"text", "email", "tel", "url", "textarea"}
 _GREENHOUSE_ANSWER_FIELDS = {
-    "question-12689994007": ("#question_12689994007, textarea[name='question_12689994007']", False),
-    "question-12689995007": ("#question_12689995007, textarea[name='question_12689995007']", False),
-    "question-12689996007": ("#question_12689996007, textarea[name='question_12689996007']", False),
-    "question-12689997007": ("#question_12689997007, input[name='question_12689997007']", True),
-    "question-12689998007": ("#question_12689998007, input[name='question_12689998007']", True),
-    "question-12690000007": ("#question_12690000007, input[name='question_12690000007']", True),
-    "question-12690001007": ("#question_12690001007, input[name='question_12690001007']", True),
+    "question-12689994007": (
+        "#question_12689994007, textarea[name='question_12689994007']",
+        False,
+    ),
+    "question-12689995007": (
+        "#question_12689995007, textarea[name='question_12689995007']",
+        False,
+    ),
+    "question-12689996007": (
+        "#question_12689996007, textarea[name='question_12689996007']",
+        False,
+    ),
+    "question-12689997007": (
+        "#question_12689997007, input[name='question_12689997007']",
+        True,
+    ),
+    "question-12689998007": (
+        "#question_12689998007, input[name='question_12689998007']",
+        True,
+    ),
+    "question-12690000007": (
+        "#question_12690000007, input[name='question_12690000007']",
+        True,
+    ),
+    "question-12690001007": (
+        "#question_12690001007, input[name='question_12690001007']",
+        True,
+    ),
 }
 
 
@@ -82,12 +110,23 @@ def discover_fields(page: Any) -> list[BrowserField]:
     for index, item in enumerate(raw):
         if item.get("hidden"):
             continue
-        field_id = re.sub(r"[^a-z0-9]+", "-", str(item["id"]).lower()).strip("-") or "field"
+        field_id = (
+            re.sub(r"[^a-z0-9]+", "-", str(item["id"]).lower()).strip("-") or "field"
+        )
         if field_id in seen:
             field_id = f"{field_id}-{len(seen) + 1}"
         seen.add(field_id)
         label = str(item["label"]).strip() or field_id
-        fields.append(BrowserField(field_id, index, label, bool(item["required"]), str(item["type"]), bool(_SENSITIVE.search(label))))
+        fields.append(
+            BrowserField(
+                field_id,
+                index,
+                label,
+                bool(item["required"]),
+                str(item["type"]),
+                bool(_SENSITIVE.search(label)),
+            )
+        )
     return fields
 
 
@@ -98,9 +137,20 @@ def _profile_value_for_field(label: str, career: Any) -> str:
     name_parts = name.split()
     if "first name" in normalized or "given name" in normalized:
         return name_parts[0] if name_parts else ""
-    if "last name" in normalized or "family name" in normalized or "surname" in normalized:
+    if (
+        "last name" in normalized
+        or "family name" in normalized
+        or "surname" in normalized
+    ):
         return " ".join(name_parts[1:]) if len(name_parts) > 1 else ""
-    key = next((value for field_name, value in _PROFILE_FIELDS.items() if field_name in normalized), None)
+    key = next(
+        (
+            value
+            for field_name, value in _PROFILE_FIELDS.items()
+            if field_name in normalized
+        ),
+        None,
+    )
     return str(getattr(career.profile, key, "")) if key else ""
 
 
@@ -112,7 +162,11 @@ def _is_greenhouse_application(url: str) -> bool:
 def _greenhouse_profile_values(profile: Any, location: str) -> dict[str, str]:
     """Map known facts to the current Greenhouse form identifiers."""
     name_parts = profile.name.split()
-    location = unicodedata.normalize("NFKD", location).encode("ascii", "ignore").decode("ascii")
+    location = (
+        unicodedata.normalize("NFKD", location)
+        .encode("ascii", "ignore")
+        .decode("ascii")
+    )
     country = location.rsplit(",", 1)[-1].strip() if "," in location else ""
     values = {
         "#first_name": name_parts[0] if name_parts else "",
@@ -126,9 +180,15 @@ def _greenhouse_profile_values(profile: Any, location: str) -> dict[str, str]:
     return {selector: value for selector, value in values.items() if value}
 
 
-def _greenhouse_confirmed_answers(document: ApplicationDocument) -> dict[str, tuple[str, bool]]:
+def _greenhouse_confirmed_answers(
+    document: ApplicationDocument,
+) -> dict[str, tuple[str, bool]]:
     """Return reviewed answers only for exact, known Greenhouse controls."""
-    confirmed = {item.field_id: item for item in document.answers if item.confirmed_for_application}
+    confirmed = {
+        item.field_id: item
+        for item in document.answers
+        if item.confirmed_for_application
+    }
     return {
         field_id: (confirmed[field_id].answer, is_combobox)
         for field_id, (_, is_combobox) in _GREENHOUSE_ANSWER_FIELDS.items()
@@ -163,7 +223,11 @@ def _fill_greenhouse_combobox(page: Any, selector: str, value: str) -> bool:
 
 
 def _fill_greenhouse_known(
-    page: Any, fields: list[BrowserField], project_path: Path, document: ApplicationDocument, job: Any
+    page: Any,
+    fields: list[BrowserField],
+    project_path: Path,
+    document: ApplicationDocument,
+    job: Any,
 ) -> set[str]:
     configuration = load_project_configuration(project_path)
     locale = _resume_locale_for_job(job, configuration.resume_language)
@@ -179,7 +243,9 @@ def _fill_greenhouse_known(
     }
     available = {field.field_id for field in fields}
     filled: set[str] = set()
-    for selector, value in _greenhouse_profile_values(localized_career.profile, localized_career.profile.location).items():
+    for selector, value in _greenhouse_profile_values(
+        localized_career.profile, localized_career.profile.location
+    ).items():
         field_id = selector_field_ids[selector]
         if field_id not in available:
             continue
@@ -191,7 +257,9 @@ def _fill_greenhouse_known(
         if control.count():
             control.fill(value)
             filled.add(field_id)
-    for field_id, (answer, is_combobox) in _greenhouse_confirmed_answers(document).items():
+    for field_id, (answer, is_combobox) in _greenhouse_confirmed_answers(
+        document
+    ).items():
         if field_id not in available:
             continue
         selector, _ = _GREENHOUSE_ANSWER_FIELDS[field_id]
@@ -212,22 +280,38 @@ def _wait_for_form_controls(page: Any) -> None:
     page.wait_for_timeout(500)
 
 
-def _launch_isolated_context(playwright: Any, project_path: Path, *, interactive: bool) -> tuple[Any, Path | None]:
+def _launch_isolated_context(
+    playwright: Any, project_path: Path, *, interactive: bool
+) -> tuple[Any, Path | None]:
     """Use a temporary project-local profile if a previous browser kept the main one locked."""
     profile = browser_profile_path(project_path)
     try:
-        return playwright.chromium.launch_persistent_context(str(profile), headless=not interactive), None
+        return playwright.chromium.launch_persistent_context(
+            str(profile), headless=not interactive
+        ), None
     except Exception as error:
         if error.__class__.__name__ != "TargetClosedError":
             raise
-        temporary_profile = Path(tempfile.mkdtemp(prefix="browser-recovery-", dir=project_path / ".seriemacv"))
+        temporary_profile = Path(
+            tempfile.mkdtemp(
+                prefix="browser-recovery-", dir=project_path / ".seriemacv"
+            )
+        )
         return (
-            playwright.chromium.launch_persistent_context(str(temporary_profile), headless=not interactive),
+            playwright.chromium.launch_persistent_context(
+                str(temporary_profile), headless=not interactive
+            ),
             temporary_profile,
         )
 
 
-def prepare_application(project_path: Path, application_id: str, *, interactive: bool = False, ai_assisted: bool = False) -> ApplicationDocument:
+def prepare_application(
+    project_path: Path,
+    application_id: str,
+    *,
+    interactive: bool = False,
+    ai_assisted: bool = False,
+) -> ApplicationDocument:
     """Open an isolated browser, fill safe known values, and queue unknown required fields."""
     document = load_application(project_path, application_id)
     if not document.url:
@@ -239,7 +323,9 @@ def prepare_application(project_path: Path, application_id: str, *, interactive:
     except ImportError as error:  # pragma: no cover
         raise ValueError("Playwright is required for browser preparation") from error
     with sync_playwright() as playwright:
-        context, temporary_profile = _launch_isolated_context(playwright, project_path, interactive=interactive)
+        context, temporary_profile = _launch_isolated_context(
+            playwright, project_path, interactive=interactive
+        )
         try:
             page = context.pages[0] if context.pages else context.new_page()
             page.goto(document.url, wait_until="domcontentloaded")
@@ -249,22 +335,35 @@ def prepare_application(project_path: Path, application_id: str, *, interactive:
             greenhouse = _is_greenhouse_application(document.url)
             filled = (
                 _fill_greenhouse_known(page, fields, project_path, document, job)
-                if greenhouse else _fill_known(page, fields, project_path, document)
+                if greenhouse
+                else _fill_known(page, fields, project_path, document)
             )
-            _attach_documents(page, fields, project_path, document, job=job, greenhouse=greenhouse)
+            _attach_documents(
+                page, fields, project_path, document, job=job, greenhouse=greenhouse
+            )
             if interactive:
-                input("Review the pre-filled safe fields and complete any login, then press Enter to inspect unresolved fields: ")
+                input(
+                    "Review the pre-filled safe fields and complete any login, then press Enter to inspect unresolved fields: "
+                )
             _wait_for_form_controls(page)
             fields = discover_fields(page)
             filled.update(
                 _fill_greenhouse_known(page, fields, project_path, document, job)
-                if greenhouse else _fill_known(page, fields, project_path, document)
+                if greenhouse
+                else _fill_known(page, fields, project_path, document)
             )
-            _attach_documents(page, fields, project_path, document, job=job, greenhouse=greenhouse)
+            _attach_documents(
+                page, fields, project_path, document, job=job, greenhouse=greenhouse
+            )
             career = load_career(project_path / "career.yml")
-            saved_answers = _saved_answers_for_job(career.answers, job.seniority, job.language)
+            saved_answers = _saved_answers_for_job(
+                career.answers, job.seniority, job.language
+            )
             questions = _questions_for(
-                fields, document, filled, include_optional=ai_assisted,
+                fields,
+                document,
+                filled,
+                include_optional=ai_assisted,
                 include_optional_sensitive=not greenhouse,
                 saved_answers=saved_answers,
             )
@@ -276,16 +375,31 @@ def prepare_application(project_path: Path, application_id: str, *, interactive:
                 shutil.rmtree(temporary_profile, ignore_errors=True)
 
 
-def _fill_known(page: Any, fields: list[BrowserField], project_path: Path, document: ApplicationDocument) -> set[str]:
+def _fill_known(
+    page: Any,
+    fields: list[BrowserField],
+    project_path: Path,
+    document: ApplicationDocument,
+) -> set[str]:
     career = load_career(project_path / "career.yml")
     used = {item.field_id: item for item in document.answers}
     filled: set[str] = set()
     for field in fields:
-        if field.sensitive or field.input_type in {"file", "hidden", "submit", "checkbox", "radio"}:
+        if field.sensitive or field.input_type in {
+            "file",
+            "hidden",
+            "submit",
+            "checkbox",
+            "radio",
+        }:
             continue
         value = _profile_value_for_field(field.label, career)
         saved = used.get(field.field_id)
-        if not value and saved and (not saved.sensitive or saved.confirmed_for_application):
+        if (
+            not value
+            and saved
+            and (not saved.sensitive or saved.confirmed_for_application)
+        ):
             value = saved.answer
         if value:
             page.locator(_FORM_CONTROLS).nth(field.index).fill(value)
@@ -311,8 +425,12 @@ def _normalized_language_scope(language: str) -> str:
     """Map a job's declared language to the stable answer-scope identifier."""
     normalized = language.strip().casefold()
     aliases = {
-        "en": "en", "english": "en",
-        "pt": "pt", "pt-br": "pt", "portuguese": "pt", "português": "pt",
+        "en": "en",
+        "english": "en",
+        "pt": "pt",
+        "pt-br": "pt",
+        "portuguese": "pt",
+        "português": "pt",
     }
     return aliases.get(normalized, normalized)
 
@@ -338,13 +456,20 @@ def _attach_documents(
     attachments = [project_path / path for path in document.attachments]
     if not attachments and document.variant_id:
         configuration = load_project_configuration(project_path)
-        variant, career = load_variant_career(project_path, document.variant_id, configuration.resume_language)
+        variant, career = load_variant_career(
+            project_path, document.variant_id, configuration.resume_language
+        )
         try:
-            attachments = [write_resume(
-                project_path, career, configuration.resume_language, "pdf",
-                style_id=variant.style or configuration.resume_style,
-                variant_id=document.variant_id,
-            )]
+            attachments = [
+                write_resume(
+                    project_path,
+                    career,
+                    configuration.resume_language,
+                    "pdf",
+                    style_id=variant.style or configuration.resume_style,
+                    variant_id=document.variant_id,
+                )
+            ]
         except ResumeRenderError:
             # The field remains visibly unresolved for the human reviewer when
             # Chromium is unavailable; do not replace it with another format.
@@ -352,15 +477,20 @@ def _attach_documents(
     if attachments:
         if job is not None and document.variant_id is None:
             default_locale = load_project_configuration(project_path).resume_language
-            expected = project_path / "exports" / (
-                f"resume.{_resume_locale_for_job(job, default_locale)}.pdf"
+            expected = (
+                project_path
+                / "exports"
+                / (f"resume.{_resume_locale_for_job(job, default_locale)}.pdf")
             )
             attachments = [
                 _resume_attachment_for_job(project_path, job)
-                if path == expected else path
+                if path == expected
+                else path
                 for path in attachments
             ]
-        page.locator(_FORM_CONTROLS).nth(upload_fields[0].index).set_input_files([str(path) for path in attachments])
+        page.locator(_FORM_CONTROLS).nth(upload_fields[0].index).set_input_files(
+            [str(path) for path in attachments]
+        )
 
 
 def _questions_for(
@@ -376,7 +506,11 @@ def _questions_for(
     result: list[ApplicationQuestion] = []
     for field in fields:
         if (
-            (not field.required and not include_optional and (not field.sensitive or not include_optional_sensitive))
+            (
+                not field.required
+                and not include_optional
+                and (not field.sensitive or not include_optional_sensitive)
+            )
             or field.input_type in {"hidden", "submit", "file"}
             or field.field_id in resolved
         ):
@@ -384,14 +518,16 @@ def _questions_for(
         question_id = f"question-{field.field_id}"
         candidate = (saved_answers or {}).get(field.label.casefold())
         proposal = candidate if candidate and candidate[2] == field.sensitive else None
-        result.append(ApplicationQuestion(
-            id=question_id,
-            field_id=field.field_id,
-            label=field.label,
-            context="Required field detected in the local browser session.",
-            required=field.required,
-            sensitive=field.sensitive,
-            proposed_answer=proposal[0] if proposal else None,
-            proposed_evidence_ids=proposal[1] if proposal else [],
-        ))
+        result.append(
+            ApplicationQuestion(
+                id=question_id,
+                field_id=field.field_id,
+                label=field.label,
+                context="Required field detected in the local browser session.",
+                required=field.required,
+                sensitive=field.sensitive,
+                proposed_answer=proposal[0] if proposal else None,
+                proposed_evidence_ids=proposal[1] if proposal else [],
+            )
+        )
     return result

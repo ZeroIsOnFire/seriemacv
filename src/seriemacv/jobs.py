@@ -45,15 +45,18 @@ class IdentifiedRecord(StrictModel):
 class JobRequirement(IdentifiedRecord):
     statement: str = Field(min_length=1)
     priority: Literal["required", "preferred"] = "required"
-    dimension: Literal[
-        "core_technical_fit",
-        "experience_seniority",
-        "responsibilities",
-        "domain",
-        "location_schedule",
-        "language",
-        "other_constraints",
-    ] | None = None
+    dimension: (
+        Literal[
+            "core_technical_fit",
+            "experience_seniority",
+            "responsibilities",
+            "domain",
+            "location_schedule",
+            "language",
+            "other_constraints",
+        ]
+        | None
+    ) = None
 
     @field_validator("statement")
     @classmethod
@@ -153,7 +156,9 @@ def validate_jobs(project_path: Path) -> list[tuple[Path, JobDiagnostic]]:
     return diagnostics
 
 
-def create_job(project_path: Path, payload: JobImportPayload, source: JobSource) -> Path:
+def create_job(
+    project_path: Path, payload: JobImportPayload, source: JobSource
+) -> Path:
     document = JobDocument(**payload.model_dump(), source=source)
     path = job_path(project_path, document.id)
     if path.exists():
@@ -187,7 +192,9 @@ def load_jobs(project_path: Path) -> list[JobDocument]:
     if diagnostics:
         path, diagnostic = diagnostics[0]
         raise ValueError(diagnostic.format(path))
-    return [load_job(path) for path in sorted((project_path / JOB_DIRECTORY).glob("*.yml"))]
+    return [
+        load_job(path) for path in sorted((project_path / JOB_DIRECTORY).glob("*.yml"))
+    ]
 
 
 def job_path(project_path: Path, job_id: str) -> Path:
@@ -214,7 +221,9 @@ def source_format_for_path(path: Path) -> Literal["json", "yaml"]:
         return "json"
     if suffix in {".yml", ".yaml"}:
         return "yaml"
-    raise ValueError(f"Unsupported job source format: {path.suffix or '(no extension)'}")
+    raise ValueError(
+        f"Unsupported job source format: {path.suffix or '(no extension)'}"
+    )
 
 
 def _import_documents(source_path: Path) -> list[JobDocument]:
@@ -240,7 +249,8 @@ def _import_documents(source_path: Path) -> list[JobDocument]:
         entries = [
             entry
             for entry in archive.infolist()
-            if not entry.is_dir() and Path(entry.filename).suffix.lower() in {".yaml", ".yml"}
+            if not entry.is_dir()
+            and Path(entry.filename).suffix.lower() in {".yaml", ".yml"}
         ]
         if not entries:
             raise ValueError("ZIP archive contains no YAML job documents")
@@ -248,7 +258,9 @@ def _import_documents(source_path: Path) -> list[JobDocument]:
             try:
                 content = archive.read(entry).decode("utf-8")
             except UnicodeDecodeError as error:
-                raise ValueError(f"ZIP entry '{entry.filename}' is not UTF-8") from error
+                raise ValueError(
+                    f"ZIP entry '{entry.filename}' is not UTF-8"
+                ) from error
             payload = load_yaml_payload(content)
             documents.append(
                 JobDocument(
@@ -338,7 +350,9 @@ def _diagnostic_for_path(
     current = document
     for part in location:
         try:
-            position = current.lc.item(part) if isinstance(part, int) else current.lc.key(part)
+            position = (
+                current.lc.item(part) if isinstance(part, int) else current.lc.key(part)
+            )
             if position is not None:
                 line, column = position[0] + 1, position[1] + 1
             current = current[part]

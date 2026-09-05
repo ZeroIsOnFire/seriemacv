@@ -37,10 +37,11 @@ to a user's canonical career data or external actions on the user's behalf.
 
 - Before reading large files, use `rg` to find relevant excerpts. Avoid generated
   artifacts, logs, and dumps.
-- The core and CLI use Python. In PowerShell run tests with
-  `$env:PYTHONPATH = 'src'; python -m unittest discover -s tests -v`; use Python
-  3.11+ if `python` is unavailable. Run `python -m ruff check src tests` after
-  installing `.[dev]`.
+- The core and CLI use Python. After installing `.[dev]`, run the official gate with
+  `python scripts/check_quality.py`; use Python 3.11+ if `python` is unavailable.
+- Do not weaken checks, broaden exclusions, add blanket ignores, or remove assertions
+  merely to make the gate pass. Fix the cause or document a narrowly scoped,
+  reviewable baseline. Expand the typed-file list as existing type debt is resolved.
 - Load YAML with `ruamel.yaml` in round-trip mode and validate strict Pydantic
   models. Do not silently accept unknown central-schema fields.
 - `seriemacv validate` checks project structure and `seriemacv career validate`
@@ -55,6 +56,12 @@ to a user's canonical career data or external actions on the user's behalf.
   Keep tracked examples exactly synchronized with `init` templates.
 - Write or update behavioral tests before implementing a behavior change. Tests must
   not require network access, secrets, remote models, or real career data.
+- Use only fictitious tracked fixtures. Never copy `.local-resumes`, browser state,
+  application answers, downloaded personal documents, or generated diagnostics into
+  tests, examples, commits, or tool output.
+- Bound retries. After the same command or browser action fails twice for the same
+  reason, stop repeating it, inspect the cause, and change the approach. Never hide
+  a retry loop behind a longer timeout.
 - Run focused checks while working, then risk-proportionate validation. Review the
   diff and fix actionable findings before handoff; never report failed, timed-out,
   or skipped validation as success.
@@ -65,4 +72,6 @@ to a user's canonical career data or external actions on the user's behalf.
   corresponding manuals under `docs/manual/` when user-facing behavior changes.
 - Keep changes focused; preserve unrelated user changes. Commits are atomic, in
   Portuguese, and use Conventional Commits.
+- Review dependency diffs and `python -m pip check`; do not add or loosen a dependency
+  merely to silence a quality failure.
 - At handoff report changed files, validations, limitations, and remaining risks.
