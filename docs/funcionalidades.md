@@ -60,6 +60,8 @@ estruturados. Nenhuma interface conhece detalhes de caminhos ou serialização.
   compartilhado entre desenvolvimento local e CI. O gate cobre compilação, lint,
   formatação integral, baseline incremental de tipagem e testes; o CI acrescenta a
   validação das dependências instaladas numa matriz de versões suportadas do Python.
+  Módulos importados que ainda possuem dívida de tipagem usam overrides explícitos
+  e revisáveis, evitando que o resultado dependa do cache ou do ambiente local.
 
 **Depende de:** nada.
 
