@@ -74,7 +74,7 @@ from seriemacv.proposals import (
     validate_proposal,
     write_proposal_request,
 )
-from seriemacv.renderer import ResumeRenderError, write_resume
+from seriemacv.renderer import ResumeRenderError, is_resume_current, write_resume
 from seriemacv.studio import create_studio_server
 from seriemacv.styles import STYLE_IDS, list_styles
 from seriemacv.variants import (
@@ -676,8 +676,10 @@ def _run_resume_command(args: argparse.Namespace) -> int:
             or (variant.style if variant else None)
             or configuration.resume_style
         )
-        output_paths = [
-            write_resume(
+        output_paths = []
+        output_states = []
+        for output_format in args.format:
+            cached = is_resume_current(
                 project_path,
                 career,
                 locale,
@@ -686,12 +688,26 @@ def _run_resume_command(args: argparse.Namespace) -> int:
                 resume_color=configuration.resume_color,
                 variant_id=args.variant,
             )
-            for output_format in args.format
-        ]
+            output_paths.append(
+                write_resume(
+                    project_path,
+                    career,
+                    locale,
+                    output_format,
+                    style_id=style_id,
+                    resume_color=configuration.resume_color,
+                    variant_id=args.variant,
+                )
+            )
+            output_states.append("cached" if cached else "rendered")
     except (OSError, ResumeRenderError, ValueError, ValidationError, YAMLError) as error:
         _print_error(f"{career_path}: {error}")
         return 1
-    print(f"Rendered {', '.join(item.upper() for item in args.format)} resume using {style_id}: {', '.join(str(path) for path in output_paths)}")
+    outputs = ", ".join(
+        f"{output_format.upper()} ({state}): {path}"
+        for output_format, state, path in zip(args.format, output_states, output_paths)
+    )
+    print(f"Resume using {style_id}: {outputs}")
     return 0
 
 

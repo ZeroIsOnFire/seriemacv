@@ -14,6 +14,7 @@ from seriemacv.career import CareerDocument
 from seriemacv.cli import main
 from seriemacv.project import create_project
 from seriemacv.renderer import (
+    is_resume_current,
     render_docx,
     render_html,
     render_markdown,
@@ -447,6 +448,143 @@ class MarkdownRendererTests(unittest.TestCase):
             self.assertIn("Professional Experience", fake.html)
             self.assertFalse((project_path / "exports/resume.html").exists())
 
+    def test_pdf_reuses_cache_when_render_inputs_are_unchanged(self) -> None:
+        class FakePdf:
+            def __init__(self) -> None:
+                self.calls = 0
+
+            def render(self, html: str) -> bytes:
+                self.calls += 1
+                return f"%PDF-fake-{self.calls}".encode()
+
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            project_path = Path(temporary_directory)
+            fake = FakePdf()
+            career = self._career()
+
+            first = write_resume(project_path, career, "en", "pdf", fake)
+            second = write_resume(project_path, career, "en", "pdf", fake)
+
+            self.assertEqual(first, second)
+            self.assertEqual(fake.calls, 1)
+            self.assertEqual(second.read_bytes(), b"%PDF-fake-1")
+            self.assertTrue(
+                is_resume_current(project_path, career, "en", "pdf")
+            )
+
+    def test_pdf_cache_is_invalidated_when_career_data_changes(self) -> None:
+        class FakePdf:
+            def __init__(self) -> None:
+                self.calls = 0
+
+            def render(self, html: str) -> bytes:
+                self.calls += 1
+                return f"%PDF-fake-{self.calls}".encode()
+
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            project_path = Path(temporary_directory)
+            fake = FakePdf()
+            career = self._career()
+            updated = career.model_copy(update={"summary": "Updated summary."})
+
+            write_resume(project_path, career, "en", "pdf", fake)
+            output = write_resume(project_path, updated, "en", "pdf", fake)
+
+            self.assertEqual(fake.calls, 2)
+            self.assertEqual(output.read_bytes(), b"%PDF-fake-2")
+
+    def test_pdf_cache_is_invalidated_when_artifact_is_changed_externally(self) -> None:
+        class FakePdf:
+            def __init__(self) -> None:
+                self.calls = 0
+
+            def render(self, html: str) -> bytes:
+                self.calls += 1
+                return f"%PDF-fake-{self.calls}".encode()
+
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            project_path = Path(temporary_directory)
+            fake = FakePdf()
+            career = self._career()
+            output = write_resume(project_path, career, "en", "pdf", fake)
+            output.write_bytes(b"externally changed")
+
+            self.assertFalse(
+                is_resume_current(project_path, career, "en", "pdf")
+            )
+            write_resume(project_path, career, "en", "pdf", fake)
+
+            self.assertEqual(fake.calls, 2)
+            self.assertEqual(output.read_bytes(), b"%PDF-fake-2")
+
+    def test_pdf_cache_is_invalidated_when_presentation_changes(self) -> None:
+        class FakePdf:
+            def __init__(self) -> None:
+                self.calls = 0
+
+            def render(self, html: str) -> bytes:
+                self.calls += 1
+                return f"%PDF-fake-{self.calls}".encode()
+
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            project_path = Path(temporary_directory)
+            fake = FakePdf()
+            career = self._career()
+
+            write_resume(
+                project_path,
+                career,
+                "en",
+                "pdf",
+                fake,
+                style_id="modern",
+                resume_color="#647D74",
+            )
+            write_resume(
+                project_path,
+                career,
+                "en",
+                "pdf",
+                fake,
+                style_id="modern",
+                resume_color="#112233",
+            )
+
+            self.assertEqual(fake.calls, 2)
+
+    def test_variant_pdf_always_renders_instead_of_using_canonical_cache(self) -> None:
+        class FakePdf:
+            def __init__(self) -> None:
+                self.calls = 0
+
+            def render(self, html: str) -> bytes:
+                self.calls += 1
+                return f"%PDF-variant-{self.calls}".encode()
+
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            project_path = Path(temporary_directory)
+            fake = FakePdf()
+            career = self._career()
+
+            write_resume(
+                project_path, career, "en", "pdf", fake, variant_id="backend-role"
+            )
+            output = write_resume(
+                project_path, career, "en", "pdf", fake, variant_id="backend-role"
+            )
+
+            self.assertEqual(fake.calls, 2)
+            self.assertEqual(output.read_bytes(), b"%PDF-variant-2")
+            self.assertFalse(
+                is_resume_current(
+                    project_path,
+                    career,
+                    "en",
+                    "pdf",
+                    variant_id="backend-role",
+                )
+            )
+
     def test_style_failure_does_not_overwrite_an_existing_artifact(self) -> None:
         with tempfile.TemporaryDirectory() as temporary_directory:
             project_path = Path(temporary_directory)
@@ -619,6 +757,32 @@ class MarkdownRendererTests(unittest.TestCase):
 
 
 class ResumeRenderCliTests(unittest.TestCase):
+    def test_cli_reports_and_reuses_a_current_pdf_cache(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            project_path = Path(temporary_directory) / "career-project"
+            create_project(
+                project_path, project_name="Career Project", resume_language="en"
+            )
+            self._write_complete_career(project_path)
+
+            with patch(
+                "seriemacv.renderer.PlaywrightPdfRenderer.render",
+                return_value=b"%PDF-cached",
+            ) as render_pdf:
+                with redirect_stdout(StringIO()) as first_output:
+                    first = main([
+                        "resume", "render", str(project_path), "--format", "pdf",
+                    ])
+                with redirect_stdout(StringIO()) as second_output:
+                    second = main([
+                        "resume", "render", str(project_path), "--format", "pdf",
+                    ])
+
+            self.assertEqual((first, second), (0, 0))
+            self.assertEqual(render_pdf.call_count, 1)
+            self.assertIn("PDF (rendered)", first_output.getvalue())
+            self.assertIn("PDF (cached)", second_output.getvalue())
+
     def test_cli_uses_configured_style_and_allows_a_one_off_override(self) -> None:
         with tempfile.TemporaryDirectory() as temporary_directory:
             project_path = Path(temporary_directory) / "career-project"

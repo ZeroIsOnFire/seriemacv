@@ -48,6 +48,9 @@ to a user's canonical career data or external actions on the user's behalf.
   conversions must be explicit and must not remove legacy canonical data.
 - `resume render --format markdown|html|pdf|docx [--style ID]` validates before
   atomically writing `exports/resume.*`; PDF requires Playwright Chromium.
+- Canonical PDF rendering is content-addressed: reuse a current cached PDF through
+  the normal renderer instead of launching Playwright again. Do not delete or bypass
+  `.seriemacv/cache` to force work. Job-specific variants intentionally render fresh.
 - Preserve the ATS-safe style constraints and the documented style-family contracts.
   Keep tracked examples exactly synchronized with `init` templates.
 - Write or update behavioral tests before implementing a behavior change. Tests must

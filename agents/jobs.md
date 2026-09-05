@@ -72,6 +72,10 @@ When the user asks to apply:
    preparing the application.
 2. Prepare the correct localized resume, attachments, and only reviewed answers.
    Ask about every unresolved required field; do not guess.
+   For a canonical resume, call the normal renderer and reuse its PDF cache when the
+   career data, locale, style, color, and style assets are unchanged. Do not request
+   a redundant render merely to refresh an existing file. Job-specific variants are
+   rendered separately and do not reuse the canonical cache.
 3. Open the form with Playwright so the user can log in, inspect prefilled values,
    and complete the process. Use a site-specific adapter when a generic form mapping
    is unreliable.

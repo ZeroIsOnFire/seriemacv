@@ -139,6 +139,12 @@ sem persistência. Projetos antigos assumem `clean`. Todos os estilos escrevem
 atomicamente nos caminhos fixos `exports/resume.*`; renderizar outro estilo substitui
 o artefato anterior do formato. `resume_language` seleciona apenas títulos fixos e
 nunca traduz conteúdo do usuário. `.doc` está explicitamente fora do escopo.
+PDFs canônicos possuem cache local endereçado por conteúdo. A assinatura cobre todo
+o documento de carreira canônico e localizado, além de idioma, estilo, cor,
+manifesto, template e CSS; o hash do próprio artefato impede reutilização após uma
+alteração externa. Assim, qualquer atualização dos dados YAML invalida o PDF, mesmo
+quando o campo alterado não é impresso. Variantes de vaga preservam artefatos
+próprios e sempre passam pelo renderer, sem reutilizar o cache canônico.
 Layouts com faixas laterais coloridas usam uma única faixa fixa de impressão e um
 quadro paginado de apresentação, cujo cabeçalho e rodapé repetidos preservam o
 espaçamento do conteúdo sem criar emendas no fundo. No `timeline`, a quebra evita

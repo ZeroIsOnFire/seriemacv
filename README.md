@@ -83,6 +83,11 @@ render without changing the project. Every format atomically replaces its fixed
 `exports/resume.*` artifact. PDF requires local Chromium:
 `python -m playwright install chromium`.
 
+Canonical PDFs use a content-addressed cache. When localized data, locale, style,
+color, and style assets are unchanged, the command reuses
+`exports/resume.<locale>.pdf` without launching Chromium. Any input change
+invalidates the cache. Job-specific variants are always rendered separately.
+
 `resume_color` sets the RGB color for configurable visual styles, including `modern`,
 `clean-executive`, `timeline`, `sidebar`, `split-header`, `contact-band`, `left-rail`,
 and `detail-sidebar` (including `-alt`); its default is mascot green `#647D74`.

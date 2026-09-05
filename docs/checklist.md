@@ -48,6 +48,8 @@ currículo, com vagas, match e tailoring locais disponíveis.
 - [x] Gerar currículo Markdown a partir do YAML.
 - [x] Renderizar currículo em HTML.
 - [x] Exportar PDF por renderizador local de navegador.
+- [x] Reutilizar PDF canônico por cache de conteúdo e invalidá-lo quando dados,
+  idioma, estilo, cor ou assets mudarem; manter variantes fora do cache canônico.
 - [x] Exportar DOCX por renderer próprio, sem converter do PDF.
 - [x] Manter `.doc` fora do produto; a compatibilidade editável termina em DOCX.
 - [x] Adicionar CLI para editar dados estruturados, validar e renderizar currículo.

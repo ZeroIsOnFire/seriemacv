@@ -143,9 +143,6 @@ def _resume_locale_for_job(job: Any, default_locale: str) -> str:
 def _resume_attachment_for_job(project_path: Path, job: Any) -> Path:
     configuration = load_project_configuration(project_path)
     locale = _resume_locale_for_job(job, configuration.resume_language)
-    path = project_path / "exports" / f"resume.{locale}.pdf"
-    if path.is_file():
-        return path
     return write_resume(
         project_path,
         load_localized_career(project_path, locale),
@@ -353,6 +350,16 @@ def _attach_documents(
             # Chromium is unavailable; do not replace it with another format.
             return
     if attachments:
+        if job is not None and document.variant_id is None:
+            default_locale = load_project_configuration(project_path).resume_language
+            expected = project_path / "exports" / (
+                f"resume.{_resume_locale_for_job(job, default_locale)}.pdf"
+            )
+            attachments = [
+                _resume_attachment_for_job(project_path, job)
+                if path == expected else path
+                for path in attachments
+            ]
         page.locator(_FORM_CONTROLS).nth(upload_fields[0].index).set_input_files([str(path) for path in attachments])
 
 

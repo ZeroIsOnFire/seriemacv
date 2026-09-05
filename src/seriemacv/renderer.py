@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import hashlib
+import json
 import os
 import re
 import tempfile
@@ -37,6 +39,7 @@ _FILENAMES = {
     "pdf": "pdf",
     "docx": "docx",
 }
+_PDF_CACHE_VERSION = 1
 
 
 class ResumeRenderError(ValueError):
@@ -239,6 +242,16 @@ def write_resume(
     path.parent.mkdir(parents=True, exist_ok=True)
     style = load_style(style_id).manifest
     _ensure_supported(style, output_format)
+    if is_resume_current(
+        project_path,
+        career,
+        locale,
+        output_format,
+        style_id=style_id,
+        resume_color=resume_color,
+        variant_id=variant_id,
+    ):
+        return path
     content: bytes
     if output_format == "markdown":
         content = render_markdown(
@@ -271,7 +284,80 @@ def write_resume(
             preserve_record_order=variant_id is not None,
         )
     _atomic_write(path, content)
+    if output_format == "pdf" and variant_id is None:
+        cache_path = _pdf_cache_path(project_path, path)
+        cache_path.parent.mkdir(parents=True, exist_ok=True)
+        metadata = {
+            "schema_version": _PDF_CACHE_VERSION,
+            "input_sha256": _pdf_cache_key(
+                career, locale, style_id, resume_color
+            ),
+            "artifact_sha256": hashlib.sha256(content).hexdigest(),
+        }
+        _atomic_write(
+            cache_path,
+            (json.dumps(metadata, sort_keys=True) + "\n").encode(),
+        )
     return path
+
+
+def is_resume_current(
+    project_path: Path,
+    career: CareerDocument,
+    locale: ResumeLocale,
+    output_format: ResumeFormat,
+    *,
+    style_id: ResumeStyleId = "clean",
+    resume_color: str | None = None,
+    variant_id: str | None = None,
+) -> bool:
+    """Return whether a canonical PDF matches all current render inputs."""
+    if output_format != "pdf" or variant_id is not None:
+        return False
+    path = project_path / "exports" / f"resume.{locale}.pdf"
+    cache_path = _pdf_cache_path(project_path, path)
+    if not path.is_file() or not cache_path.is_file():
+        return False
+    try:
+        metadata = json.loads(cache_path.read_text(encoding="utf-8"))
+        artifact_hash = hashlib.sha256(path.read_bytes()).hexdigest()
+    except (OSError, ValueError, TypeError):
+        return False
+    if not isinstance(metadata, dict):
+        return False
+    return (
+        metadata.get("schema_version") == _PDF_CACHE_VERSION
+        and metadata.get("input_sha256")
+        == _pdf_cache_key(career, locale, style_id, resume_color)
+        and metadata.get("artifact_sha256") == artifact_hash
+    )
+
+
+def _pdf_cache_path(project_path: Path, output_path: Path) -> Path:
+    return project_path / ".seriemacv" / "cache" / "resume" / f"{output_path.name}.json"
+
+
+def _pdf_cache_key(
+    career: CareerDocument,
+    locale: ResumeLocale,
+    style_id: ResumeStyleId,
+    resume_color: str | None,
+) -> str:
+    style = load_style(style_id)
+    payload = {
+        "cache_version": _PDF_CACHE_VERSION,
+        "career": career.model_dump(mode="json"),
+        "locale": locale,
+        "style_id": style_id,
+        "resume_color": resume_color,
+        "style": style.manifest.model_dump(mode="json"),
+        "template": style.template,
+        "css": style.css,
+    }
+    encoded = json.dumps(
+        payload, ensure_ascii=False, sort_keys=True, separators=(",", ":")
+    ).encode("utf-8")
+    return hashlib.sha256(encoded).hexdigest()
 
 
 def write_markdown_resume(

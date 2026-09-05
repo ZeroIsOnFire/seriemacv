@@ -84,6 +84,11 @@ renderização sem alterar o projeto. Cada formato substitui atomicamente seu ar
 fixo em `exports/resume.*`. PDF requer Chromium local:
 `python -m playwright install chromium`.
 
+PDFs canônicos usam cache por conteúdo. Se dados localizados, idioma, estilo, cor e
+assets continuarem iguais, o comando reutiliza `exports/resume.<locale>.pdf` sem
+abrir o Chromium. Uma alteração em qualquer entrada invalida o cache. Variantes de
+vaga são sempre renderizadas separadamente.
+
 `resume_color` define a cor RGB dos estilos configuráveis `modern`,
 `clean-executive`, `timeline`, `sidebar`, `split-header`, `contact-band`, `left-rail`
 e `detail-sidebar` (incluindo `-alt`); o padrão é o verde do mascote `#647D74`.

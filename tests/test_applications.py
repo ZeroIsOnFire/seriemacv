@@ -282,9 +282,12 @@ class ApplicationTests(unittest.TestCase):
 
         page = Page()
         expected_resume = self.project / "exports" / "resume.en.pdf"
+        expected_resume.write_bytes(b"existing PDF")
         with (
             patch("seriemacv.browser.load_localized_career", return_value=SimpleNamespace()),
-            patch("seriemacv.browser.write_resume", return_value=expected_resume),
+            patch(
+                "seriemacv.browser.write_resume", return_value=expected_resume
+            ) as render_resume,
         ):
             _attach_documents(
                 page, [], self.project, load_application(self.project, "role-application"),
@@ -292,6 +295,53 @@ class ApplicationTests(unittest.TestCase):
             )
 
         self.assertEqual(page.selector, "input#resume, input[name='resume']")
+        self.assertEqual(page.field.files, [str(expected_resume)])
+        render_resume.assert_called_once()
+
+    def test_generic_adapter_refreshes_a_canonical_resume_attachment(self) -> None:
+        expected_resume = self.project / "exports" / "resume.en.pdf"
+        expected_resume.write_bytes(b"existing PDF")
+        create_application(
+            self.project,
+            ApplicationDocument(
+                id="role-application",
+                job_id="role",
+                attachments=["exports/resume.en.pdf"],
+            ),
+        )
+
+        class Locator:
+            def __init__(self) -> None:
+                self.files: list[str] = []
+
+            def nth(self, index: int) -> "Locator":
+                self.index = index
+                return self
+
+            def set_input_files(self, files: list[str]) -> None:
+                self.files = files
+
+        class Page:
+            def __init__(self) -> None:
+                self.field = Locator()
+
+            def locator(self, selector: str) -> Locator:
+                return self.field
+
+        page = Page()
+        with patch(
+            "seriemacv.browser._resume_attachment_for_job",
+            return_value=expected_resume,
+        ) as refresh_resume:
+            _attach_documents(
+                page,
+                [BrowserField("resume", 0, "Resume", True, "file", False)],
+                self.project,
+                load_application(self.project, "role-application"),
+                job=SimpleNamespace(language="English"),
+            )
+
+        refresh_resume.assert_called_once()
         self.assertEqual(page.field.files, [str(expected_resume)])
 
     def test_browser_preparation_waits_for_client_rendered_form_controls(self) -> None:
