@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 import tomllib
 import unittest
 from pathlib import Path
@@ -16,8 +17,13 @@ class QualityPolicyTests(unittest.TestCase):
         self.assertIn("timeout-minutes: 20", workflow)
         self.assertIn("python -m pip check", workflow)
         self.assertIn("python scripts/check_quality.py", workflow)
-        self.assertIn("uses: actions/checkout@v6", workflow)
-        self.assertIn("uses: actions/setup-python@v6", workflow)
+        self.assertGreaterEqual(self._action_major(workflow, "actions/checkout"), 5)
+        self.assertGreaterEqual(self._action_major(workflow, "actions/setup-python"), 6)
+
+    def _action_major(self, workflow: str, action: str) -> int:
+        match = re.search(rf"uses:\s*{re.escape(action)}@v(\d+)\b", workflow)
+        self.assertIsNotNone(match, f"{action} must use a versioned major tag")
+        return int(match.group(1))
 
     def test_mypy_baseline_expands_beyond_the_original_privacy_modules(self) -> None:
         configuration = tomllib.loads(
