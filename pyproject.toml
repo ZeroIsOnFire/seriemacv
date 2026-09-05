@@ -21,7 +21,7 @@ dependencies = [
 
 [project.optional-dependencies]
 dev = [
-    "mypy>=1.13,<2",
+    "mypy>=1.13,<3",
     "ruff>=0.12,<1",
 ]
 
