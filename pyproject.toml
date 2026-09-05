@@ -16,12 +16,12 @@ dependencies = [
     "playwright>=1.50,<2",
     "pydantic>=2.12,<3",
     "python-docx>=1.2,<2",
-    "ruamel.yaml>=0.18,<0.19",
+    "ruamel.yaml>=0.18,<0.20",
 ]
 
 [project.optional-dependencies]
 dev = [
-    "mypy>=1.13,<2",
+    "mypy>=1.13,<3",
     "ruff>=0.12,<1",
 ]
 
@@ -66,3 +66,16 @@ no_implicit_optional = true
 warn_redundant_casts = true
 warn_unused_ignores = true
 warn_unused_configs = true
+
+# Imported modules with known type debt are kept explicit so clean modules remain
+# checked without making the incremental baseline environment-dependent.
+[[tool.mypy.overrides]]
+module = [
+    "seriemacv.applications",
+    "seriemacv.career",
+    "seriemacv.jobs",
+    "seriemacv.proposals",
+    "seriemacv.renderer",
+    "seriemacv.variants",
+]
+ignore_errors = true

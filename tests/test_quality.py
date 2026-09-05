@@ -16,6 +16,8 @@ class QualityPolicyTests(unittest.TestCase):
         self.assertIn("timeout-minutes: 20", workflow)
         self.assertIn("python -m pip check", workflow)
         self.assertIn("python scripts/check_quality.py", workflow)
+        self.assertIn("uses: actions/checkout@v6", workflow)
+        self.assertIn("uses: actions/setup-python@v6", workflow)
 
     def test_mypy_baseline_expands_beyond_the_original_privacy_modules(self) -> None:
         configuration = tomllib.loads(
@@ -27,6 +29,24 @@ class QualityPolicyTests(unittest.TestCase):
         self.assertIn("src/seriemacv/browser.py", typed_files)
         self.assertIn("src/seriemacv/matching.py", typed_files)
         self.assertIn("src/seriemacv/project.py", typed_files)
+
+        debt_modules = {
+            module
+            for override in configuration["tool"]["mypy"]["overrides"]
+            if override.get("ignore_errors") is True
+            for module in override["module"]
+        }
+        self.assertEqual(
+            debt_modules,
+            {
+                "seriemacv.applications",
+                "seriemacv.career",
+                "seriemacv.jobs",
+                "seriemacv.proposals",
+                "seriemacv.renderer",
+                "seriemacv.variants",
+            },
+        )
 
     def test_agent_policies_cover_untrusted_content_and_browser_boundaries(
         self,
