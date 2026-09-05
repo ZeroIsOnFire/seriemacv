@@ -52,9 +52,16 @@ def main() -> None:
                         print_background=True,
                         prefer_css_page_size=True,
                     )
-                    if not style.id.startswith(
-                        ("timeline", "contact-band", "detail-sidebar", "left-rail")
-                    ):
+                    if style.id not in {
+                        "timeline",
+                        "timeline-alt",
+                        "contact-band",
+                        "contact-band-alt",
+                        "detail-sidebar",
+                        "detail-sidebar-alt",
+                        "left-rail",
+                        "left-rail-alt",
+                    }:
                         page.add_style_tag(
                             content=(
                                 "body { padding-top: "

@@ -43,7 +43,7 @@ candidaturas, estilos e artefatos internos.
 - Configuração versionada sem segredos.
 - Compatibilidade de leitura para projetos criados no layout anterior; migrações de
   dados canônicos exigem uma ação explícita do usuário.
-- Índice SQLite local para estado, cache e busca futura.
+- Busca lexical direta no YAML canônico, sem banco de dados local.
 
 **Contrato:** recebe um diretório de projeto e produz entidades válidas ou erros
 estruturados. Nenhuma interface conhece detalhes de caminhos ou serialização.
@@ -52,9 +52,14 @@ estruturados. Nenhuma interface conhece detalhes de caminhos ou serialização.
 
 - Escolher a linguagem do núcleo antes de implementar este módulo.
 - Adotar um parser YAML seguro e schemas de validação.
-- Usar SQLite local com migrações para dados internos; arquivos permanecem a fonte
-  de verdade para conteúdo pertencente ao usuário.
+- Manter os dados locais em YAML enquanto a escala não justificar um índice
+  descartável; arquivos permanecem a fonte de verdade para conteúdo pertencente ao
+  usuário.
 - Definir uma abstração de filesystem para testes sem disco real.
+- Manter um único gate de qualidade reproduzível em `scripts/check_quality.py`,
+  compartilhado entre desenvolvimento local e CI. O gate cobre compilação, lint,
+  formatação integral, baseline incremental de tipagem e testes; o CI acrescenta a
+  validação das dependências instaladas numa matriz de versões suportadas do Python.
 
 **Depende de:** nada.
 
@@ -95,8 +100,8 @@ funcionalidade consumidora recebe IDs de evidência, não fatos implícitos em p
 
 **Decisões tecnológicas**
 
-- YAML para conteúdo editável; SQLite FTS5 para índice lexical, se
-  necessário após a primeira versão de busca.
+- YAML para conteúdo editável e busca lexical direta; avaliar um índice descartável
+  somente se a escala justificar.
 - Não usar embeddings inicialmente.
 - Modelagem explícita de dados sensíveis e campos permitidos para cada uso.
 
@@ -138,6 +143,12 @@ sem persistência. Projetos antigos assumem `clean`. Todos os estilos escrevem
 atomicamente nos caminhos fixos `exports/resume.*`; renderizar outro estilo substitui
 o artefato anterior do formato. `resume_language` seleciona apenas títulos fixos e
 nunca traduz conteúdo do usuário. `.doc` está explicitamente fora do escopo.
+PDFs canônicos possuem cache local endereçado por conteúdo. A assinatura cobre todo
+o documento de carreira canônico e localizado, além de idioma, estilo, cor,
+manifesto, template e CSS; o hash do próprio artefato impede reutilização após uma
+alteração externa. Assim, qualquer atualização dos dados YAML invalida o PDF, mesmo
+quando o campo alterado não é impresso. Variantes de vaga preservam artefatos
+próprios e sempre passam pelo renderer, sem reutilizar o cache canônico.
 Layouts com faixas laterais coloridas usam uma única faixa fixa de impressão e um
 quadro paginado de apresentação, cujo cabeçalho e rodapé repetidos preservam o
 espaçamento do conteúdo sem criar emendas no fundo. No `timeline`, a quebra evita
@@ -323,7 +334,7 @@ está pausado sem remoção dos dados ou contratos já implementados.
 ## Decisões que precisam ser tomadas antes do código
 
 1. **Linguagem do núcleo e CLI:** **decidido: Python**. As escolhas de bibliotecas
-   e empacotamento devem priorizar portabilidade local, parsing/validação, SQLite,
+   e empacotamento devem priorizar portabilidade local, parsing/validação,
    PDF, ecossistema MCP, testes e futura integração com o Studio.
 2. **Forma do primeiro Studio:** Tauri desde o início ou web local temporária.
 3. **Formato de schemas:** biblioteca de validação e política de compatibilidade

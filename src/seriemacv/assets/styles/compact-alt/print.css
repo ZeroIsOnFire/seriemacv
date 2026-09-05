@@ -2,9 +2,9 @@
 * { box-sizing: border-box; }
 body { margin: 0; color: {{primary_color}}; font: {{body_size_pt}}pt {{font_family}}, sans-serif; line-height: {{line_spacing}}; }
 main { max-width: {{content_width_mm}}mm; margin: auto; }
-header { display: grid; grid-template-columns: 1fr auto; column-gap: 8pt; align-items: end; }
-header h1 { grid-column: 1; margin: 0; font-size: {{name_size_pt}}pt; }
-header .title { grid-column: 1; }
+header { display: block; }
+header h1 { margin: 0; font-size: {{name_size_pt}}pt; }
+header .title { margin-top: 1pt; }
 header p { margin: 1pt 0; }
 h2 { margin: {{section_spacing_pt}}pt 0 3pt; font-size: {{section_size_pt}}pt; }
 h3 { margin: 5pt 0 0; font-size: {{record_size_pt}}pt; }

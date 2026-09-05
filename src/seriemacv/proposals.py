@@ -61,7 +61,7 @@ class ProposalExperienceContext(StrictModel):
     id: str
     company: str
     title: str
-    highlights: list[str] = Field(default_factory=list)
+    highlights: list[str] = Field(default_factory=list, max_length=1)
 
 
 class ProposalEducationContext(StrictModel):
@@ -161,13 +161,20 @@ class VariantLocaleProposal(ProposalItemBase):
 
     @model_validator(mode="after")
     def claims_require_evidence(self) -> "VariantLocaleProposal":
-        has_summary = bool(self.locale_override.summary and self.locale_override.summary.strip())
+        has_summary = bool(
+            self.locale_override.summary and self.locale_override.summary.strip()
+        )
         has_highlights = any(
             item.highlights
-            for item in (*self.locale_override.experience.values(), *self.locale_override.education.values())
+            for item in (
+                *self.locale_override.experience.values(),
+                *self.locale_override.education.values(),
+            )
         )
         if (has_summary or has_highlights) and not self.evidence_ids:
-            raise ValueError("evidence_ids is required for tailored summary or highlights")
+            raise ValueError(
+                "evidence_ids is required for tailored summary or highlights"
+            )
         return self
 
 
@@ -272,15 +279,31 @@ def create_proposal_request(
             profile={"title": career.profile.title},
             summary=career.summary,
             experience=[
-                {"id": item.id, "company": item.company, "title": item.title, "highlights": item.highlights}
+                {
+                    "id": item.id,
+                    "company": item.company,
+                    "title": item.title,
+                    "highlights": item.highlights,
+                }
                 for item in career.experience
             ],
             education=[
-                {"id": item.id, "institution": item.institution, "degree": item.degree, "highlights": item.highlights}
+                {
+                    "id": item.id,
+                    "institution": item.institution,
+                    "degree": item.degree,
+                    "highlights": item.highlights,
+                }
                 for item in career.education
             ],
             skills=[
-                {"id": item.id, "name": item.name, "category": item.category, "level": item.level, "core": item.core}
+                {
+                    "id": item.id,
+                    "name": item.name,
+                    "category": item.category,
+                    "level": item.level,
+                    "core": item.core,
+                }
                 for item in career.skills
             ],
         ),
@@ -294,38 +317,67 @@ def validate_proposal(
 ) -> list[ProposalDiagnostic]:
     diagnostics: list[ProposalDiagnostic] = []
     if response.request_id != request.id:
-        diagnostics.append(ProposalDiagnostic("request_id", f"declares '{response.request_id}', expected '{request.id}'"))
+        diagnostics.append(
+            ProposalDiagnostic(
+                "request_id",
+                f"declares '{response.request_id}', expected '{request.id}'",
+            )
+        )
     facts = load_career(project_path / "career.yml")
     verified_ids = {item.id for item in facts.evidence if item.verified}
     known_ids = {item.id for item in facts.evidence}
     for item in response.items:
         unknown = set(item.evidence_ids) - known_ids
         if unknown:
-            diagnostics.append(ProposalDiagnostic(f"items.{item.id}.evidence_ids", f"references unknown evidence_ids: {', '.join(sorted(unknown))}"))
+            diagnostics.append(
+                ProposalDiagnostic(
+                    f"items.{item.id}.evidence_ids",
+                    f"references unknown evidence_ids: {', '.join(sorted(unknown))}",
+                )
+            )
         unverified = (set(item.evidence_ids) & known_ids) - verified_ids
         if unverified:
-            diagnostics.append(ProposalDiagnostic(f"items.{item.id}.evidence_ids", f"references unverified evidence_ids: {', '.join(sorted(unverified))}"))
+            diagnostics.append(
+                ProposalDiagnostic(
+                    f"items.{item.id}.evidence_ids",
+                    f"references unverified evidence_ids: {', '.join(sorted(unverified))}",
+                )
+            )
 
     selection_item = _item_of_kind(response, "variant_selection")
-    selection = selection_item.selection if isinstance(selection_item, VariantSelectionProposal) else VariantSelection()
+    selection = (
+        selection_item.selection
+        if isinstance(selection_item, VariantSelectionProposal)
+        else VariantSelection()
+    )
     for section in ("experience", "education", "skills"):
         selected = getattr(selection, section)
         if selected is not None:
             unknown = set(selected) - {item.id for item in getattr(facts, section)}
             if unknown:
-                diagnostics.append(ProposalDiagnostic(f"selection.{section}", f"references unknown {section} ids: {', '.join(sorted(unknown))}"))
+                diagnostics.append(
+                    ProposalDiagnostic(
+                        f"selection.{section}",
+                        f"references unknown {section} ids: {', '.join(sorted(unknown))}",
+                    )
+                )
 
     locale_item = _item_of_kind(response, "variant_locale")
     if isinstance(locale_item, VariantLocaleProposal):
         try:
-            override = ResumeVariantLocale.model_validate({
-                "schema_version": 1,
-                "locale": request.locale,
-                "evidence_ids": locale_item.evidence_ids,
-                **locale_item.locale_override.model_dump(mode="python"),
-            })
+            override = ResumeVariantLocale.model_validate(
+                {
+                    "schema_version": 1,
+                    "locale": request.locale,
+                    "evidence_ids": locale_item.evidence_ids,
+                    **locale_item.locale_override.model_dump(mode="python"),
+                }
+            )
         except ValidationError as error:
-            diagnostics.extend(ProposalDiagnostic("variant_locale", item["msg"]) for item in error.errors())
+            diagnostics.extend(
+                ProposalDiagnostic("variant_locale", item["msg"])
+                for item in error.errors()
+            )
         else:
             diagnostics.extend(_validate_locale_targets(override, selection, facts))
     return diagnostics
@@ -353,25 +405,39 @@ def apply_proposal(
 ) -> AppliedProposal:
     diagnostics = validate_proposal(project_path, request, response)
     if diagnostics:
-        raise ValueError("; ".join(f"{item.path}: {item.message}" for item in diagnostics))
+        raise ValueError(
+            "; ".join(f"{item.path}: {item.message}" for item in diagnostics)
+        )
     accepted = set(accepted_ids)
     known = {item.id for item in response.items}
     unknown = accepted - known
     if unknown:
-        raise ValueError(f"accepts unknown proposal item ids: {', '.join(sorted(unknown))}")
+        raise ValueError(
+            f"accepts unknown proposal item ids: {', '.join(sorted(unknown))}"
+        )
     if not accepted:
         raise ValueError("at least one proposal item must be accepted")
 
     selected = [item for item in response.items if item.id in accepted]
-    selection_item = next((item for item in selected if isinstance(item, VariantSelectionProposal)), None)
-    locale_item = next((item for item in selected if isinstance(item, VariantLocaleProposal)), None)
-    cover_item = next((item for item in selected if isinstance(item, CoverLetterProposal)), None)
+    selection_item = next(
+        (item for item in selected if isinstance(item, VariantSelectionProposal)), None
+    )
+    locale_item = next(
+        (item for item in selected if isinstance(item, VariantLocaleProposal)), None
+    )
+    cover_item = next(
+        (item for item in selected if isinstance(item, CoverLetterProposal)), None
+    )
     variant_path: Path | None = None
     if selection_item is not None or locale_item is not None:
         directory = variant_directory(project_path, request.variant_id)
         if directory.exists():
             raise FileExistsError(f"variant '{request.variant_id}' already exists")
-        selection = selection_item.selection if selection_item is not None else VariantSelection()
+        selection = (
+            selection_item.selection
+            if selection_item is not None
+            else VariantSelection()
+        )
         style = selection_item.style if selection_item is not None else None
         _write_yaml(
             directory / "variant.yml",
@@ -384,17 +450,24 @@ def apply_proposal(
             ),
         )
         if locale_item is not None:
-            override = ResumeVariantLocale.model_validate({
-                "schema_version": 1,
-                "locale": request.locale,
-                "evidence_ids": locale_item.evidence_ids,
-                **locale_item.locale_override.model_dump(mode="python"),
-            })
+            override = ResumeVariantLocale.model_validate(
+                {
+                    "schema_version": 1,
+                    "locale": request.locale,
+                    "evidence_ids": locale_item.evidence_ids,
+                    **locale_item.locale_override.model_dump(mode="python"),
+                }
+            )
             _write_yaml(directory / "locales" / f"{request.locale}.yml", override)
         variant_path = directory / "variant.yml"
     cover_letter_path: Path | None = None
     if cover_item is not None:
-        cover_letter_path = project_path / "exports" / "cover-letters" / f"{request.id}.{request.locale}.md"
+        cover_letter_path = (
+            project_path
+            / "exports"
+            / "cover-letters"
+            / f"{request.id}.{request.locale}.md"
+        )
         _atomic_write(cover_letter_path, cover_item.body.rstrip() + "\n")
     return AppliedProposal(variant_path, cover_letter_path)
 
@@ -429,10 +502,14 @@ def _item_of_kind(response: ProposalResponse, kind: str) -> ProposalItem | None:
 
 
 def _proposal_item_content(item: ProposalItem) -> dict[str, Any]:
-    return item.model_dump(exclude={"id", "kind", "confidence", "pending_information"}, mode="python")
+    return item.model_dump(
+        exclude={"id", "kind", "confidence", "pending_information"}, mode="python"
+    )
 
 
-def _validate_locale_targets(override: ResumeVariantLocale, selection: VariantSelection, facts: Any) -> list[ProposalDiagnostic]:
+def _validate_locale_targets(
+    override: ResumeVariantLocale, selection: VariantSelection, facts: Any
+) -> list[ProposalDiagnostic]:
     diagnostics: list[ProposalDiagnostic] = []
     for section in ("experience", "education", "skills"):
         known = {item.id for item in getattr(facts, section)}
@@ -441,7 +518,12 @@ def _validate_locale_targets(override: ResumeVariantLocale, selection: VariantSe
             known &= set(selected)
         unknown = set(getattr(override, section)) - known
         if unknown:
-            diagnostics.append(ProposalDiagnostic(f"variant_locale.{section}", f"references unavailable {section} ids: {', '.join(sorted(unknown))}"))
+            diagnostics.append(
+                ProposalDiagnostic(
+                    f"variant_locale.{section}",
+                    f"references unavailable {section} ids: {', '.join(sorted(unknown))}",
+                )
+            )
     return diagnostics
 
 
@@ -467,7 +549,9 @@ def _dump_yaml(value: Any) -> str:
 
 def _atomic_write(path: Path, content: str) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
-    descriptor, temporary_path = tempfile.mkstemp(dir=path.parent, prefix=f".{path.name}.", suffix=".tmp", text=True)
+    descriptor, temporary_path = tempfile.mkstemp(
+        dir=path.parent, prefix=f".{path.name}.", suffix=".tmp", text=True
+    )
     try:
         with os.fdopen(descriptor, "w", encoding="utf-8", newline="\n") as file:
             file.write(content)

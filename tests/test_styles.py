@@ -102,13 +102,17 @@ class ResumeStyleTests(unittest.TestCase):
         for family in ("clean-executive", "modern", "sidebar"):
             self.assertTrue(load_style(family).manifest.color_customizable)
 
-    def test_readmes_link_to_separate_style_galleries_and_use_small_mascot(self) -> None:
+    def test_readmes_link_to_separate_style_galleries_and_use_small_mascot(
+        self,
+    ) -> None:
         root = Path(__file__).resolve().parents[1]
         readme = (root / "README.md").read_text(encoding="utf-8")
         readme_pt = (root / "README.pt-BR.md").read_text(encoding="utf-8")
 
         self.assertIn("[compatible layout gallery](docs/styles.md)", readme)
-        self.assertIn("[galeria de layouts compatíveis](docs/styles.pt-BR.md)", readme_pt)
+        self.assertIn(
+            "[galeria de layouts compatíveis](docs/styles.pt-BR.md)", readme_pt
+        )
         self.assertNotIn("examples/styles/clean/preview.png", readme)
         self.assertNotIn("examples/styles/clean/preview.png", readme_pt)
         self.assertIn('<img src="mascot.png" width="140"', readme)

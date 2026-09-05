@@ -21,8 +21,8 @@ The families are `clean`, `classic`, `modern`, `compact`, `clean-executive`,
 lines, for example `modern-alt`.
 
 `init` refuses to overwrite an existing project. It creates a user-owned empty
-`career.yml`, fictional examples, the local SQLite index, export directories, and
-reserved directories for future capabilities.
+`career.yml`, fictional examples, export directories, and reserved directories for
+future capabilities.
 
 ## Important files
 
@@ -38,7 +38,6 @@ reserved directories for future capabilities.
 | `i18n/<locale>.yml.example` | Fictional application translation catalog |
 | `seriemacv.yml.example` | Fictional configuration example |
 | `exports/resume.*` | Generated artifacts; never canonical data |
-| `.seriemacv/index/` | Internal local SQLite state |
 | `jobs/` | Local structured job documents and their preserved sources |
 
 ## Configuration
@@ -70,7 +69,7 @@ seriemacv validate .\my-career
 ```
 
 When `path` is omitted, the current directory is validated. This command checks the
-configuration, required directories, required artifacts, and local SQLite index. It
-does not validate whether the resume content is complete.
+configuration, required directories, and required artifacts. It does not validate
+whether the resume content is complete.
 
 For content validation, continue with [Career Builder](career-builder.md).

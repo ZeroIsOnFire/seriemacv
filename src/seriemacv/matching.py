@@ -39,9 +39,35 @@ _DIMENSIONS: tuple[MatchDimension, ...] = (
     "other_constraints",
 )
 _STOP_WORDS = {
-    "a", "an", "and", "are", "as", "at", "be", "com", "de", "do", "e",
-    "em", "for", "have", "in", "is", "of", "or", "para", "required", "the",
-    "to", "with", "experience", "professional", "must", "ter", "uma", "um",
+    "a",
+    "an",
+    "and",
+    "are",
+    "as",
+    "at",
+    "be",
+    "com",
+    "de",
+    "do",
+    "e",
+    "em",
+    "for",
+    "have",
+    "in",
+    "is",
+    "of",
+    "or",
+    "para",
+    "required",
+    "the",
+    "to",
+    "with",
+    "experience",
+    "professional",
+    "must",
+    "ter",
+    "uma",
+    "um",
 }
 _TOKEN_PATTERN = re.compile(r"[\w+#.]+", re.UNICODE)
 _CONFLICT_PATTERN = re.compile(r"\b(no|not|without|sem|n[aã]o)\b", re.IGNORECASE)
@@ -128,16 +154,32 @@ def extract_requirements(job: JobDocument) -> list[JobRequirement]:
         if normalized.rstrip(":").casefold() in {"requirements", "requisitos"}:
             continue
         lowered = normalized.casefold()
-        if any(marker in lowered for marker in ("must", "required", "requirement", "necessário", "necessaria", "obrigatório", "obrigatoria")):
+        if any(
+            marker in lowered
+            for marker in (
+                "must",
+                "required",
+                "requirement",
+                "necessário",
+                "necessaria",
+                "obrigatório",
+                "obrigatoria",
+            )
+        ):
             candidates.append(normalized)
     if not candidates:
         for sentence in re.split(r"(?<=[.!?])\s+", job.description):
             normalized = sentence.strip()
-            if normalized and any(marker in normalized.casefold() for marker in ("must", "required", "necessário", "obrigatório")):
+            if normalized and any(
+                marker in normalized.casefold()
+                for marker in ("must", "required", "necessário", "obrigatório")
+            ):
                 candidates.append(normalized)
     used_ids: set[str] = set()
     return [
-        JobRequirement(id=_requirement_id(item, used_ids), statement=item, priority="required")
+        JobRequirement(
+            id=_requirement_id(item, used_ids), statement=item, priority="required"
+        )
         for item in candidates
     ]
 
@@ -155,26 +197,43 @@ def match_job(
     matched = [_match_requirement(item, evidence) for item in extract_requirements(job)]
     dimension_scores: dict[MatchDimension, list[float]] = defaultdict(list)
     for item in matched:
-        dimension_scores[item.dimension].append(_classification_value(item.classification))
+        dimension_scores[item.dimension].append(
+            _classification_value(item.classification)
+        )
     dimensions = {
         dimension: round(sum(values) / len(values), 2)
         for dimension, values in sorted(dimension_scores.items())
     }
-    present_weight = sum(getattr(effective_weights, dimension) for dimension in dimensions)
+    present_weight = sum(
+        getattr(effective_weights, dimension) for dimension in dimensions
+    )
     total = (
         round(
-            sum(dimensions[dimension] * getattr(effective_weights, dimension) for dimension in dimensions)
+            sum(
+                dimensions[dimension] * getattr(effective_weights, dimension)
+                for dimension in dimensions
+            )
             / present_weight,
             2,
         )
-        if present_weight else 0.0
+        if present_weight
+        else 0.0
     )
-    gaps = [item.id for item in matched if item.classification == MatchClassification.NO_EVIDENCE]
-    conflicts = [item.id for item in matched if item.classification == MatchClassification.CONFLICT]
+    gaps = [
+        item.id
+        for item in matched
+        if item.classification == MatchClassification.NO_EVIDENCE
+    ]
+    conflicts = [
+        item.id
+        for item in matched
+        if item.classification == MatchClassification.CONFLICT
+    ]
     notes = [
         f"Discuss evidence for {item.id}: {item.explanation}"
         for item in matched
-        if item.classification in {MatchClassification.PARTIAL_MATCH, MatchClassification.TRANSFERABLE}
+        if item.classification
+        in {MatchClassification.PARTIAL_MATCH, MatchClassification.TRANSFERABLE}
     ]
     return MatchReport(
         job_id=job.id,
@@ -194,7 +253,9 @@ def dump_match_report(report: MatchReport) -> str:
     return stream.getvalue()
 
 
-def _match_requirement(requirement: JobRequirement, evidence: list[CareerEvidence]) -> MatchedRequirement:
+def _match_requirement(
+    requirement: JobRequirement, evidence: list[CareerEvidence]
+) -> MatchedRequirement:
     terms = _terms(requirement.id.replace("-", " ") + " " + requirement.statement)
     dimension = requirement.dimension or _infer_dimension(requirement)
     candidates: list[tuple[CareerEvidence, set[str], bool]] = []
@@ -206,10 +267,27 @@ def _match_requirement(requirement: JobRequirement, evidence: list[CareerEvidenc
             candidates.append((item, overlap, tag_match))
     candidates.sort(key=lambda candidate: candidate[0].id)
     if not candidates:
-        return _matched(requirement, dimension, MatchClassification.NO_EVIDENCE, [], "No verified evidence contains the requirement terms.")
-    conflicting = [item for item, overlap, _ in candidates if overlap and _CONFLICT_PATTERN.search(" ".join([item.statement, *item.details]))]
+        return _matched(
+            requirement,
+            dimension,
+            MatchClassification.NO_EVIDENCE,
+            [],
+            "No verified evidence contains the requirement terms.",
+        )
+    conflicting = [
+        item
+        for item, overlap, _ in candidates
+        if overlap
+        and _CONFLICT_PATTERN.search(" ".join([item.statement, *item.details]))
+    ]
     if conflicting:
-        return _matched(requirement, dimension, MatchClassification.CONFLICT, conflicting, "Verified evidence explicitly contradicts this requirement.")
+        return _matched(
+            requirement,
+            dimension,
+            MatchClassification.CONFLICT,
+            conflicting,
+            "Verified evidence explicitly contradicts this requirement.",
+        )
     supporting = [item for item, _, _ in candidates]
     combined_overlap = set().union(*(overlap for _, overlap, _ in candidates))
     text = " ".join(" ".join([item.statement, *item.details]) for item in supporting)
@@ -253,13 +331,31 @@ def _terms(value: str) -> set[str]:
 
 def _infer_dimension(requirement: JobRequirement) -> MatchDimension:
     text = (requirement.id + " " + requirement.statement).casefold()
-    if any(term in text for term in ("english", "portuguese", "language", "idioma", "inglês")):
+    if any(
+        term in text
+        for term in ("english", "portuguese", "language", "idioma", "inglês")
+    ):
         return "language"
-    if any(term in text for term in ("remote", "location", "timezone", "time zone", "localização", "horário")):
+    if any(
+        term in text
+        for term in (
+            "remote",
+            "location",
+            "timezone",
+            "time zone",
+            "localização",
+            "horário",
+        )
+    ):
         return "location_schedule"
-    if any(term in text for term in ("senior", "years", "anos", "leadership", "liderança")):
+    if any(
+        term in text for term in ("senior", "years", "anos", "leadership", "liderança")
+    ):
         return "experience_seniority"
-    if any(term in text for term in ("responsib", "build", "operate", "deliver", "desenvolv", "operar")):
+    if any(
+        term in text
+        for term in ("responsib", "build", "operate", "deliver", "desenvolv", "operar")
+    ):
         return "responsibilities"
     return "core_technical_fit"
 

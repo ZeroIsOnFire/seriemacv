@@ -74,7 +74,7 @@ from seriemacv.proposals import (
     validate_proposal,
     write_proposal_request,
 )
-from seriemacv.renderer import ResumeRenderError, write_resume
+from seriemacv.renderer import ResumeRenderError, is_resume_current, write_resume
 from seriemacv.studio import create_studio_server
 from seriemacv.styles import STYLE_IDS, list_styles
 from seriemacv.variants import (
@@ -96,8 +96,12 @@ def build_parser() -> argparse.ArgumentParser:
 
     init_parser = subparsers.add_parser("init", help="Create a local career project")
     init_parser.add_argument("path", type=Path)
-    init_parser.add_argument("--name", required=True, help="Human-readable project name")
-    init_parser.add_argument("--language", default="pt-BR", help="Default BCP 47 resume locale")
+    init_parser.add_argument(
+        "--name", required=True, help="Human-readable project name"
+    )
+    init_parser.add_argument(
+        "--language", default="pt-BR", help="Default BCP 47 resume locale"
+    )
     init_parser.add_argument("--style", choices=STYLE_IDS, default="clean")
 
     validate_parser = subparsers.add_parser(
@@ -118,18 +122,26 @@ def build_parser() -> argparse.ArgumentParser:
     diagnostics_bundle.add_argument("--output", type=Path, required=True)
 
     career_parser = subparsers.add_parser("career", help="Manage canonical career data")
-    career_subparsers = career_parser.add_subparsers(dest="career_command", required=True)
+    career_subparsers = career_parser.add_subparsers(
+        dest="career_command", required=True
+    )
 
     career_validate = career_subparsers.add_parser(
         "validate", help="Validate career.yml and report actionable diagnostics"
     )
     career_validate.add_argument("path", nargs="?", type=Path, default=Path.cwd())
 
-    locale_parser = career_subparsers.add_parser("locale", help="Manage localized resume content")
-    locale_subparsers = locale_parser.add_subparsers(dest="locale_command", required=True)
+    locale_parser = career_subparsers.add_parser(
+        "locale", help="Manage localized resume content"
+    )
+    locale_subparsers = locale_parser.add_subparsers(
+        dest="locale_command", required=True
+    )
     locale_list = locale_subparsers.add_parser("list", help="List available locales")
     locale_list.add_argument("path", type=Path)
-    locale_validate = locale_subparsers.add_parser("validate", help="Validate one locale")
+    locale_validate = locale_subparsers.add_parser(
+        "validate", help="Validate one locale"
+    )
     locale_validate.add_argument("path", type=Path)
     locale_validate.add_argument("--language", required=True)
 
@@ -145,7 +157,9 @@ def build_parser() -> argparse.ArgumentParser:
         "portfolio",
     ):
         profile_parser.add_argument(f"--{field}")
-    profile_parser.add_argument("--link", action="append", default=[], metavar="NAME=URL")
+    profile_parser.add_argument(
+        "--link", action="append", default=[], metavar="NAME=URL"
+    )
 
     _add_experience_parser(career_subparsers)
     _add_education_parser(career_subparsers)
@@ -158,16 +172,31 @@ def build_parser() -> argparse.ArgumentParser:
     list_parser.add_argument("path", type=Path)
     list_parser.add_argument(
         "section",
-        choices=("profile", "experience", "education", "skills", "evidence", "answers", "stories"),
+        choices=(
+            "profile",
+            "experience",
+            "education",
+            "skills",
+            "evidence",
+            "answers",
+            "stories",
+        ),
     )
 
     resume_parser = subparsers.add_parser("resume", help="Render resume artifacts")
-    resume_subparsers = resume_parser.add_subparsers(dest="resume_command", required=True)
+    resume_subparsers = resume_parser.add_subparsers(
+        dest="resume_command", required=True
+    )
     render_parser = resume_subparsers.add_parser(
         "render", help="Render an ATS-safe resume from career.yml"
     )
     render_parser.add_argument("path", type=Path)
-    render_parser.add_argument("--format", choices=("markdown", "html", "pdf", "docx"), required=True, action="append")
+    render_parser.add_argument(
+        "--format",
+        choices=("markdown", "html", "pdf", "docx"),
+        required=True,
+        action="append",
+    )
     render_parser.add_argument("--style", choices=STYLE_IDS)
     render_parser.add_argument("--language")
     render_parser.add_argument("--variant")
@@ -183,9 +212,15 @@ def build_parser() -> argparse.ArgumentParser:
     search_evidence_parser.add_argument("--tag", action="append", default=[])
     search_evidence_parser.add_argument("--experience-id")
 
-    applications_parser = subparsers.add_parser("applications", help="Manage local, reviewable job applications")
-    applications_subparsers = applications_parser.add_subparsers(dest="applications_command", required=True)
-    application_create = applications_subparsers.add_parser("create", help="Create a local application record")
+    applications_parser = subparsers.add_parser(
+        "applications", help="Manage local, reviewable job applications"
+    )
+    applications_subparsers = applications_parser.add_subparsers(
+        dest="applications_command", required=True
+    )
+    application_create = applications_subparsers.add_parser(
+        "create", help="Create a local application record"
+    )
     application_create.add_argument("path", type=Path)
     application_create.add_argument("--id", required=True)
     application_create.add_argument("--job-id", required=True)
@@ -193,56 +228,101 @@ def build_parser() -> argparse.ArgumentParser:
     application_create.add_argument("--url", default="")
     application_create.add_argument("--attachment", action="append", default=[])
     application_create.add_argument("--cover-letter-path")
-    application_list = applications_subparsers.add_parser("list", help="List application records")
+    application_list = applications_subparsers.add_parser(
+        "list", help="List application records"
+    )
     application_list.add_argument("path", type=Path)
-    application_validate = applications_subparsers.add_parser("validate", help="Validate application records")
+    application_validate = applications_subparsers.add_parser(
+        "validate", help="Validate application records"
+    )
     application_validate.add_argument("path", type=Path)
-    application_show = applications_subparsers.add_parser("show", help="Print one application record")
+    application_show = applications_subparsers.add_parser(
+        "show", help="Print one application record"
+    )
     application_show.add_argument("path", type=Path)
     application_show.add_argument("id")
-    application_status = applications_subparsers.add_parser("set-status", help="Transition an application status")
+    application_status = applications_subparsers.add_parser(
+        "set-status", help="Transition an application status"
+    )
     application_status.add_argument("path", type=Path)
     application_status.add_argument("id")
-    application_status.add_argument("status", choices=("saved", "preparing", "needs_user_input", "ready_for_review", "applied", "recruiter", "interview", "offer", "rejected", "withdrawn"))
-    application_prepare = applications_subparsers.add_parser("prepare", help="Prepare a generic browser form without submitting it")
+    application_status.add_argument(
+        "status",
+        choices=(
+            "saved",
+            "preparing",
+            "needs_user_input",
+            "ready_for_review",
+            "applied",
+            "recruiter",
+            "interview",
+            "offer",
+            "rejected",
+            "withdrawn",
+        ),
+    )
+    application_prepare = applications_subparsers.add_parser(
+        "prepare", help="Prepare a generic browser form without submitting it"
+    )
     application_prepare.add_argument("path", type=Path)
     application_prepare.add_argument("id")
     application_prepare.add_argument("--interactive", action="store_true")
     application_prepare.add_argument("--ai-assisted", action="store_true")
-    application_questions = applications_subparsers.add_parser("questions", help="List unresolved application questions")
+    application_questions = applications_subparsers.add_parser(
+        "questions", help="List unresolved application questions"
+    )
     application_questions.add_argument("path", type=Path)
     application_questions.add_argument("id")
-    application_answer = applications_subparsers.add_parser("apply-answer", help="Explicitly apply a proposed or supplied answer")
+    application_answer = applications_subparsers.add_parser(
+        "apply-answer", help="Explicitly apply a proposed or supplied answer"
+    )
     application_answer.add_argument("path", type=Path)
     application_answer.add_argument("id")
-    application_answer.add_argument("question-id")
+    application_answer.add_argument("question_id")
     application_answer.add_argument("--answer")
     application_answer.add_argument("--save-answer-id")
     application_answer.add_argument("--save-prompt")
-    application_browser = applications_subparsers.add_parser("clear-browser-profile", help="Delete the isolated browser profile for this project")
+    application_answer.add_argument("--save-role-scope", action="append", default=[])
+    application_answer.add_argument(
+        "--save-language-scope", action="append", default=[]
+    )
+    application_browser = applications_subparsers.add_parser(
+        "clear-browser-profile",
+        help="Delete the isolated browser profile for this project",
+    )
     application_browser.add_argument("path", type=Path)
-    application_ai_request = applications_subparsers.add_parser("ai-request", help="Write a minimal AI assistance request for detected form fields")
+    application_ai_request = applications_subparsers.add_parser(
+        "ai-request",
+        help="Write a minimal AI assistance request for detected form fields",
+    )
     application_ai_request.add_argument("path", type=Path)
     application_ai_request.add_argument("id")
     application_ai_request.add_argument("--request-id", required=True)
     application_ai_request.add_argument("--output", type=Path, required=True)
     application_ai_preview = applications_subparsers.add_parser(
-        "ai-preview", help="Print the exact minimal AI assistance context without writing it"
+        "ai-preview",
+        help="Print the exact minimal AI assistance context without writing it",
     )
     application_ai_preview.add_argument("path", type=Path)
     application_ai_preview.add_argument("id")
     application_ai_preview.add_argument("--request-id", required=True)
-    application_ai_review = applications_subparsers.add_parser("ai-review", help="Validate and show an AI application response")
+    application_ai_review = applications_subparsers.add_parser(
+        "ai-review", help="Validate and show an AI application response"
+    )
     application_ai_review.add_argument("path", type=Path)
     application_ai_review.add_argument("request", type=Path)
     application_ai_review.add_argument("response", type=Path)
-    application_ai_apply = applications_subparsers.add_parser("ai-apply", help="Persist explicitly accepted AI application proposals")
+    application_ai_apply = applications_subparsers.add_parser(
+        "ai-apply", help="Persist explicitly accepted AI application proposals"
+    )
     application_ai_apply.add_argument("path", type=Path)
     application_ai_apply.add_argument("request", type=Path)
     application_ai_apply.add_argument("response", type=Path)
     application_ai_apply.add_argument("--accept", action="append", required=True)
 
-    jobs_parser = subparsers.add_parser("jobs", help="Manage structured local job documents")
+    jobs_parser = subparsers.add_parser(
+        "jobs", help="Manage structured local job documents"
+    )
     jobs_subparsers = jobs_parser.add_subparsers(dest="jobs_command", required=True)
     _add_job_parser(jobs_subparsers)
     _add_job_import_parser(jobs_subparsers)
@@ -259,7 +339,9 @@ def build_parser() -> argparse.ArgumentParser:
     match_parser.add_argument("path", type=Path)
     match_parser.add_argument("job_id")
 
-    studio_parser = subparsers.add_parser("studio", help="Start the local read-only Studio")
+    studio_parser = subparsers.add_parser(
+        "studio", help="Start the local read-only Studio"
+    )
     studio_parser.add_argument("path", type=Path)
     studio_parser.add_argument("--port", type=int, default=8765)
     variants_parser = resume_subparsers.add_parser(
@@ -323,11 +405,15 @@ def build_parser() -> argparse.ArgumentParser:
         "show", help="Print a structured YAML template for an external tool"
     )
     template_show.add_argument("path", type=Path)
-    template_show.add_argument("name", choices=("career", "job", "variant", "variant-locale"))
+    template_show.add_argument(
+        "name", choices=("career", "job", "variant", "variant-locale")
+    )
     return parser
 
 
-def _add_experience_parser(subparsers: argparse._SubParsersAction[argparse.ArgumentParser]) -> None:
+def _add_experience_parser(
+    subparsers: argparse._SubParsersAction[argparse.ArgumentParser],
+) -> None:
     parser = subparsers.add_parser("add-experience", help="Add an experience record")
     parser.add_argument("path", type=Path)
     parser.add_argument("--id", required=True)
@@ -336,7 +422,9 @@ def _add_experience_parser(subparsers: argparse._SubParsersAction[argparse.Argum
     parser.add_argument("--end-date")
 
 
-def _add_education_parser(subparsers: argparse._SubParsersAction[argparse.ArgumentParser]) -> None:
+def _add_education_parser(
+    subparsers: argparse._SubParsersAction[argparse.ArgumentParser],
+) -> None:
     parser = subparsers.add_parser("add-education", help="Add an education record")
     parser.add_argument("path", type=Path)
     parser.add_argument("--id", required=True)
@@ -345,17 +433,25 @@ def _add_education_parser(subparsers: argparse._SubParsersAction[argparse.Argume
     parser.add_argument("--end-date")
 
 
-def _add_skill_parser(subparsers: argparse._SubParsersAction[argparse.ArgumentParser]) -> None:
+def _add_skill_parser(
+    subparsers: argparse._SubParsersAction[argparse.ArgumentParser],
+) -> None:
     parser = subparsers.add_parser("add-skill", help="Add a skill record")
     parser.add_argument("path", type=Path)
     parser.add_argument("--id", required=True)
-    parser.add_argument("--level", choices=("beginner", "intermediate", "advanced", "expert"))
+    parser.add_argument(
+        "--level", choices=("beginner", "intermediate", "advanced", "expert")
+    )
     parser.add_argument("--core", action="store_true")
     parser.add_argument("--tag", action="append", default=[])
 
 
-def _add_evidence_parser(subparsers: argparse._SubParsersAction[argparse.ArgumentParser]) -> None:
-    parser = subparsers.add_parser("add-evidence", help="Add verified or pending evidence")
+def _add_evidence_parser(
+    subparsers: argparse._SubParsersAction[argparse.ArgumentParser],
+) -> None:
+    parser = subparsers.add_parser(
+        "add-evidence", help="Add verified or pending evidence"
+    )
     parser.add_argument("path", type=Path)
     parser.add_argument("--id", required=True)
     parser.add_argument("--statement", required=True)
@@ -365,7 +461,9 @@ def _add_evidence_parser(subparsers: argparse._SubParsersAction[argparse.Argumen
     parser.add_argument("--verified", action="store_true")
 
 
-def _add_answer_parser(subparsers: argparse._SubParsersAction[argparse.ArgumentParser]) -> None:
+def _add_answer_parser(
+    subparsers: argparse._SubParsersAction[argparse.ArgumentParser],
+) -> None:
     parser = subparsers.add_parser("add-answer", help="Add a reusable saved answer")
     parser.add_argument("path", type=Path)
     parser.add_argument("--id", required=True)
@@ -375,7 +473,9 @@ def _add_answer_parser(subparsers: argparse._SubParsersAction[argparse.ArgumentP
     parser.add_argument("--evidence-id", action="append", default=[])
 
 
-def _add_story_parser(subparsers: argparse._SubParsersAction[argparse.ArgumentParser]) -> None:
+def _add_story_parser(
+    subparsers: argparse._SubParsersAction[argparse.ArgumentParser],
+) -> None:
     parser = subparsers.add_parser("add-story", help="Add a reusable structured story")
     parser.add_argument("path", type=Path)
     parser.add_argument("--id", required=True)
@@ -386,21 +486,31 @@ def _add_story_parser(subparsers: argparse._SubParsersAction[argparse.ArgumentPa
     parser.add_argument("--evidence-id", action="append", default=[])
 
 
-def _add_job_parser(subparsers: argparse._SubParsersAction[argparse.ArgumentParser]) -> None:
+def _add_job_parser(
+    subparsers: argparse._SubParsersAction[argparse.ArgumentParser],
+) -> None:
     parser = subparsers.add_parser("add", help="Add a job from explicit fields")
     parser.add_argument("path", type=Path)
     _add_job_fields(parser, required_identity=True)
     parser.add_argument("--description", required=True)
 
 
-def _add_job_import_parser(subparsers: argparse._SubParsersAction[argparse.ArgumentParser]) -> None:
-    parser = subparsers.add_parser("import", help="Import a structured local JSON or YAML job")
+def _add_job_import_parser(
+    subparsers: argparse._SubParsersAction[argparse.ArgumentParser],
+) -> None:
+    parser = subparsers.add_parser(
+        "import", help="Import a structured local JSON or YAML job"
+    )
     parser.add_argument("path", type=Path)
     parser.add_argument("source", type=Path)
 
 
-def _add_job_read_parsers(subparsers: argparse._SubParsersAction[argparse.ArgumentParser]) -> None:
-    validate = subparsers.add_parser("validate", help="Validate one or all job documents")
+def _add_job_read_parsers(
+    subparsers: argparse._SubParsersAction[argparse.ArgumentParser],
+) -> None:
+    validate = subparsers.add_parser(
+        "validate", help="Validate one or all job documents"
+    )
     validate.add_argument("path", type=Path)
     validate.add_argument("--id")
     list_parser = subparsers.add_parser("list", help="Print validated job documents")
@@ -410,7 +520,9 @@ def _add_job_read_parsers(subparsers: argparse._SubParsersAction[argparse.Argume
     show.add_argument("id")
 
 
-def _add_job_fields(parser: argparse.ArgumentParser, *, required_identity: bool) -> None:
+def _add_job_fields(
+    parser: argparse.ArgumentParser, *, required_identity: bool
+) -> None:
     parser.add_argument("--id", required=required_identity)
     parser.add_argument("--title", required=required_identity)
     parser.add_argument("--company", default="")
@@ -500,7 +612,11 @@ def _run_career_command(args: argparse.Namespace) -> int:
         diagnostics = validate_locale(project_path, args.language)
         if diagnostics:
             for diagnostic in diagnostics:
-                _print_error(diagnostic.format(project_path / "career.locales" / f"{args.language}.yml"))
+                _print_error(
+                    diagnostic.format(
+                        project_path / "career.locales" / f"{args.language}.yml"
+                    )
+                )
             return 1
         print(f"Valid locale document: {args.language}")
         return 0
@@ -518,42 +634,88 @@ def _run_career_command(args: argparse.Namespace) -> int:
         if args.career_command == "set-profile":
             values = {
                 key: getattr(args, key)
-            for key in (
-                    "name", "email", "phone", "linkedin", "portfolio",
+                for key in (
+                    "name",
+                    "email",
+                    "phone",
+                    "linkedin",
+                    "portfolio",
                 )
             }
             if args.link:
                 values["links"] = _key_values(args.link, "--link")
             set_profile(career_path, values)
         elif args.career_command == "add-experience":
-            add_record(career_path, "experience", {
-                "id": args.id, "company": args.company, "start_date": args.start_date, "end_date": args.end_date,
-            })
+            add_record(
+                career_path,
+                "experience",
+                {
+                    "id": args.id,
+                    "company": args.company,
+                    "start_date": args.start_date,
+                    "end_date": args.end_date,
+                },
+            )
         elif args.career_command == "add-education":
-            add_record(career_path, "education", {
-                "id": args.id, "institution": args.institution, "start_date": args.start_date, "end_date": args.end_date,
-            })
+            add_record(
+                career_path,
+                "education",
+                {
+                    "id": args.id,
+                    "institution": args.institution,
+                    "start_date": args.start_date,
+                    "end_date": args.end_date,
+                },
+            )
         elif args.career_command == "add-skill":
-            add_record(career_path, "skills", {
-                "id": args.id, "tags": args.tag, "level": args.level, "core": args.core,
-            })
+            add_record(
+                career_path,
+                "skills",
+                {
+                    "id": args.id,
+                    "tags": args.tag,
+                    "level": args.level,
+                    "core": args.core,
+                },
+            )
         elif args.career_command == "add-evidence":
-            add_record(career_path, "evidence", {
-                "id": args.id, "statement": args.statement,
-                "experience_id": args.experience_id, "tags": args.tag,
-                "details": args.detail, "verified": args.verified,
-            })
+            add_record(
+                career_path,
+                "evidence",
+                {
+                    "id": args.id,
+                    "statement": args.statement,
+                    "experience_id": args.experience_id,
+                    "tags": args.tag,
+                    "details": args.detail,
+                    "verified": args.verified,
+                },
+            )
         elif args.career_command == "add-answer":
-            add_record(career_path, "answers", {
-                "id": args.id, "prompt": args.prompt, "answer": args.answer,
-                "tags": args.tag, "evidence_ids": args.evidence_id,
-            })
+            add_record(
+                career_path,
+                "answers",
+                {
+                    "id": args.id,
+                    "prompt": args.prompt,
+                    "answer": args.answer,
+                    "tags": args.tag,
+                    "evidence_ids": args.evidence_id,
+                },
+            )
         elif args.career_command == "add-story":
-            add_record(career_path, "stories", {
-                "id": args.id, "title": args.title, "situation": args.situation,
-                "action": args.action, "result": args.result,
-                "evidence_ids": args.evidence_id,
-            })
+            add_record(
+                career_path,
+                "stories",
+                {
+                    "id": args.id,
+                    "title": args.title,
+                    "situation": args.situation,
+                    "action": args.action,
+                    "result": args.result,
+                    "evidence_ids": args.evidence_id,
+                },
+            )
         elif args.career_command == "list":
             print(dump_section(list_section(career_path, args.section)), end="")
             return 0
@@ -598,7 +760,9 @@ def _run_proposal_command(args: argparse.Namespace) -> int:
         diagnostics = validate_proposal(project_path, request, response)
         if diagnostics:
             for diagnostic in diagnostics:
-                _print_error(f"{args.response}: {diagnostic.path}: {diagnostic.message}")
+                _print_error(
+                    f"{args.response}: {diagnostic.path}: {diagnostic.message}"
+                )
             return 1
         if args.proposal_command == "review":
             print(dump_proposal_diff(diff_proposal(response)), end="")
@@ -674,8 +838,10 @@ def _run_resume_command(args: argparse.Namespace) -> int:
             or (variant.style if variant else None)
             or configuration.resume_style
         )
-        output_paths = [
-            write_resume(
+        output_paths = []
+        output_states = []
+        for output_format in args.format:
+            cached = is_resume_current(
                 project_path,
                 career,
                 locale,
@@ -684,12 +850,32 @@ def _run_resume_command(args: argparse.Namespace) -> int:
                 resume_color=configuration.resume_color,
                 variant_id=args.variant,
             )
-            for output_format in args.format
-        ]
-    except (OSError, ResumeRenderError, ValueError, ValidationError, YAMLError) as error:
+            output_paths.append(
+                write_resume(
+                    project_path,
+                    career,
+                    locale,
+                    output_format,
+                    style_id=style_id,
+                    resume_color=configuration.resume_color,
+                    variant_id=args.variant,
+                )
+            )
+            output_states.append("cached" if cached else "rendered")
+    except (
+        OSError,
+        ResumeRenderError,
+        ValueError,
+        ValidationError,
+        YAMLError,
+    ) as error:
         _print_error(f"{career_path}: {error}")
         return 1
-    print(f"Rendered {', '.join(item.upper() for item in args.format)} resume using {style_id}: {', '.join(str(path) for path in output_paths)}")
+    outputs = ", ".join(
+        f"{output_format.upper()} ({state}): {path}"
+        for output_format, state, path in zip(args.format, output_states, output_paths)
+    )
+    print(f"Resume using {style_id}: {outputs}")
     return 0
 
 
@@ -697,10 +883,17 @@ def _run_applications_command(args: argparse.Namespace) -> int:
     project_path = args.path.expanduser().resolve()
     try:
         if args.applications_command == "create":
-            saved = create_application(project_path, ApplicationDocument(
-                id=args.id, job_id=args.job_id, variant_id=args.variant_id, url=args.url,
-                attachments=args.attachment, cover_letter_path=args.cover_letter_path,
-            ))
+            saved = create_application(
+                project_path,
+                ApplicationDocument(
+                    id=args.id,
+                    job_id=args.job_id,
+                    variant_id=args.variant_id,
+                    url=args.url,
+                    attachments=args.attachment,
+                    cover_letter_path=args.cover_letter_path,
+                ),
+            )
             print(f"Saved application document: {saved}")
             return 0
         if args.applications_command == "list":
@@ -718,19 +911,43 @@ def _run_applications_command(args: argparse.Namespace) -> int:
             print(dump_application(load_application(project_path, args.id)), end="")
             return 0
         if args.applications_command == "set-status":
-            print(dump_application(update_status(project_path, args.id, args.status)), end="")
+            print(
+                dump_application(update_status(project_path, args.id, args.status)),
+                end="",
+            )
             return 0
         if args.applications_command == "questions":
             print(dump_application(pending_questions(project_path, args.id)), end="")
             return 0
         if args.applications_command == "apply-answer":
-            print(dump_application(apply_answer(
-                project_path, args.id, args.question_id, args.answer,
-                save_answer_id=args.save_answer_id, save_prompt=args.save_prompt,
-            )), end="")
+            print(
+                dump_application(
+                    apply_answer(
+                        project_path,
+                        args.id,
+                        args.question_id,
+                        args.answer,
+                        save_answer_id=args.save_answer_id,
+                        save_prompt=args.save_prompt,
+                        save_role_scope=args.save_role_scope,
+                        save_language_scope=args.save_language_scope,
+                    )
+                ),
+                end="",
+            )
             return 0
         if args.applications_command == "prepare":
-            print(dump_application(prepare_application(project_path, args.id, interactive=args.interactive, ai_assisted=args.ai_assisted)), end="")
+            print(
+                dump_application(
+                    prepare_application(
+                        project_path,
+                        args.id,
+                        interactive=args.interactive,
+                        ai_assisted=args.ai_assisted,
+                    )
+                ),
+                end="",
+            )
             return 0
         if args.applications_command == "ai-request":
             request = create_ai_request(project_path, args.request_id, args.id)
@@ -738,17 +955,35 @@ def _run_applications_command(args: argparse.Namespace) -> int:
             print(f"Wrote application AI request: {args.output.expanduser().resolve()}")
             return 0
         if args.applications_command == "ai-preview":
-            print(dump_ai(create_ai_request(project_path, args.request_id, args.id)), end="")
+            print(
+                dump_ai(create_ai_request(project_path, args.request_id, args.id)),
+                end="",
+            )
             return 0
         if args.applications_command == "ai-review":
             request = load_ai_request(args.request.expanduser().resolve())
             response = load_ai_response(args.response.expanduser().resolve())
-            print(dump_ai([item.__dict__ for item in validate_ai_response(project_path, request, response)]), end="")
+            print(
+                dump_ai(
+                    [
+                        item.__dict__
+                        for item in validate_ai_response(
+                            project_path, request, response
+                        )
+                    ]
+                ),
+                end="",
+            )
             return 0
         if args.applications_command == "ai-apply":
             request = load_ai_request(args.request.expanduser().resolve())
             response = load_ai_response(args.response.expanduser().resolve())
-            print(dump_application(apply_ai_response(project_path, request, response, args.accept)), end="")
+            print(
+                dump_application(
+                    apply_ai_response(project_path, request, response, args.accept)
+                ),
+                end="",
+            )
             return 0
         if args.applications_command == "clear-browser-profile":
             clear_browser_profile(project_path)
@@ -766,7 +1001,9 @@ def _run_jobs_command(args: argparse.Namespace) -> int:
         if args.jobs_command == "validate":
             if args.id:
                 document_path = job_path(project_path, args.id)
-                diagnostics = [(document_path, item) for item in validate_job(document_path)]
+                diagnostics = [
+                    (document_path, item) for item in validate_job(document_path)
+                ]
             else:
                 diagnostics = validate_jobs(project_path)
             if diagnostics:
@@ -803,7 +1040,10 @@ def _run_jobs_command(args: argparse.Namespace) -> int:
 
             stream = StringIO()
             YAML().dump(
-                [item.model_dump(mode="python") for item in extract_requirements(load_job(document_path))],
+                [
+                    item.model_dump(mode="python")
+                    for item in extract_requirements(load_job(document_path))
+                ],
                 stream,
             )
             print(stream.getvalue(), end="")
@@ -869,7 +1109,9 @@ def _run_studio_command(args: argparse.Namespace) -> int:
 
 def _job_payload_from_args(args: argparse.Namespace) -> JobImportPayload:
     requirements = _requirements_from_args(args.requirement, "required")
-    requirements.extend(_requirements_from_args(args.preferred_requirement, "preferred"))
+    requirements.extend(
+        _requirements_from_args(args.preferred_requirement, "preferred")
+    )
     return JobImportPayload(
         schema_version=1,
         id=args.id,
@@ -892,7 +1134,9 @@ def _requirements_from_args(values: list[str], priority: str) -> list[dict[str, 
         identifier, separator, statement = value.partition("=")
         if not separator or not identifier or not statement:
             raise ValueError("requirements must use ID=TEXT")
-        requirements.append({"id": identifier, "statement": statement, "priority": priority})
+        requirements.append(
+            {"id": identifier, "statement": statement, "priority": priority}
+        )
     return requirements
 
 

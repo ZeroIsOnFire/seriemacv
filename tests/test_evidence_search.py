@@ -1,13 +1,12 @@
-import sqlite3
 import tempfile
 import unittest
-from contextlib import closing, redirect_stderr, redirect_stdout
+from contextlib import redirect_stderr, redirect_stdout
 from io import StringIO
 from pathlib import Path
 
 from seriemacv.cli import main
 from seriemacv.evidence_search import search_verified_evidence
-from seriemacv.project import create_project, open_project
+from seriemacv.project import create_project
 
 
 class EvidenceSearchTests(unittest.TestCase):
@@ -20,7 +19,8 @@ class EvidenceSearchTests(unittest.TestCase):
 
             results = search_verified_evidence(project_path, tags=["PYTHON"])
             self.assertEqual(
-                [item.id for item in results], ["alpha-python", "beta-python", "reliable-service"]
+                [item.id for item in results],
+                ["alpha-python", "beta-python", "reliable-service"],
             )
 
             results = search_verified_evidence(
@@ -28,13 +28,18 @@ class EvidenceSearchTests(unittest.TestCase):
             )
             self.assertEqual([item.id for item in results], ["reliable-service"])
 
-    def test_synchronizes_the_disposable_index_from_manual_yaml_edits(self) -> None:
+    def test_reads_manual_yaml_edits_directly(self) -> None:
         with tempfile.TemporaryDirectory() as temporary_directory:
             project_path = _create_project(temporary_directory)
             career_path = project_path / "career.yml"
 
             self.assertEqual(
-                [item.id for item in search_verified_evidence(project_path, query="reliability")],
+                [
+                    item.id
+                    for item in search_verified_evidence(
+                        project_path, query="reliability"
+                    )
+                ],
                 ["reliable-service"],
             )
             career_path.write_text(
@@ -45,10 +50,15 @@ class EvidenceSearchTests(unittest.TestCase):
             )
 
             self.assertEqual(
-                [item.id for item in search_verified_evidence(project_path, query="incident")],
+                [
+                    item.id
+                    for item in search_verified_evidence(project_path, query="incident")
+                ],
                 ["reliable-service"],
             )
-            self.assertEqual(search_verified_evidence(project_path, query="reliability"), [])
+            self.assertEqual(
+                search_verified_evidence(project_path, query="reliability"), []
+            )
 
     def test_excludes_unverified_evidence_and_orders_ties_by_id(self) -> None:
         with tempfile.TemporaryDirectory() as temporary_directory:
@@ -57,20 +67,22 @@ class EvidenceSearchTests(unittest.TestCase):
             results = search_verified_evidence(project_path, tags=["python"])
 
             self.assertEqual(
-                [item.id for item in results], ["alpha-python", "beta-python", "reliable-service"]
+                [item.id for item in results],
+                ["alpha-python", "beta-python", "reliable-service"],
             )
             self.assertNotIn("pending-python", [item.id for item in results])
 
             results = search_verified_evidence(project_path, query="shared")
-            self.assertEqual([item.id for item in results], ["alpha-python", "beta-python"])
+            self.assertEqual(
+                [item.id for item in results], ["alpha-python", "beta-python"]
+            )
 
-    def test_rejects_missing_criteria_invalid_fts_and_invalid_career(self) -> None:
+    def test_rejects_missing_criteria_and_invalid_career(self) -> None:
         with tempfile.TemporaryDirectory() as temporary_directory:
             project_path = _create_project(temporary_directory)
             with self.assertRaisesRegex(ValueError, "Provide a text query"):
                 search_verified_evidence(project_path)
-            with self.assertRaisesRegex(ValueError, "Invalid FTS query"):
-                search_verified_evidence(project_path, query='"')
+            self.assertEqual(search_verified_evidence(project_path, query='"'), [])
 
             (project_path / "career.yml").write_text("profile: [\n", encoding="utf-8")
             with self.assertRaisesRegex(ValueError, "invalid YAML"):
@@ -80,9 +92,16 @@ class EvidenceSearchTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temporary_directory:
             project_path = _create_project(temporary_directory)
             with redirect_stdout(StringIO()) as output:
-                result = main([
-                    "career", "search-evidence", str(project_path), "python", "--tag", "reliability",
-                ])
+                result = main(
+                    [
+                        "career",
+                        "search-evidence",
+                        str(project_path),
+                        "python",
+                        "--tag",
+                        "reliability",
+                    ]
+                )
             self.assertEqual(result, 0)
             self.assertIn("id: reliable-service", output.getvalue())
 
@@ -90,23 +109,6 @@ class EvidenceSearchTests(unittest.TestCase):
                 result = main(["career", "search-evidence", str(project_path)])
             self.assertEqual(result, 1)
             self.assertIn("Provide a text query", error.getvalue())
-
-    def test_opening_a_v1_index_migrates_it_to_fts5(self) -> None:
-        with tempfile.TemporaryDirectory() as temporary_directory:
-            project_path = _create_project(temporary_directory)
-            database_path = project_path / ".seriemacv/index/seriemacv.db"
-            with closing(sqlite3.connect(database_path)) as connection:
-                with connection:
-                    connection.execute("DROP TABLE evidence_fts")
-                    connection.execute("DELETE FROM schema_migrations WHERE version = 2")
-
-            project = open_project(project_path)
-            self.assertEqual(project.database_schema_version, 2)
-            with closing(sqlite3.connect(database_path)) as connection:
-                row = connection.execute(
-                    "SELECT name FROM sqlite_master WHERE name = 'evidence_fts'"
-                ).fetchone()
-            self.assertIsNotNone(row)
 
 
 def _create_project(temporary_directory: str) -> Path:

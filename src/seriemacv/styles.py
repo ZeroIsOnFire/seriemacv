@@ -32,6 +32,9 @@ ResumeStyleId = Literal[
     "left-rail-alt",
     "detail-sidebar",
     "detail-sidebar-alt",
+    "split-header-clean",
+    "compact-executive",
+    "compact-executive-alt",
 ]
 ResumeLayout = Literal["single-column", "two-column", "timeline"]
 MarkdownVariant = Literal[
@@ -57,6 +60,7 @@ STYLE_FAMILIES: tuple[str, ...] = (
     "contact-band",
     "left-rail",
     "detail-sidebar",
+    "compact-executive",
 )
 
 STYLE_IDS: tuple[ResumeStyleId, ...] = (
@@ -82,6 +86,9 @@ STYLE_IDS: tuple[ResumeStyleId, ...] = (
     "left-rail-alt",
     "detail-sidebar",
     "detail-sidebar-alt",
+    "split-header-clean",
+    "compact-executive",
+    "compact-executive-alt",
 )
 
 

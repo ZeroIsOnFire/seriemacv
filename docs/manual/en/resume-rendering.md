@@ -99,6 +99,15 @@ Rendering another style in the same format replaces that format's previous artif
 Other formats are untouched. If validation or generation fails, an existing artifact
 is preserved.
 
+The canonical PDF uses a content-addressed cache under
+`.seriemacv/cache/resume/`. Before launching Chromium, the renderer compares a
+signature of all canonical and localized career data, locale, style, color, and style assets with the
+existing PDF signature. If they match, the PDF is reused and the CLI reports
+`PDF (cached)`. YAML or presentation changes invalidate the cache automatically, so
+no manually maintained update timestamp is needed. Even non-printed data, such as
+evidence, invalidates the cache when changed. Variant PDFs remain separate and
+do not use the canonical cache.
+
 ## Content rules
 
 - Experience and education are sorted in reverse chronology.

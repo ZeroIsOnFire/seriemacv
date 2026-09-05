@@ -17,10 +17,11 @@ experience:
     location: Remote
     employment_type: Full-time
     start_date: 2022-03
-    highlights:
-      - Led delivery of a documented service used by multiple internal teams.
+    bullets:
       - Improved deployment reliability through automated checks and observability.
       - Mentored engineers through design reviews and collaborative development.
+    highlights:
+      - Led delivery of a documented service used by multiple internal teams.
   - id: example-developer
     company: Sample Technology
     title: Software Developer
@@ -28,9 +29,10 @@ experience:
     employment_type: Full-time
     start_date: 2018-01
     end_date: 2022-02
+    bullets:
+      - Expanded automated test coverage and maintained delivery pipelines.
     highlights:
       - Developed web applications and integrations with external services.
-      - Expanded automated test coverage and maintained delivery pipelines.
 education:
   - id: example-degree
     institution: Example University

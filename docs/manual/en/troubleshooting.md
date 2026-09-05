@@ -24,9 +24,9 @@ Run:
 seriemacv validate .\my-career
 ```
 
-Restore the specifically reported missing directory or artifact. Do not recreate the
-SQLite file as plain text. If the project predates the current layout, validation
-automatically recognizes the supported legacy contract.
+Restore the specifically reported missing directory or artifact. If the project
+predates the current layout, validation automatically recognizes the supported legacy
+contract. An old `.seriemacv/index/` directory is ignored and can be kept as a backup.
 
 ## Career validation fails
 
@@ -50,7 +50,7 @@ seriemacv diagnostics bundle .\my-career --output .\diagnostics.zip
 
 The ZIP contains only `diagnostics.json` with the seriemaCV version and redacted
 project-structure validation. It excludes career YAML, job and application records,
-exports, SQLite indexes, browser profiles, and AI request/response files. seriemaCV
+exports, browser profiles, and AI request/response files. seriemaCV
 does not collect or send telemetry.
 
 Dates must use `YYYY-MM`, for example `2024-01`. Current records omit `end_date`.
