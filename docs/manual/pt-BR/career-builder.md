@@ -10,7 +10,7 @@ competências. Currículos gerados nunca escrevem alterações nesses arquivos.
 | Seção canônica | Fatos em `career.yml` | Texto em `career.locales/<locale>.yml` |
 | --- | --- | --- |
 | `profile` | Nome, contato e links | Cargo, localização, idiomas e textos de trabalho |
-| `experience` | ID, empresa e datas | Cargo, localização, tipo de vínculo e destaques |
+| `experience` | ID, empresa e datas | Cargo, localização, tipo de vínculo, bullets e no máximo um highlight |
 | `education` | ID, instituição e datas | Formação, área, localização e destaques |
 | `skills` | ID, nível, tags e prioridade editorial | Nome de exibição e categoria |
 | `evidence` | Suporte rastreável para declarações profissionais | Não é localizado nem impresso |
@@ -76,7 +76,8 @@ seriemacv career add-experience .\minha-carreira `
 
 `--id`, `--company` e `--start-date` são obrigatórios. Omita `--end-date` para o
 vínculo atual. Depois adicione o mesmo ID em `experience` em cada locale de carreira
-necessário, com o cargo e os destaques factuais.
+necessário, com o cargo, os bullets comuns e no máximo um highlight factual. Se
+nenhuma realização estiver explicitamente destacada na fonte, omita `highlights`.
 
 ## Adicionar formação
 
@@ -155,10 +156,10 @@ seriemacv career search-evidence .\minha-carreira confiabilidade
 seriemacv career search-evidence .\minha-carreira --tag python --experience-id empresa-exemplo-senior
 ```
 
-O índice lexical local é reconstruído a partir de `career.yml` antes de cada busca.
-Ela retorna somente evidências marcadas como `verified: true`; evidências pendentes
-nunca aparecem nos resultados. Informe texto, um ou mais filtros `--tag` ou
-`--experience-id`. Tags repetidas são combinadas, e a saída é YAML validado.
+A busca lê `career.yml` diretamente. Ela retorna somente evidências marcadas como
+`verified: true`; evidências pendentes nunca aparecem nos resultados. Informe texto,
+um ou mais filtros `--tag` ou `--experience-id`. Tags repetidas são combinadas, e a
+saída é YAML validado.
 
 ## Inspecionar seções
 

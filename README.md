@@ -19,7 +19,31 @@ See the [complete usage guide](docs/manual/en/index.md) for installation, projec
 configuration, every Career Builder command, resume formats, templates, and
 troubleshooting.
 
-## Career Builder
+## Seriema with AI
+
+Use an AI agent with the local project path and a clear request. For example:
+
+```text
+Create a Seriema project at .\my-career. I will attach my resume; extract only its
+stated facts into a proposed career.yml and wait for my review before saving it.
+```
+
+```text
+Import this job: https://careers.example.com/jobs/123.
+Validate it, analyze compatibility with my career, and research a salary expectation.
+```
+
+```text
+Let's apply to platform-engineer. My expectation is BRL 20,000.
+Confirm the compatibility analysis first, prepare the correct resume and answers,
+then open the application in Playwright for me to review.
+```
+
+The agent must ground claims in verified career evidence, ask before using sensitive
+answers, and never submit without explicit authorization. See [Using Seriema with
+an AI agent](docs/manual/en/using-ai.md) for complete examples.
+
+## Seriema CLI
 
 ```powershell
 seriemacv init .\my-career --name "My career" --language en --style modern
@@ -58,6 +82,11 @@ seriemacv resume render .\my-career --variant platform-role --format pdf
 render without changing the project. Every format atomically replaces its fixed
 `exports/resume.*` artifact. PDF requires local Chromium:
 `python -m playwright install chromium`.
+
+Canonical PDFs use a content-addressed cache. When localized data, locale, style,
+color, and style assets are unchanged, the command reuses
+`exports/resume.<locale>.pdf` without launching Chromium. Any input change
+invalidates the cache. Job-specific variants are always rendered separately.
 
 `resume_color` sets the RGB color for configurable visual styles, including `modern`,
 `clean-executive`, `timeline`, `sidebar`, `split-header`, `contact-band`, `left-rail`,
@@ -105,12 +134,13 @@ are localized during rendering. The profile also accepts explicit HTTP(S) URLs i
 ## Local verification
 
 ```powershell
-$env:PYTHONPATH = 'src'
-python -m unittest discover -s tests -v
-python -m ruff check src tests scripts
+python scripts/check_quality.py
 ```
 
-Install development tools with `python -m pip install -e ".[dev]"`.
+Install development tools with `python -m pip install -e ".[dev]"`. The gate compiles
+the source tree, checks lint and formatting, checks the typed module baseline, and
+runs the complete unit suite. CI additionally runs `python -m pip check` in a clean
+Python 3.11 and 3.12 matrix.
 
 ## License
 

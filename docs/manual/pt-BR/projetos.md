@@ -21,8 +21,8 @@ As famílias são `clean`, `classic`, `modern`, `compact`, `clean-executive`,
 divisórias nas seções, por exemplo `modern-alt`.
 
 `init` recusa sobrescrever um projeto existente. Ele cria um `career.yml` vazio e
-pertencente ao usuário, exemplos fictícios, o índice SQLite local, diretórios de
-exportação e diretórios reservados para funcionalidades futuras.
+pertencente ao usuário, exemplos fictícios, diretórios de exportação e diretórios
+reservados para funcionalidades futuras.
 
 ## Arquivos importantes
 
@@ -38,7 +38,6 @@ exportação e diretórios reservados para funcionalidades futuras.
 | `i18n/<locale>.yml.example` | Catálogo fictício de traduções da aplicação |
 | `seriemacv.yml.example` | Exemplo fictício de configuração |
 | `exports/resume.*` | Artefatos gerados; nunca são dados canônicos |
-| `.seriemacv/index/` | Estado SQLite interno e local |
 | `jobs/` | Documentos estruturados locais de vagas e suas fontes preservadas |
 
 ## Configuração
@@ -71,7 +70,7 @@ seriemacv validate .\minha-carreira
 ```
 
 Quando `path` é omitido, o diretório atual é validado. O comando verifica configuração,
-diretórios, artefatos obrigatórios e o índice SQLite local. Ele não verifica se o
-conteúdo do currículo está completo.
+diretórios e artefatos obrigatórios. Ele não verifica se o conteúdo do currículo
+está completo.
 
 Para validar o conteúdo, continue em [Career Builder](career-builder.md).

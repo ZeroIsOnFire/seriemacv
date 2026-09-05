@@ -6,7 +6,7 @@ body::before { position: fixed; z-index: 0; top: 0; bottom: 0; right: {{margins_
 .page-frame > thead > tr > td, .page-frame > tfoot > tr > td { height: {{margins_mm}}mm; }
 .page-frame > tbody > tr > td { padding: 0 {{margins_mm}}mm; }
 main { position: relative; z-index: 1; max-width: {{content_width_mm}}mm; margin: auto; }
-header { text-align: {{header_alignment}}; padding: 0 0 9pt {{sidebar_offset_mm}}mm; }
+header { text-align: {{header_alignment}}; padding: 0 0 9pt; }
 h1 { margin: 0 0 2pt; color: {{primary_color}}; font-size: {{name_size_pt}}pt; }
 header p { margin: 1pt 0; }
 .resume-layout { display: grid; grid-template-columns: minmax(0, 1fr) {{sidebar_width_mm}}mm; gap: 7mm; }
@@ -17,6 +17,8 @@ header p { margin: 1pt 0; }
 h2 { margin: {{section_spacing_pt}}pt 0 4pt; color: {{primary_color}}; font-size: {{section_size_pt}}pt; }
 h3 { margin: 7pt 0 1pt; font-size: {{record_size_pt}}pt; }
 p { margin: 0 0 3pt; }
-ul { margin: 2pt 0 4pt; padding-left: 14pt; }
-article { break-inside: avoid; }
+ul { margin: 2pt 0 4pt; padding-left: 14pt; break-inside: avoid; }
+li { break-inside: avoid; overflow-wrap: anywhere; }
+h2, h3 { break-after: avoid; }
+article { break-inside: avoid; overflow-wrap: anywhere; }
 a { color: {{primary_color}}; }

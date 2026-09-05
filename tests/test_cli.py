@@ -16,10 +16,18 @@ class CliTests(unittest.TestCase):
             stdout = StringIO()
 
             with redirect_stdout(stdout):
-                result = main([
-                    "init", str(project_path), "--name", "My Career",
-                    "--language", "en", "--style", "classic",
-                ])
+                result = main(
+                    [
+                        "init",
+                        str(project_path),
+                        "--name",
+                        "My Career",
+                        "--language",
+                        "en",
+                        "--style",
+                        "classic",
+                    ]
+                )
 
             self.assertEqual(result, 0)
             self.assertIn("Created seriemaCV project", stdout.getvalue())
@@ -64,9 +72,7 @@ class CliTests(unittest.TestCase):
             self.assertIn("id: example-platform-variant", output.getvalue())
 
             with redirect_stdout(StringIO()) as output:
-                result = main(
-                    ["template", "show", str(project_path), "variant-locale"]
-                )
+                result = main(["template", "show", str(project_path), "variant-locale"])
             self.assertEqual(result, 0)
             self.assertIn("evidence_ids: [example-service]", output.getvalue())
 
@@ -130,7 +136,16 @@ class CliTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temporary_directory:
             project_path = Path(temporary_directory) / "my-career"
             with redirect_stdout(StringIO()):
-                main(["init", str(project_path), "--name", "My Career", "--language", "en"])
+                main(
+                    [
+                        "init",
+                        str(project_path),
+                        "--name",
+                        "My Career",
+                        "--language",
+                        "en",
+                    ]
+                )
             (project_path / "career.yml").write_text(
                 "schema_version: 2\nprofile: {name: Example, email: example@example.invalid}\n"
                 "experience: []\neducation: []\nskills: []\n"

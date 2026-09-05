@@ -99,6 +99,15 @@ Renderizar outro estilo no mesmo formato substitui o artefato anterior daquele
 formato. Os demais formatos não são alterados. Se a validação ou geração falhar, um
 artefato existente é preservado.
 
+O PDF canônico possui cache por conteúdo em `.seriemacv/cache/resume/`. Antes de
+abrir o Chromium, o renderer compara uma assinatura de todos os dados canônicos e localizados, idioma,
+estilo, cor e assets com a assinatura do PDF existente. Se estiverem iguais, o PDF
+é reutilizado e a CLI informa `PDF (cached)`. Edições no YAML ou mudanças de
+apresentação invalidam o cache automaticamente; não é necessário manter uma data de
+atualização manual. Mesmo dados não impressos, como evidências, invalidam o cache ao
+serem alterados. PDFs de variantes continuam sendo gerados separadamente e não
+usam o cache canônico.
+
 ## Regras de conteúdo
 
 - Experiência e formação são ordenadas em cronologia reversa.

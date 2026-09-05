@@ -20,7 +20,31 @@ Consulte o [guia completo de uso](docs/manual/pt-BR/index.md) para instalação,
 configuração de projetos, todos os comandos do Career Builder, formatos de currículo,
 templates e solução de problemas.
 
-## Career Builder
+## Seriema com IA
+
+Use um agente de IA com o caminho do projeto local e um pedido claro. Por exemplo:
+
+```text
+Crie um projeto Seriema em .\minha-carreira. Vou anexar meu currículo; extraia apenas
+os fatos presentes nele para uma proposta de career.yml e aguarde minha revisão antes de salvar.
+```
+
+```text
+Importe esta vaga: https://careers.example.com/jobs/123.
+Valide-a, analise a compatibilidade com a minha carreira e pesquise a pretensão salarial.
+```
+
+```text
+Vamos nos inscrever em platform-engineer. Minha pretensão é R$ 20.000.
+Primeiro confirme a análise de compatibilidade, prepare o currículo e as respostas
+corretos e abra a candidatura no Playwright para eu revisar.
+```
+
+O agente deve fundamentar afirmações em evidências verificadas, pedir revisão antes
+de usar respostas sensíveis e nunca enviar sem autorização explícita. Veja [Usar o
+Seriema com IA](docs/manual/pt-BR/uso-com-ia.md) para exemplos completos.
+
+## Seriema CLI
 
 ```powershell
 seriemacv init .\minha-carreira --name "Minha carreira" --language pt-BR --style modern
@@ -59,6 +83,11 @@ seriemacv resume render .\minha-carreira --variant vaga-plataforma --format pdf
 renderização sem alterar o projeto. Cada formato substitui atomicamente seu artefato
 fixo em `exports/resume.*`. PDF requer Chromium local:
 `python -m playwright install chromium`.
+
+PDFs canônicos usam cache por conteúdo. Se dados localizados, idioma, estilo, cor e
+assets continuarem iguais, o comando reutiliza `exports/resume.<locale>.pdf` sem
+abrir o Chromium. Uma alteração em qualquer entrada invalida o cache. Variantes de
+vaga são sempre renderizadas separadamente.
 
 `resume_color` define a cor RGB dos estilos configuráveis `modern`,
 `clean-executive`, `timeline`, `sidebar`, `split-header`, `contact-band`, `left-rail`
@@ -110,12 +139,13 @@ HTTP(S) explícitas em `linkedin` e `portfolio`.
 ## Verificação local
 
 ```powershell
-$env:PYTHONPATH = 'src'
-python -m unittest discover -s tests -v
-python -m ruff check src tests scripts
+python scripts/check_quality.py
 ```
 
 Instale as ferramentas de desenvolvimento com `python -m pip install -e ".[dev]"`.
+O gate compila o código, verifica lint e formatação, analisa a baseline de módulos
+tipados e executa toda a suíte unitária. O CI também roda `python -m pip check` numa
+matriz limpa com Python 3.11 e 3.12.
 
 ## Licença
 
