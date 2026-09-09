@@ -37,6 +37,9 @@ the source resume.
 When the user asks to import a job, always do all of the following:
 
 1. Import and validate the job document from the most authoritative available source.
+   Save a raw external response at most once when provenance requires it. Extract
+   bounded structured fields locally; never return a complete job-page HTML document
+   or large API response through tool output.
 2. Analyze requirements, eligibility, seniority, work model, language, and blockers.
 3. Produce an explainable compatibility report grounded only in verified evidence.
 4. Research published compensation and a market expectation, with sources or clear
@@ -84,6 +87,9 @@ When the user asks to apply:
 3. Open the form with Playwright so the user can log in, inspect prefilled values,
    and complete the process. Use a site-specific adapter when a generic form mapping
    is unreliable.
+   Inspect the form once, then batch safe fills and verification in one browser run.
+   Reuse the existing isolated profile and open session rather than refetching the
+   page or relaunching the browser for each field.
    Do not infer checkbox, radio, or select semantics from DOM order alone: bind each
    answer to its visible question and verify the selected state. Do not bypass CAPTCHA,
    anti-bot controls, authentication, rate limits, or employer eligibility checks.

@@ -31,6 +31,13 @@ source code, unless the user explicitly asks for both.
 - Separate preparation from external side effects. Never claim that a submission,
   message, upload, or status transition succeeded without direct confirmation from
   the responsible system or the user.
+- Keep model context and tool output bounded. Inspect file size and shape before
+  reading generated, minified, one-line, or externally sourced artifacts. Parse them
+  locally and return only the fields or excerpts needed; never print a whole HTML
+  page, API payload, browser dump, session log, or large YAML document.
+- Reuse validated local artifacts and concise findings instead of reopening unchanged
+  sources. Batch independent reads, cap command output, and avoid a new model round
+  trip when the next deterministic step can run in the same tool call.
 - Keep `AGENTS.md` and the profile documents concise and durable. Architecture
   decisions belong in `docs/funcionalidades.md`; implementation progress belongs in
   `docs/checklist.md`.
