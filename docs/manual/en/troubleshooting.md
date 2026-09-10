@@ -59,7 +59,8 @@ Dates must use `YYYY-MM`, for example `2024-01`. Current records omit `end_date`
 
 The CLI and MCP server record only numeric local metrics under
 `.seriemacv/metrics/operations.jsonl`. Arguments, paths, URLs, selectors, and content
-are not stored. Inspect totals and the largest results with:
+are not stored. Inspect totals, errors, largest results, slowest operations, and
+operations with the most browser calls with:
 
 ```powershell
 seriemacv diagnostics operations .\my-career --limit 10

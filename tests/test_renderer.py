@@ -9,12 +9,15 @@ from unittest.mock import patch
 
 from docx import Document
 from docx.shared import Pt, RGBColor
+from playwright.sync_api import Error as PlaywrightError
 
 from seriemacv.career import CareerDocument
 from seriemacv.cli import main
 from seriemacv.operations import OperationRecorder
 from seriemacv.project import create_project
 from seriemacv.renderer import (
+    PlaywrightPdfRenderer,
+    ResumeRenderError,
     is_resume_current,
     render_docx,
     render_html,
@@ -477,6 +480,30 @@ class MarkdownRendererTests(unittest.TestCase):
             self.assertEqual(output_path.read_bytes(), b"%PDF-fake")
             self.assertIn("Professional Experience", fake.html)
             self.assertFalse((project_path / "exports/resume.html").exists())
+
+    def test_pdf_renderer_preserves_nested_playwright_failure(self) -> None:
+        with patch(
+            "playwright.sync_api.sync_playwright",
+            side_effect=PlaywrightError(
+                "Sync API inside the asyncio loop; use the Async API instead"
+            ),
+        ):
+            with self.assertRaisesRegex(
+                ResumeRenderError, "Sync API inside the asyncio loop"
+            ) as raised:
+                PlaywrightPdfRenderer().render("<html></html>")
+
+        self.assertIsInstance(raised.exception.__cause__, PlaywrightError)
+
+    def test_pdf_renderer_reports_missing_chromium_specifically(self) -> None:
+        with patch(
+            "playwright.sync_api.sync_playwright",
+            side_effect=PlaywrightError("Executable doesn't exist"),
+        ):
+            with self.assertRaisesRegex(
+                ResumeRenderError, "playwright install chromium"
+            ):
+                PlaywrightPdfRenderer().render("<html></html>")
 
     def test_pdf_reuses_cache_when_render_inputs_are_unchanged(self) -> None:
         class FakePdf:

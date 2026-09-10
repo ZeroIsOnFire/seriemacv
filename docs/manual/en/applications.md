@@ -19,13 +19,18 @@ seriemacv applications set-status .\my-career platform-application applied
 `prepare --interactive` opens an isolated persistent browser profile at
 `.seriemacv/browser`. Login is performed manually. While the window remains open,
 use `refill`, `inspect`, and `close` in the terminal to control the same session. The
-generic preparer fills only
+`inspect` command and the final check only observe the page and update pending
+questions; only `refill` repeats fills and uploads. The generic preparer fills only
 safe profile values and non-sensitive saved answers, then creates questions for
-required unresolved fields. It never fills legal statements, work authorization,
-salary, demographic, or self-identification fields.
+required unresolved fields. Questions are persisted before upload even when a later
+step fails. It never fills legal statements, work authorization, salary, demographic,
+or self-identification fields.
 
 `prepare-job` validates the job, creates or reuses its application, selects the only
-linked variant when available, renders the required PDF, and starts preparation. Use
+linked variant when available, resolves or reuses its PDF before opening the browser,
+and starts preparation. Greenhouse comboboxes count as filled only after selecting a
+visible option with matching text and confirming the resulting value; a failed
+control remains pending without another automatic attempt in that session. Use
 `--application-id` or `--variant-id` when more than one choice exists. The `context`
 command returns only status, attachments, confirmed answers, pending questions, and
 the next action. Sensitive answers are represented only as redacted confirmations.

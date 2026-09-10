@@ -101,6 +101,9 @@ mesmo núcleo e preservam a carreira canônica.
 - [x] Detectar campos e mapear dados determinísticos de perfil.
 - [x] Agrupar opções de radio e checkbox por pergunta visível.
 - [x] Manter a sessão interativa controlável para inspecionar e preencher novamente.
+- [x] Separar inspeção de novo preenchimento e persistir perguntas antes do upload.
+- [x] Resolver anexos antes do Playwright e validar comboboxes Greenhouse com timeout
+  curto, opção correspondente e confirmação do valor selecionado.
 - [x] Integrar vaga, candidatura, variante, PDF e navegador em `prepare-job`.
 - [x] Expor contexto compacto e redigido por candidatura.
 - [x] Reutilizar respostas salvas quando aplicável.

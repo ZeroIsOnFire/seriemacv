@@ -24,6 +24,7 @@ from docx.shared import Mm, Pt, RGBColor
 from seriemacv.career import CareerDocument, Education, Experience, Skill
 from seriemacv.i18n import translate
 from seriemacv.operations import record_cache
+from seriemacv.privacy import redact_sensitive_text
 from seriemacv.styles import (
     ResumeStyleId,
     StyleManifest,
@@ -64,8 +65,13 @@ class PdfRenderer(Protocol):
 class PlaywrightPdfRenderer:
     def render(self, html: str) -> bytes:
         try:
+            from playwright.sync_api import Error as PlaywrightError
             from playwright.sync_api import sync_playwright
-
+        except ImportError as error:
+            raise ResumeRenderError(
+                "PDF rendering requires Playwright; install the project dependencies"
+            ) from error
+        try:
             with sync_playwright() as playwright:
                 browser = playwright.chromium.launch()
                 try:
@@ -76,11 +82,14 @@ class PlaywrightPdfRenderer:
                     )
                 finally:
                     browser.close()
-        except Exception as error:
-            raise ResumeRenderError(
-                "PDF rendering requires Chromium; run "
-                "'python -m playwright install chromium'"
-            ) from error
+        except (PlaywrightError, RuntimeError) as error:
+            detail = redact_sensitive_text(error)
+            if "executable doesn't exist" in str(error).casefold():
+                raise ResumeRenderError(
+                    "PDF rendering requires Chromium; run "
+                    "'python -m playwright install chromium'"
+                ) from error
+            raise ResumeRenderError(f"PDF rendering failed: {detail}") from error
 
 
 def render_markdown(

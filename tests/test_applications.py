@@ -32,10 +32,13 @@ from seriemacv.applications import (
 from seriemacv.browser import (
     BrowserField,
     _attach_documents,
+    _fill_and_persist_application_page,
+    _fill_greenhouse_combobox,
     _greenhouse_confirmed_answers,
     _greenhouse_profile_values,
     _interactive_browser_session,
     _is_greenhouse_application,
+    _prepare_resume_attachment,
     _profile_value_for_field,
     _questions_for,
     _saved_answers_for_job,
@@ -482,8 +485,15 @@ class ApplicationTests(unittest.TestCase):
     def test_greenhouse_adapter_attaches_english_resume_to_resume_field_only(
         self,
     ) -> None:
+        expected_resume = self.project / "exports" / "resume.en.pdf"
+        expected_resume.write_bytes(b"existing PDF")
         create_application(
-            self.project, ApplicationDocument(id="role-application", job_id="role")
+            self.project,
+            ApplicationDocument(
+                id="role-application",
+                job_id="role",
+                attachments=["exports/resume.en.pdf"],
+            ),
         )
 
         class Locator:
@@ -510,17 +520,7 @@ class ApplicationTests(unittest.TestCase):
                 return self.field
 
         page = Page()
-        expected_resume = self.project / "exports" / "resume.en.pdf"
-        expected_resume.write_bytes(b"existing PDF")
-        with (
-            patch(
-                "seriemacv.browser.load_localized_career",
-                return_value=SimpleNamespace(),
-            ),
-            patch(
-                "seriemacv.browser.write_resume", return_value=expected_resume
-            ) as render_resume,
-        ):
+        with patch("seriemacv.browser.write_resume") as render_resume:
             _attach_documents(
                 page,
                 [],
@@ -532,9 +532,9 @@ class ApplicationTests(unittest.TestCase):
 
         self.assertEqual(page.selector, "input#resume, input[name='resume']")
         self.assertEqual(page.field.files, [str(expected_resume)])
-        render_resume.assert_called_once()
+        render_resume.assert_not_called()
 
-    def test_generic_adapter_refreshes_a_canonical_resume_attachment(self) -> None:
+    def test_generic_adapter_uploads_without_rendering_inside_browser(self) -> None:
         expected_resume = self.project / "exports" / "resume.en.pdf"
         expected_resume.write_bytes(b"existing PDF")
         create_application(
@@ -565,10 +565,7 @@ class ApplicationTests(unittest.TestCase):
                 return self.field
 
         page = Page()
-        with patch(
-            "seriemacv.browser._resume_attachment_for_job",
-            return_value=expected_resume,
-        ) as refresh_resume:
+        with patch("seriemacv.browser.write_resume") as render_resume:
             _attach_documents(
                 page,
                 [BrowserField("resume", 0, "Resume", True, "file", False)],
@@ -577,8 +574,147 @@ class ApplicationTests(unittest.TestCase):
                 job=SimpleNamespace(language="English"),
             )
 
-        refresh_resume.assert_called_once()
+        render_resume.assert_not_called()
         self.assertEqual(page.field.files, [str(expected_resume)])
+
+    def test_resume_attachment_is_reused_before_browser_launch(self) -> None:
+        expected_resume = self.project / "exports" / "resume.en.pdf"
+        expected_resume.write_bytes(b"existing PDF")
+        create_application(
+            self.project,
+            ApplicationDocument(
+                id="role-application",
+                job_id="role",
+                attachments=["exports/resume.en.pdf"],
+            ),
+        )
+
+        with patch("seriemacv.browser.write_resume") as render_resume:
+            document = _prepare_resume_attachment(
+                self.project,
+                load_application(self.project, "role-application"),
+                SimpleNamespace(language="English"),
+            )
+
+        self.assertEqual(document.attachments, ["exports/resume.en.pdf"])
+        render_resume.assert_not_called()
+
+    def test_greenhouse_combobox_requires_exact_option_and_selected_value(
+        self,
+    ) -> None:
+        class Control:
+            def __init__(self) -> None:
+                self.value = ""
+                self.timeouts: list[int] = []
+
+            def count(self) -> int:
+                return 1
+
+            def get_attribute(self, name: str) -> str | None:
+                return "country-options" if name == "aria-controls" else None
+
+            def fill(self, value: str, *, timeout: int) -> None:
+                self.value = value
+                self.timeouts.append(timeout)
+
+            def input_value(self) -> str:
+                return self.value
+
+        class Options:
+            def __init__(self, control: Control, labels: list[str]) -> None:
+                self.control = control
+                self.labels = labels
+                self.index = 0
+                self.click_timeout = 0
+
+            def all_inner_texts(self) -> list[str]:
+                return self.labels
+
+            def nth(self, index: int) -> "Options":
+                self.index = index
+                return self
+
+            def click(self, *, timeout: int) -> None:
+                self.click_timeout = timeout
+                self.control.value = self.labels[self.index]
+
+        class Page:
+            def __init__(self, labels: list[str]) -> None:
+                self.control = Control()
+                self.options = Options(self.control, labels)
+                self.wait_timeout = 0
+
+            def locator(self, selector: str) -> object:
+                return self.control if selector == "#country" else self.options
+
+            def wait_for_selector(
+                self, selector: str, *, state: str, timeout: int
+            ) -> None:
+                self.wait_timeout = timeout
+
+        valid = Page(["Canada", "Brazil"])
+        invalid = Page(["Brazil (+55)"])
+        failed: set[str] = set()
+
+        self.assertTrue(
+            _fill_greenhouse_combobox(
+                valid, "#country", "Brazil", failed=failed, failure_key="country"
+            )
+        )
+        self.assertEqual(valid.control.timeouts, [2_000])
+        self.assertEqual(valid.wait_timeout, 2_000)
+        self.assertEqual(valid.options.click_timeout, 2_000)
+        self.assertFalse(
+            _fill_greenhouse_combobox(
+                invalid, "#country", "Brazil", failed=failed, failure_key="phone"
+            )
+        )
+        self.assertIn("phone", failed)
+
+        invalid.control.timeouts.clear()
+        self.assertFalse(
+            _fill_greenhouse_combobox(
+                invalid, "#country", "Brazil", failed=failed, failure_key="phone"
+            )
+        )
+        self.assertEqual(invalid.control.timeouts, [])
+
+    def test_questions_are_persisted_before_attachment_failure(self) -> None:
+        create_application(
+            self.project, ApplicationDocument(id="role-application", job_id="role")
+        )
+        document = load_application(self.project, "role-application")
+        fields = [BrowserField("source", 0, "How did you hear?", True, "text", False)]
+
+        def persist(discovered: list[BrowserField], filled: set[str]) -> None:
+            replace_questions(
+                self.project,
+                document.id,
+                _questions_for(discovered, document, filled),
+            )
+
+        with (
+            patch("seriemacv.browser._inspect_application_page", return_value=fields),
+            patch("seriemacv.browser._fill_known", return_value=set()),
+            patch(
+                "seriemacv.browser._attach_documents",
+                side_effect=RuntimeError("upload failed"),
+            ),
+        ):
+            with self.assertRaisesRegex(RuntimeError, "upload failed"):
+                _fill_and_persist_application_page(
+                    SimpleNamespace(),
+                    self.project,
+                    document,
+                    SimpleNamespace(seniority="", language="English"),
+                    failed_comboboxes=set(),
+                    persisted=persist,
+                )
+
+        saved = load_application(self.project, "role-application")
+        self.assertEqual(
+            [question.field_id for question in saved.questions], ["source"]
+        )
 
     def test_browser_preparation_waits_for_client_rendered_form_controls(self) -> None:
         class Page:
@@ -609,11 +745,15 @@ class ApplicationTests(unittest.TestCase):
             calls.append("refill")
             return [], set()
 
+        def inspect() -> tuple[list[BrowserField], set[str]]:
+            calls.append("inspect")
+            return [], set()
+
         with patch("builtins.input", side_effect=["refill", "inspect", "close"]):
             with redirect_stdout(StringIO()):
-                _interactive_browser_session(refill)
+                _interactive_browser_session(refill, inspect)
 
-        self.assertEqual(calls, ["refill", "refill"])
+        self.assertEqual(calls, ["refill", "inspect"])
 
     def test_application_context_is_compact_and_redacts_sensitive_answers(self) -> None:
         create_application(

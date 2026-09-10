@@ -317,6 +317,10 @@ confirmação de uma revisão aprovada pelo usuário.
 - Adaptadores de plataforma somente depois de fluxo genérico robusto.
 - Armazenamento e exclusão explícita de cookies/perfis por projeto.
 - A sessão interativa aceita inspeção e novo preenchimento na mesma janela.
+- Inspeção e fechamento não repetem preenchimentos; perguntas descobertas são
+  persistidas antes do upload e comboboxes exigem confirmação da opção selecionada.
+- PDFs são resolvidos antes de iniciar o Playwright da candidatura, evitando sessões
+  síncronas aninhadas e reutilizando anexos locais existentes.
 - `prepare-job` coordena seleção da candidatura, variante, PDF e navegador; `context`
   expõe apenas os dados necessários para a próxima etapa.
 - CLI e MCP registram métricas operacionais sem conteúdo em `.seriemacv/metrics`;

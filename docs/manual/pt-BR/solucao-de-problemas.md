@@ -57,7 +57,8 @@ Datas devem usar `YYYY-MM`, como `2024-01`. Registros atuais omitem `end_date`.
 
 CLI e MCP registram apenas métricas numéricas locais em
 `.seriemacv/metrics/operations.jsonl`. Argumentos, caminhos, URLs, seletores e
-conteúdo não são gravados. Consulte os totais e as maiores saídas com:
+conteúdo não são gravados. Consulte totais, erros, maiores saídas, operações mais
+lentas e operações com mais chamadas de navegador com:
 
 ```powershell
 seriemacv diagnostics operations .\minha-carreira --limit 10

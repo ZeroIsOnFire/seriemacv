@@ -182,13 +182,24 @@ class OperationMetricsTests(unittest.TestCase):
                 project_path, "cli", "applications.context"
             ) as recorder:
                 recorder.add_output(12)
+                recorder._started -= 2
+                record_browser_call("inspection")
+                record_browser_call("fill")
+            with OperationRecorder(project_path, "cli", "applications.prepare"):
+                pass
             summary = operation_summary(project_path, limit=1)
 
-        self.assertEqual(summary["operations"], 1)
+        self.assertEqual(summary["operations"], 2)
         self.assertEqual(summary["output_bytes"], 12)
+        self.assertEqual(summary["status"], {"success": 2, "error": 0})
+        self.assertGreaterEqual(summary["duration_ms"], 2_000)
         self.assertEqual(
             summary["largest_results"][0]["operation"], "applications.context"
         )
+        self.assertEqual(
+            summary["slowest_operations"][0]["operation"], "applications.context"
+        )
+        self.assertEqual(summary["most_browser_calls"][0]["browser_calls"], 2)
 
 
 if __name__ == "__main__":

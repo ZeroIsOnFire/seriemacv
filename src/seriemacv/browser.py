@@ -8,7 +8,7 @@ import tempfile
 import unicodedata
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any
+from typing import Any, Callable
 from urllib.parse import urlparse
 
 from seriemacv.applications import (
@@ -25,7 +25,7 @@ from seriemacv.career import SavedAnswer, load_career, load_localized_career
 from seriemacv.jobs import load_job
 from seriemacv.operations import record_browser_call
 from seriemacv.project import load_project_configuration
-from seriemacv.renderer import ResumeRenderError, write_resume
+from seriemacv.renderer import write_resume
 from seriemacv.variants import list_variants, load_variant, load_variant_career
 
 _SENSITIVE = re.compile(
@@ -42,6 +42,7 @@ _PROFILE_FIELDS = {
 }
 _FORM_CONTROLS = "input, select, textarea"
 _TEXT_INPUT_TYPES = {"text", "email", "tel", "url", "textarea"}
+_COMBOBOX_TIMEOUT_MS = 2_000
 _GREENHOUSE_ANSWER_FIELDS = {
     "question-12689994007": (
         "#question_12689994007, textarea[name='question_12689994007']",
@@ -245,27 +246,57 @@ def _resume_locale_for_job(job: Any, default_locale: str) -> str:
     return "en" if job.language.casefold() == "english" else default_locale
 
 
-def _resume_attachment_for_job(project_path: Path, job: Any) -> Path:
-    configuration = load_project_configuration(project_path)
-    locale = _resume_locale_for_job(job, configuration.resume_language)
-    return write_resume(
-        project_path,
-        load_localized_career(project_path, locale),
-        locale,
-        "pdf",
-        style_id=configuration.resume_style,
-    )
-
-
-def _fill_greenhouse_combobox(page: Any, selector: str, value: str) -> bool:
+def _fill_greenhouse_combobox(
+    page: Any,
+    selector: str,
+    value: str,
+    *,
+    failed: set[str],
+    failure_key: str,
+) -> bool:
+    if failure_key in failed:
+        return False
     control = page.locator(selector)
     if not control.count():
+        failed.add(failure_key)
         return False
-    control.fill(value)
-    record_browser_call("fill")
-    control.press("ArrowDown")
-    control.press("Enter")
-    return True
+    try:
+        control.fill(value, timeout=_COMBOBOX_TIMEOUT_MS)
+        record_browser_call("fill")
+        listbox_id = control.get_attribute("aria-controls") or control.get_attribute(
+            "aria-owns"
+        )
+        option_selector = "[role='listbox']:visible [role='option']"
+        if listbox_id and re.fullmatch(r"[A-Za-z0-9_-]+", listbox_id):
+            option_selector = f"#{listbox_id} [role='option']:visible"
+        page.wait_for_selector(
+            option_selector, state="visible", timeout=_COMBOBOX_TIMEOUT_MS
+        )
+        options = page.locator(option_selector)
+        expected = " ".join(value.split()).casefold()
+        matches = [
+            index
+            for index, label in enumerate(options.all_inner_texts())
+            if " ".join(label.split()).casefold() == expected
+        ]
+        if len(matches) != 1:
+            control.fill("", timeout=_COMBOBOX_TIMEOUT_MS)
+            record_browser_call("fill")
+            failed.add(failure_key)
+            return False
+        options.nth(matches[0]).click(timeout=_COMBOBOX_TIMEOUT_MS)
+        selected = " ".join(control.input_value().split()).casefold()
+        if selected != expected:
+            control.fill("", timeout=_COMBOBOX_TIMEOUT_MS)
+            record_browser_call("fill")
+            failed.add(failure_key)
+            return False
+        return True
+    except Exception as error:
+        if error.__class__.__name__ != "TimeoutError":
+            raise
+        failed.add(failure_key)
+        return False
 
 
 def _fill_greenhouse_known(
@@ -274,6 +305,7 @@ def _fill_greenhouse_known(
     project_path: Path,
     document: ApplicationDocument,
     job: Any,
+    failed_comboboxes: set[str],
 ) -> set[str]:
     configuration = load_project_configuration(project_path)
     locale = _resume_locale_for_job(job, configuration.resume_language)
@@ -296,7 +328,13 @@ def _fill_greenhouse_known(
         if field_id not in available:
             continue
         if selector in {"#country", "#candidate-location"}:
-            if _fill_greenhouse_combobox(page, selector, value):
+            if _fill_greenhouse_combobox(
+                page,
+                selector,
+                value,
+                failed=failed_comboboxes,
+                failure_key=field_id,
+            ):
                 filled.add(field_id)
             continue
         control = page.locator(selector)
@@ -310,14 +348,21 @@ def _fill_greenhouse_known(
         if field_id not in available:
             continue
         selector, _ = _GREENHOUSE_ANSWER_FIELDS[field_id]
+        if is_combobox:
+            if _fill_greenhouse_combobox(
+                page,
+                selector,
+                answer,
+                failed=failed_comboboxes,
+                failure_key=field_id,
+            ):
+                filled.add(field_id)
+            continue
         control = page.locator(selector)
         if not control.count():
             continue
         control.fill(answer)
         record_browser_call("fill")
-        if is_combobox:
-            control.press("ArrowDown")
-            control.press("Enter")
         filled.add(field_id)
     return filled
 
@@ -353,28 +398,43 @@ def _launch_isolated_context(
         )
 
 
-def _fill_application_page(
+def _inspect_application_page(page: Any) -> list[BrowserField]:
+    _wait_for_form_controls(page)
+    record_browser_call("inspection")
+    return discover_fields(page)
+
+
+def _fill_and_persist_application_page(
     page: Any,
     project_path: Path,
     document: ApplicationDocument,
     job: Any,
+    *,
+    failed_comboboxes: set[str],
+    persisted: Callable[[list[BrowserField], set[str]], None],
 ) -> tuple[list[BrowserField], set[str]]:
-    _wait_for_form_controls(page)
-    record_browser_call("inspection")
-    fields = discover_fields(page)
+    fields = _inspect_application_page(page)
     greenhouse = _is_greenhouse_application(document.url)
     filled = (
-        _fill_greenhouse_known(page, fields, project_path, document, job)
+        _fill_greenhouse_known(
+            page,
+            fields,
+            project_path,
+            document,
+            job,
+            failed_comboboxes,
+        )
         if greenhouse
         else _fill_known(page, fields, project_path, document)
     )
+    persisted(fields, filled)
     _attach_documents(
         page, fields, project_path, document, job=job, greenhouse=greenhouse
     )
     return fields, filled
 
 
-def _interactive_browser_session(refill: Any) -> None:
+def _interactive_browser_session(refill: Any, inspect: Any) -> None:
     """Keep one browser window controllable through its owning CLI process."""
     print("Browser session ready. Commands: refill, inspect, close.")
     while True:
@@ -386,7 +446,7 @@ def _interactive_browser_session(refill: Any) -> None:
             print("Known fields and attachments were filled again.")
             continue
         if command in {"", "inspect", "review"}:
-            fields, filled = refill()
+            fields, filled = inspect()
             unresolved = sum(
                 field.required
                 and field.field_id not in filled
@@ -410,6 +470,8 @@ def prepare_application(
     document = load_application(project_path, application_id)
     if not document.url:
         raise ValueError("application URL is required for browser preparation")
+    job = load_job(project_path / "jobs" / f"{document.job_id}.yml")
+    document = _prepare_resume_attachment(project_path, document, job)
     if document.status == "saved":
         document = update_status(project_path, application_id, "preparing")
     try:
@@ -424,36 +486,47 @@ def prepare_application(
             page = context.pages[0] if context.pages else context.new_page()
             record_browser_call("navigation")
             page.goto(document.url, wait_until="domcontentloaded")
-            job = load_job(project_path / "jobs" / f"{document.job_id}.yml")
-            fields, filled = _fill_application_page(page, project_path, document, job)
-            if interactive:
-                _interactive_browser_session(
-                    lambda: _fill_application_page(
-                        page,
-                        project_path,
-                        load_application(project_path, application_id),
-                        job,
-                    )
-                )
-            document = load_application(project_path, application_id)
-            if not page.is_closed():
-                fields, final_filled = _fill_application_page(
-                    page, project_path, document, job
-                )
-                filled.update(final_filled)
             career = load_career(project_path / "career.yml")
             saved_answers = _saved_answers_for_job(
                 career.answers, job.seniority, job.language
             )
-            questions = _questions_for(
-                fields,
-                document,
-                filled,
-                include_optional=ai_assisted,
-                include_optional_sensitive=not _is_greenhouse_application(document.url),
-                saved_answers=saved_answers,
-            )
-            replace_questions(project_path, application_id, questions)
+            failed_comboboxes: set[str] = set()
+
+            def persist(fields: list[BrowserField], filled: set[str]) -> None:
+                current = load_application(project_path, application_id)
+                questions = _questions_for(
+                    fields,
+                    current,
+                    filled,
+                    include_optional=ai_assisted,
+                    include_optional_sensitive=not _is_greenhouse_application(
+                        current.url
+                    ),
+                    saved_answers=saved_answers,
+                )
+                replace_questions(project_path, application_id, questions)
+
+            def refill() -> tuple[list[BrowserField], set[str]]:
+                current = load_application(project_path, application_id)
+                return _fill_and_persist_application_page(
+                    page,
+                    project_path,
+                    current,
+                    job,
+                    failed_comboboxes=failed_comboboxes,
+                    persisted=persist,
+                )
+
+            def inspect() -> tuple[list[BrowserField], set[str]]:
+                fields = _inspect_application_page(page)
+                persist(fields, set())
+                return fields, set()
+
+            refill()
+            if interactive:
+                _interactive_browser_session(refill, inspect)
+                if not page.is_closed():
+                    inspect()
             return load_application(project_path, application_id)
         finally:
             try:
@@ -544,31 +617,7 @@ def prepare_job_application(
             variant_id=chosen_variant if selected.variant_id is None else None,
         )
 
-    if not selected.attachments:
-        configuration = load_project_configuration(project_path)
-        locale = _resume_locale_for_job(job, configuration.resume_language)
-        if selected.variant_id:
-            variant, career = load_variant_career(
-                project_path, selected.variant_id, locale
-            )
-            style_id = variant.style or configuration.resume_style
-        else:
-            career = load_localized_career(project_path, locale)
-            style_id = configuration.resume_style
-        resume = write_resume(
-            project_path,
-            career,
-            locale,
-            "pdf",
-            style_id=style_id,
-            resume_color=configuration.resume_color,
-            variant_id=selected.variant_id,
-        )
-        selected = configure_application(
-            project_path,
-            selected.id,
-            attachments=[resume.relative_to(project_path).as_posix()],
-        )
+    selected = _prepare_resume_attachment(project_path, selected, job)
 
     return prepare_application(
         project_path,
@@ -639,6 +688,45 @@ def _normalized_language_scope(language: str) -> str:
     return aliases.get(normalized, normalized)
 
 
+def _prepare_resume_attachment(
+    project_path: Path,
+    document: ApplicationDocument,
+    job: Any,
+) -> ApplicationDocument:
+    """Resolve a reusable PDF before entering a Playwright browser session."""
+    existing = [
+        project_path / relative_path
+        for relative_path in document.attachments
+        if Path(relative_path).suffix.casefold() == ".pdf"
+        and (project_path / relative_path).is_file()
+    ]
+    if existing:
+        return document
+
+    configuration = load_project_configuration(project_path)
+    locale = _resume_locale_for_job(job, configuration.resume_language)
+    if document.variant_id:
+        variant, career = load_variant_career(project_path, document.variant_id, locale)
+        style_id = variant.style or configuration.resume_style
+    else:
+        career = load_localized_career(project_path, locale)
+        style_id = configuration.resume_style
+    resume = write_resume(
+        project_path,
+        career,
+        locale,
+        "pdf",
+        style_id=style_id,
+        resume_color=configuration.resume_color,
+        variant_id=document.variant_id,
+    )
+    relative_resume = resume.relative_to(project_path).as_posix()
+    attachments = [*document.attachments]
+    if relative_resume not in attachments:
+        attachments.append(relative_resume)
+    return configure_application(project_path, document.id, attachments=attachments)
+
+
 def _attach_documents(
     page: Any,
     fields: list[BrowserField],
@@ -648,8 +736,17 @@ def _attach_documents(
     job: Any | None = None,
     greenhouse: bool = False,
 ) -> None:
-    if greenhouse and job is not None:
-        resume = _resume_attachment_for_job(project_path, job)
+    attachments = [
+        project_path / path
+        for path in document.attachments
+        if (project_path / path).is_file()
+    ]
+    if greenhouse:
+        resume = next(
+            (path for path in attachments if path.suffix.casefold() == ".pdf"), None
+        )
+        if resume is None:
+            return
         field = page.locator("input#resume, input[name='resume']").first
         if field.count():
             field.set_input_files([str(resume)])
@@ -658,41 +755,7 @@ def _attach_documents(
     upload_fields = [field for field in fields if field.input_type == "file"]
     if not upload_fields:
         return
-    attachments = [project_path / path for path in document.attachments]
-    if not attachments and document.variant_id:
-        configuration = load_project_configuration(project_path)
-        variant, career = load_variant_career(
-            project_path, document.variant_id, configuration.resume_language
-        )
-        try:
-            attachments = [
-                write_resume(
-                    project_path,
-                    career,
-                    configuration.resume_language,
-                    "pdf",
-                    style_id=variant.style or configuration.resume_style,
-                    variant_id=document.variant_id,
-                )
-            ]
-        except ResumeRenderError:
-            # The field remains visibly unresolved for the human reviewer when
-            # Chromium is unavailable; do not replace it with another format.
-            return
     if attachments:
-        if job is not None and document.variant_id is None:
-            default_locale = load_project_configuration(project_path).resume_language
-            expected = (
-                project_path
-                / "exports"
-                / (f"resume.{_resume_locale_for_job(job, default_locale)}.pdf")
-            )
-            attachments = [
-                _resume_attachment_for_job(project_path, job)
-                if path == expected
-                else path
-                for path in attachments
-            ]
         page.locator(_FORM_CONTROLS).nth(upload_fields[0].index).set_input_files(
             [str(path) for path in attachments]
         )

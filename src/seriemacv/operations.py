@@ -190,8 +190,23 @@ def operation_summary(project_path: Path, limit: int = 10) -> dict[str, Any]:
         key=lambda item: int(item.get("output_bytes", 0)),
         reverse=True,
     )[: max(0, limit)]
+    slowest = sorted(
+        records,
+        key=lambda item: int(item.get("duration_ms", 0)),
+        reverse=True,
+    )[: max(0, limit)]
+    browser_heaviest = sorted(
+        records,
+        key=_browser_call_count,
+        reverse=True,
+    )[: max(0, limit)]
     return {
         "operations": len(records),
+        "status": {
+            "success": sum(item.get("status") == "success" for item in records),
+            "error": sum(item.get("status") == "error" for item in records),
+        },
+        "duration_ms": sum(int(item.get("duration_ms", 0)) for item in records),
         "input_bytes": sum(int(item.get("input_bytes", 0)) for item in records),
         "output_bytes": sum(int(item.get("output_bytes", 0)) for item in records),
         "error_bytes": sum(int(item.get("error_bytes", 0)) for item in records),
@@ -205,17 +220,26 @@ def operation_summary(project_path: Path, limit: int = 10) -> dict[str, Any]:
             kind: sum(int(item.get("browser", {}).get(kind, 0)) for item in records)
             for kind in _BROWSER_KINDS
         },
-        "largest_results": [
-            {
-                "timestamp": item.get("timestamp"),
-                "interface": item.get("interface"),
-                "operation": item.get("operation"),
-                "status": item.get("status"),
-                "output_bytes": item.get("output_bytes", 0),
-                "output_limit_exceeded": item.get("output_limit_exceeded", False),
-            }
-            for item in largest
-        ],
+        "largest_results": [_summary_record(item) for item in largest],
+        "slowest_operations": [_summary_record(item) for item in slowest],
+        "most_browser_calls": [_summary_record(item) for item in browser_heaviest],
+    }
+
+
+def _browser_call_count(item: dict[str, Any]) -> int:
+    return sum(int(item.get("browser", {}).get(kind, 0)) for kind in _BROWSER_KINDS)
+
+
+def _summary_record(item: dict[str, Any]) -> dict[str, Any]:
+    return {
+        "timestamp": item.get("timestamp"),
+        "interface": item.get("interface"),
+        "operation": item.get("operation"),
+        "status": item.get("status"),
+        "duration_ms": item.get("duration_ms", 0),
+        "output_bytes": item.get("output_bytes", 0),
+        "browser_calls": _browser_call_count(item),
+        "output_limit_exceeded": item.get("output_limit_exceeded", False),
     }
 
 

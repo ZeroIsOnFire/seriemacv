@@ -90,10 +90,12 @@ When the user asks to apply:
    rendered separately and do not reuse the canonical cache.
 3. Open the form with Playwright so the user can log in, inspect prefilled values,
    and complete the process. Use a site-specific adapter when a generic form mapping
-   is unreliable.
+   is unreliable. Pass `--interactive` when the user needs to see or review the form.
    Inspect the form once, then batch safe fills and verification in one browser run.
    Reuse the existing isolated profile and open session rather than refetching the
    page or relaunching the browser for each field.
+   Use `inspect` for observation and `refill` only when values or attachments must be
+   applied again; closing the session already performs a final inspection.
    Do not infer checkbox, radio, or select semantics from DOM order alone: bind each
    answer to its visible question and verify the selected state. Do not bypass CAPTCHA,
    anti-bot controls, authentication, rate limits, or employer eligibility checks.
