@@ -31,8 +31,8 @@ seriemacv resume render .\my-career --language en --format pdf --format docx
 ```powershell
 seriemacv jobs import .\my-career .\role.yml
 seriemacv match .\my-career platform-engineer
-seriemacv applications create .\my-career --id platform-application --job-id platform-engineer --url https://example.invalid/apply
-seriemacv applications prepare .\my-career platform-application --interactive
+seriemacv applications prepare-job .\my-career platform-engineer --url https://example.invalid/apply --interactive
+seriemacv applications context .\my-career platform-engineer-application
 ```
 
 The application command opens an isolated browser profile for review; it does not

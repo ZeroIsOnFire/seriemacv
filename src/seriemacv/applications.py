@@ -21,6 +21,9 @@ from seriemacv.variants import load_variant
 
 APPLICATIONS_DIRECTORY = "applications"
 _ID = re.compile(r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
+_CONTEXT_ITEMS_LIMIT = 50
+_CONTEXT_OPTIONS_LIMIT = 25
+_CONTEXT_TEXT_LIMIT = 240
 ApplicationStatus = Literal[
     "saved",
     "preparing",
@@ -66,6 +69,7 @@ class ApplicationQuestion(StrictModel):
     required: bool = True
     sensitive: bool = False
     field_id: str = Field(min_length=1)
+    options: list[str] = Field(default_factory=list)
     proposed_answer: str | None = None
     proposed_evidence_ids: list[str] = Field(default_factory=list)
 
@@ -180,6 +184,40 @@ def update_status(
     updated = document.model_copy(
         update={"status": status, "audit": [*document.audit, _audit("status", status)]}
     )
+    _write(application_path(project_path, application_id), updated)
+    return updated
+
+
+def configure_application(
+    project_path: Path,
+    application_id: str,
+    *,
+    url: str | None = None,
+    variant_id: str | None = None,
+    attachments: list[str] | None = None,
+) -> ApplicationDocument:
+    """Set preparation assets while preserving the application's review state."""
+    document = load_application(project_path, application_id)
+    update: dict[str, object] = {}
+    if url is not None:
+        update["url"] = url
+    if variant_id is not None:
+        update["variant_id"] = variant_id
+    if attachments is not None:
+        update["attachments"] = attachments
+    if not update:
+        return document
+    updated = ApplicationDocument.model_validate(
+        {
+            **document.model_dump(mode="python"),
+            **update,
+            "audit": [
+                *document.audit,
+                _audit("configured_for_preparation"),
+            ],
+        }
+    )
+    _validate_links(project_path, updated)
     _write(application_path(project_path, application_id), updated)
     return updated
 
@@ -333,6 +371,81 @@ def pending_questions(
     project_path: Path, application_id: str
 ) -> list[ApplicationQuestion]:
     return load_application(project_path, application_id).questions
+
+
+def application_context(project_path: Path, application_id: str) -> dict[str, object]:
+    """Return the bounded context needed to continue one application workflow."""
+    document = load_application(project_path, application_id)
+    answers = [
+        {
+            "field_id": item.field_id,
+            "answer": (
+                "[confirmed sensitive answer]"
+                if item.sensitive
+                else _bounded_context_text(item.answer)
+            ),
+        }
+        for item in document.answers[:_CONTEXT_ITEMS_LIMIT]
+    ]
+    questions = [
+        {
+            "id": item.id,
+            "label": _bounded_context_text(item.label),
+            "required": item.required,
+            "sensitive": item.sensitive,
+            "options": [
+                _bounded_context_text(option)
+                for option in item.options[:_CONTEXT_OPTIONS_LIMIT]
+            ],
+            "has_proposal": item.proposed_answer is not None,
+        }
+        for item in document.questions[:_CONTEXT_ITEMS_LIMIT]
+    ]
+    next_action = {
+        "saved": "prepare the application",
+        "preparing": "finish browser preparation",
+        "needs_user_input": "answer required pending questions",
+        "ready_for_review": "review the form before explicit submission",
+        "applied": "wait for an employer response",
+        "recruiter": "record the recruiter interaction",
+        "interview": "prepare for the interview",
+        "offer": "review the offer",
+        "rejected": "close the application",
+        "withdrawn": "close the application",
+    }[document.status]
+    latest = document.audit[-1] if document.audit else None
+    return {
+        "schema_version": 1,
+        "thread_key": document.job_id,
+        "application_id": document.id,
+        "job_id": document.job_id,
+        "status": document.status,
+        "variant_id": document.variant_id,
+        "attachments": document.attachments[:_CONTEXT_ITEMS_LIMIT],
+        "cover_letter_path": document.cover_letter_path,
+        "confirmed_answers": answers,
+        "pending_questions": questions,
+        "omitted": {
+            "attachments": max(0, len(document.attachments) - _CONTEXT_ITEMS_LIMIT),
+            "confirmed_answers": max(0, len(document.answers) - _CONTEXT_ITEMS_LIMIT),
+            "pending_questions": max(0, len(document.questions) - _CONTEXT_ITEMS_LIMIT),
+        },
+        "latest_event": latest.model_dump(mode="python") if latest else None,
+        "next_action": next_action,
+    }
+
+
+def _bounded_context_text(value: str) -> str:
+    normalized = " ".join(value.split())
+    if len(normalized) <= _CONTEXT_TEXT_LIMIT:
+        return normalized
+    return f"{normalized[: _CONTEXT_TEXT_LIMIT - 1]}…"
+
+
+def dump_application_context(value: dict[str, object]) -> str:
+    stream = StringIO()
+    YAML().dump(value, stream)
+    return stream.getvalue()
 
 
 def set_cover_letter_path(

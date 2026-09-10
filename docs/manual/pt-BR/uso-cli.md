@@ -31,8 +31,8 @@ seriemacv resume render .\minha-carreira --language en --format pdf --format doc
 ```powershell
 seriemacv jobs import .\minha-carreira .\vaga.yml
 seriemacv match .\minha-carreira engenheiro-plataforma
-seriemacv applications create .\minha-carreira --id candidatura-plataforma --job-id engenheiro-plataforma --url https://example.invalid/apply
-seriemacv applications prepare .\minha-carreira candidatura-plataforma --interactive
+seriemacv applications prepare-job .\minha-carreira engenheiro-plataforma --url https://example.invalid/apply --interactive
+seriemacv applications context .\minha-carreira engenheiro-plataforma-application
 ```
 
 O comando de candidatura abre um perfil isolado no navegador para revisão; ele não

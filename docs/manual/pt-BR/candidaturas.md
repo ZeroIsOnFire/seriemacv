@@ -9,16 +9,29 @@ diagnósticos.
 seriemacv applications create .\minha-carreira --id candidatura-plataforma --job-id vaga-plataforma --variant-id vaga-plataforma --url https://example.invalid/apply
 seriemacv applications validate .\minha-carreira
 seriemacv applications prepare .\minha-carreira candidatura-plataforma --interactive
+seriemacv applications prepare-job .\minha-carreira vaga-plataforma --url https://example.invalid/apply --interactive
+seriemacv applications context .\minha-carreira vaga-plataforma-application
 seriemacv applications questions .\minha-carreira candidatura-plataforma
 seriemacv applications apply-answer .\minha-carreira candidatura-plataforma question-why --answer "..." --save-answer-id por-que-plataforma
 seriemacv applications set-status .\minha-carreira candidatura-plataforma applied
 ```
 
 `prepare --interactive` abre um perfil persistente isolado em
-`.seriemacv/browser`. O login é manual. O preparador genérico preenche apenas dados
+`.seriemacv/browser`. O login é manual. Enquanto a janela estiver aberta, use os
+comandos `refill`, `inspect` e `close` no terminal para controlar a mesma sessão. O
+preparador genérico preenche apenas dados
 seguros do perfil e respostas salvas não sensíveis; os campos obrigatórios sem
 resolução tornam-se perguntas. Declarações legais, autorização de trabalho,
 salário, demografia e autoidentificação nunca são preenchidos automaticamente.
+
+`prepare-job` valida a vaga, cria ou reutiliza sua candidatura, seleciona a única
+variante vinculada quando houver, renderiza o PDF necessário e inicia a preparação.
+Use `--application-id` ou `--variant-id` quando houver mais de uma opção. O comando
+`context` retorna somente o estado, anexos, respostas confirmadas, pendências e a
+próxima ação. Respostas sensíveis aparecem apenas como confirmação redigida.
+
+Prefira uma conversa de agente por vaga e use a saída de `context` para retomar o
+trabalho sem carregar o histórico de outras candidaturas.
 
 Um agente externo via MCP pode ler candidaturas e perguntas e devolver uma proposta
 revisável. O usuário deve aplicar a resposta explicitamente na CLI; com

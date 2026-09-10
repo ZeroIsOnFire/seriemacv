@@ -5,6 +5,10 @@ matching, resume tailoring, and application preparation. Follow the detailed
 [job-analysis guideline](../docs/agent-job-analysis-guideline.md) for research and
 the reviewable analysis format.
 
+Keep one vacancy per conversation when the client supports starting a new thread.
+Resume existing work from `seriemacv applications context PATH ID` rather than
+carrying the history of unrelated vacancies into the next workflow.
+
 ## Facts and canonical data
 
 - Treat `career.yml` and verified evidence as the only source of candidate facts.

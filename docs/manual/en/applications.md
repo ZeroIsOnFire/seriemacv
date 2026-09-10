@@ -9,16 +9,29 @@ values in diagnostics.
 seriemacv applications create .\my-career --id platform-application --job-id platform-role --variant-id platform-role --url https://example.invalid/apply
 seriemacv applications validate .\my-career
 seriemacv applications prepare .\my-career platform-application --interactive
+seriemacv applications prepare-job .\my-career platform-role --url https://example.invalid/apply --interactive
+seriemacv applications context .\my-career platform-role-application
 seriemacv applications questions .\my-career platform-application
 seriemacv applications apply-answer .\my-career platform-application question-why --answer "..." --save-answer-id why-platform
 seriemacv applications set-status .\my-career platform-application applied
 ```
 
 `prepare --interactive` opens an isolated persistent browser profile at
-`.seriemacv/browser`. Login is performed manually. The generic preparer fills only
+`.seriemacv/browser`. Login is performed manually. While the window remains open,
+use `refill`, `inspect`, and `close` in the terminal to control the same session. The
+generic preparer fills only
 safe profile values and non-sensitive saved answers, then creates questions for
 required unresolved fields. It never fills legal statements, work authorization,
 salary, demographic, or self-identification fields.
+
+`prepare-job` validates the job, creates or reuses its application, selects the only
+linked variant when available, renders the required PDF, and starts preparation. Use
+`--application-id` or `--variant-id` when more than one choice exists. The `context`
+command returns only status, attachments, confirmed answers, pending questions, and
+the next action. Sensitive answers are represented only as redacted confirmations.
+
+Prefer one agent conversation per job and use `context` output to resume work without
+carrying unrelated application history.
 
 An external MCP agent can read applications and their questions and request a
 reviewable answer proposal. The user must explicitly apply an answer through the

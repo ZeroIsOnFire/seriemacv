@@ -22,6 +22,7 @@ from seriemacv.applications import (
     ApplicationDocument,
     ApplicationQuestion,
     add_questions,
+    application_context,
     apply_answer,
     create_application,
     load_application,
@@ -33,6 +34,7 @@ from seriemacv.browser import (
     _attach_documents,
     _greenhouse_confirmed_answers,
     _greenhouse_profile_values,
+    _interactive_browser_session,
     _is_greenhouse_application,
     _profile_value_for_field,
     _questions_for,
@@ -40,6 +42,7 @@ from seriemacv.browser import (
     _wait_for_form_controls,
     browser_profile_path,
     discover_fields,
+    prepare_job_application,
 )
 from seriemacv.career import SavedAnswer, load_career
 from seriemacv.cli import main
@@ -315,6 +318,92 @@ class ApplicationTests(unittest.TestCase):
             [(item.field_id, item.label) for item in fields], [("country", "Country")]
         )
 
+    def test_discovery_groups_radio_options_by_name_and_visible_question(self) -> None:
+        class Locator:
+            def evaluate_all(self, _: str) -> list[dict[str, object]]:
+                return [
+                    {
+                        "index": 0,
+                        "id": "english-basic",
+                        "name": "english-level",
+                        "label": "Basic",
+                        "groupLabel": "English proficiency",
+                        "required": True,
+                        "type": "radio",
+                        "hidden": False,
+                        "populated": False,
+                    },
+                    {
+                        "index": 1,
+                        "id": "english-advanced",
+                        "name": "english-level",
+                        "label": "Advanced",
+                        "groupLabel": "English proficiency",
+                        "required": True,
+                        "type": "radio",
+                        "hidden": False,
+                        "populated": True,
+                    },
+                ]
+
+        class Page:
+            def locator(self, _: str) -> Locator:
+                return Locator()
+
+        fields = discover_fields(Page())
+
+        self.assertEqual(len(fields), 1)
+        self.assertEqual(fields[0].field_id, "english-level")
+        self.assertEqual(fields[0].label, "English proficiency")
+        self.assertEqual(fields[0].options, ("Basic", "Advanced"))
+        self.assertTrue(fields[0].populated)
+
+    def test_populated_group_is_not_reported_as_pending(self) -> None:
+        create_application(
+            self.project, ApplicationDocument(id="role-application", job_id="role")
+        )
+        questions = _questions_for(
+            [
+                BrowserField(
+                    "english-level",
+                    0,
+                    "English proficiency",
+                    True,
+                    "radio",
+                    False,
+                    ("Basic", "Advanced"),
+                    True,
+                )
+            ],
+            load_application(self.project, "role-application"),
+            set(),
+        )
+
+        self.assertEqual(questions, [])
+
+    def test_group_options_are_preserved_in_one_pending_question(self) -> None:
+        create_application(
+            self.project, ApplicationDocument(id="role-application", job_id="role")
+        )
+        questions = _questions_for(
+            [
+                BrowserField(
+                    "english-level",
+                    0,
+                    "English proficiency",
+                    True,
+                    "radio",
+                    False,
+                    ("Basic", "Advanced"),
+                )
+            ],
+            load_application(self.project, "role-application"),
+            set(),
+        )
+
+        self.assertEqual(len(questions), 1)
+        self.assertEqual(questions[0].options, ["Basic", "Advanced"])
+
     def test_greenhouse_adapter_uses_dedicated_fields_for_location_and_linkedin(
         self,
     ) -> None:
@@ -513,6 +602,79 @@ class ApplicationTests(unittest.TestCase):
             ],
         )
 
+    def test_interactive_browser_session_refills_without_closing(self) -> None:
+        calls: list[str] = []
+
+        def refill() -> tuple[list[BrowserField], set[str]]:
+            calls.append("refill")
+            return [], set()
+
+        with patch("builtins.input", side_effect=["refill", "inspect", "close"]):
+            with redirect_stdout(StringIO()):
+                _interactive_browser_session(refill)
+
+        self.assertEqual(calls, ["refill", "refill"])
+
+    def test_application_context_is_compact_and_redacts_sensitive_answers(self) -> None:
+        create_application(
+            self.project,
+            ApplicationDocument(
+                id="role-application",
+                job_id="role",
+                answers=[
+                    ApplicationAnswer(
+                        field_id="salary",
+                        answer="10000",
+                        sensitive=True,
+                        confirmed_for_application=True,
+                    ),
+                    ApplicationAnswer(
+                        field_id="portfolio",
+                        answer="https://example.invalid/work " + ("detail " * 80),
+                        confirmed_for_application=True,
+                    ),
+                ],
+            ),
+        )
+
+        context = application_context(self.project, "role-application")
+
+        self.assertEqual(context["thread_key"], "role")
+        answers = context["confirmed_answers"]
+        self.assertEqual(
+            answers[0],
+            {"field_id": "salary", "answer": "[confirmed sensitive answer]"},
+        )
+        self.assertEqual(answers[1]["field_id"], "portfolio")
+        self.assertTrue(answers[1]["answer"].endswith("…"))
+        self.assertNotIn("10000", str(context))
+        self.assertLessEqual(len(answers[1]["answer"]), 240)
+
+    def test_prepare_job_creates_application_and_renders_resume_once(self) -> None:
+        resume = self.project / "exports" / "resume.en.pdf"
+        resume.write_bytes(b"pdf")
+        with (
+            patch("seriemacv.browser.write_resume", return_value=resume) as render,
+            patch(
+                "seriemacv.browser.load_localized_career",
+                return_value=load_career(self.project / "career.yml"),
+            ),
+            patch("seriemacv.browser.prepare_application") as prepare,
+        ):
+            prepare.side_effect = lambda project, application_id, **_: load_application(
+                project, application_id
+            )
+            document = prepare_job_application(
+                self.project,
+                "role",
+                url="https://jobs.example.invalid/role/apply",
+            )
+
+        self.assertEqual(document.id, "role-application")
+        self.assertEqual(document.attachments, ["exports/resume.en.pdf"])
+        render.assert_called_once()
+        prepare.assert_called_once()
+
     def test_cli_creates_lists_and_updates_application(self) -> None:
         with redirect_stdout(StringIO()):
             result = main(
@@ -543,6 +705,26 @@ class ApplicationTests(unittest.TestCase):
             )
         self.assertEqual(result, 0)
         self.assertIn("preparing", output.getvalue())
+
+    def test_cli_prints_bounded_application_context(self) -> None:
+        create_application(
+            self.project, ApplicationDocument(id="role-application", job_id="role")
+        )
+
+        with redirect_stdout(StringIO()) as output:
+            result = main(
+                [
+                    "applications",
+                    "context",
+                    str(self.project),
+                    "role-application",
+                ]
+            )
+
+        self.assertEqual(result, 0)
+        self.assertIn("thread_key: role", output.getvalue())
+        self.assertIn("next_action: prepare the application", output.getvalue())
+        self.assertNotIn("source:", output.getvalue())
 
     def test_cli_applies_an_explicit_application_answer(self) -> None:
         create_application(

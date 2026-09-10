@@ -303,6 +303,8 @@ preenchimento no navegador com checkpoint de revisão.
 - Preparação de sessão isolada de navegador.
 - Descoberta de campos, preenchimento determinístico e rascunhos para campos
   incertos.
+- Agrupamento de controles de escolha por pergunta e opções visíveis.
+- Contexto compacto por candidatura para continuidade em uma conversa dedicada.
 - Token/checkpoint explícito antes de submissão.
 
 **Contrato:** preparação e preenchimento não equivalem a submissão. Submeter requer
@@ -314,6 +316,9 @@ confirmação de uma revisão aprovada pelo usuário.
 - Máquina de estados persistível e observável, não um prompt único.
 - Adaptadores de plataforma somente depois de fluxo genérico robusto.
 - Armazenamento e exclusão explícita de cookies/perfis por projeto.
+- A sessão interativa aceita inspeção e novo preenchimento na mesma janela.
+- `prepare-job` coordena seleção da candidatura, variante, PDF e navegador; `context`
+  expõe apenas os dados necessários para a próxima etapa.
 - O primeiro fluxo persiste `applications/<id>.yml`, usa login manual e não
   oferece comando de submissão; o checkpoint/token fica para a etapa que introduzir
   ação externa.

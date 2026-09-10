@@ -99,6 +99,10 @@ mesmo núcleo e preservam a carreira canônica.
 - [x] Associar vaga, variante, carta e respostas à candidatura.
 - [x] Preparar sessão isolada de navegador por projeto.
 - [x] Detectar campos e mapear dados determinísticos de perfil.
+- [x] Agrupar opções de radio e checkbox por pergunta visível.
+- [x] Manter a sessão interativa controlável para inspecionar e preencher novamente.
+- [x] Integrar vaga, candidatura, variante, PDF e navegador em `prepare-job`.
+- [x] Expor contexto compacto e redigido por candidatura.
 - [x] Reutilizar respostas salvas quando aplicável.
 - [x] Criar rascunhos de IA apenas para campos incertos.
 - [x] Exigir revisão explícita antes de submeter.

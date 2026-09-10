@@ -18,16 +18,22 @@ from seriemacv.application_ai import (
 )
 from seriemacv.applications import (
     ApplicationDocument,
+    application_context,
     apply_answer,
     create_application,
     dump_application,
+    dump_application_context,
     list_applications,
     load_application,
     pending_questions,
     update_status,
     validate_applications,
 )
-from seriemacv.browser import clear_browser_profile, prepare_application
+from seriemacv.browser import (
+    clear_browser_profile,
+    prepare_application,
+    prepare_job_application,
+)
 from seriemacv.career import (
     CAREER_FILE,
     add_record,
@@ -268,6 +274,22 @@ def build_parser() -> argparse.ArgumentParser:
     application_prepare.add_argument("id")
     application_prepare.add_argument("--interactive", action="store_true")
     application_prepare.add_argument("--ai-assisted", action="store_true")
+    application_prepare_job = applications_subparsers.add_parser(
+        "prepare-job",
+        help="Resolve a job application, resume, questions, and browser in one command",
+    )
+    application_prepare_job.add_argument("path", type=Path)
+    application_prepare_job.add_argument("job_id")
+    application_prepare_job.add_argument("--application-id")
+    application_prepare_job.add_argument("--url", default="")
+    application_prepare_job.add_argument("--variant-id")
+    application_prepare_job.add_argument("--interactive", action="store_true")
+    application_prepare_job.add_argument("--ai-assisted", action="store_true")
+    application_context_parser = applications_subparsers.add_parser(
+        "context", help="Print bounded context for continuing one application"
+    )
+    application_context_parser.add_argument("path", type=Path)
+    application_context_parser.add_argument("id")
     application_questions = applications_subparsers.add_parser(
         "questions", help="List unresolved application questions"
     )
@@ -946,6 +968,29 @@ def _run_applications_command(args: argparse.Namespace) -> int:
                         ai_assisted=args.ai_assisted,
                     )
                 ),
+                end="",
+            )
+            return 0
+        if args.applications_command == "prepare-job":
+            document = prepare_job_application(
+                project_path,
+                args.job_id,
+                application_id=args.application_id,
+                url=args.url,
+                variant_id=args.variant_id,
+                interactive=args.interactive,
+                ai_assisted=args.ai_assisted,
+            )
+            print(
+                dump_application_context(
+                    application_context(project_path, document.id)
+                ),
+                end="",
+            )
+            return 0
+        if args.applications_command == "context":
+            print(
+                dump_application_context(application_context(project_path, args.id)),
                 end="",
             )
             return 0

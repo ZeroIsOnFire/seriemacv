@@ -14,6 +14,9 @@ from urllib.parse import urlparse
 from seriemacv.applications import (
     ApplicationDocument,
     ApplicationQuestion,
+    configure_application,
+    create_application,
+    list_applications,
     load_application,
     replace_questions,
     update_status,
@@ -22,7 +25,7 @@ from seriemacv.career import SavedAnswer, load_career, load_localized_career
 from seriemacv.jobs import load_job
 from seriemacv.project import load_project_configuration
 from seriemacv.renderer import ResumeRenderError, write_resume
-from seriemacv.variants import load_variant_career
+from seriemacv.variants import list_variants, load_variant, load_variant_career
 
 _SENSITIVE = re.compile(
     r"salary|compensation|pay|legal|authori[sz](ation|ed)|visa|sponsor(ship)?|work permit|sole proprietor|invoice|demographic|gender|race|ethnicity|disability|veteran|self.ident",
@@ -78,6 +81,8 @@ class BrowserField:
     required: bool
     input_type: str
     sensitive: bool
+    options: tuple[str, ...] = ()
+    populated: bool = False
 
 
 def browser_profile_path(project_path: Path) -> Path:
@@ -93,40 +98,79 @@ def clear_browser_profile(project_path: Path) -> None:
 def discover_fields(page: Any) -> list[BrowserField]:
     """Inspect generic form controls without retaining their values."""
     raw = page.locator(_FORM_CONTROLS).evaluate_all("""elements => elements.map((element, index) => {
-      const label = element.labels && element.labels.length ? element.labels[0].innerText :
+      const optionLabel = element.labels && element.labels.length ? element.labels[0].innerText :
         element.getAttribute('aria-label') || element.getAttribute('placeholder') ||
         (element.type === 'checkbox' ? element.parentElement?.innerText : '') ||
         element.name || element.id || `field-${index + 1}`;
+      const container = element.closest('fieldset, .application-question, .application-row, [role="group"]');
+      const groupLabel = container?.querySelector('legend, .application-label, [data-qa$="-label"]')?.innerText || '';
       return {
+        index,
         id: element.id || element.name || `field-${index + 1}`,
-        label,
+        name: element.name || '',
+        label: optionLabel,
+        groupLabel,
         required: element.required || element.getAttribute('aria-required') === 'true',
         type: element.type || element.tagName.toLowerCase(),
-        hidden: element.type === 'hidden' || element.getAttribute('aria-hidden') === 'true'
+        hidden: element.type === 'hidden' || element.getAttribute('aria-hidden') === 'true',
+        populated: ['radio', 'checkbox'].includes(element.type) ? element.checked : Boolean(element.value)
       };
     })""")
     fields: list[BrowserField] = []
     seen: set[str] = set()
-    for index, item in enumerate(raw):
+    grouped: dict[tuple[str, str], int] = {}
+    group_counts: dict[tuple[str, str], int] = {}
+    for item in raw:
+        input_type = str(item["type"])
+        name = str(item.get("name", ""))
+        if not item.get("hidden") and name and input_type in {"radio", "checkbox"}:
+            key = (input_type, name)
+            group_counts[key] = group_counts.get(key, 0) + 1
+    for raw_index, item in enumerate(raw):
         if item.get("hidden"):
             continue
-        field_id = (
-            re.sub(r"[^a-z0-9]+", "-", str(item["id"]).lower()).strip("-") or "field"
-        )
+        input_type = str(item["type"])
+        name = str(item.get("name", ""))
+        group_key = (input_type, name)
+        is_group = input_type == "radio" or group_counts.get(group_key, 0) > 1
+        option = str(item["label"]).strip()
+        if is_group and name and group_key in grouped:
+            position = grouped[group_key]
+            current = fields[position]
+            fields[position] = BrowserField(
+                current.field_id,
+                current.index,
+                current.label,
+                current.required or bool(item["required"]),
+                current.input_type,
+                current.sensitive or bool(_SENSITIVE.search(option)),
+                (*current.options, option)
+                if option not in current.options
+                else current.options,
+                current.populated or bool(item.get("populated")),
+            )
+            continue
+        identifier = name if is_group and name else str(item["id"])
+        field_id = re.sub(r"[^a-z0-9]+", "-", identifier.lower()).strip("-") or "field"
         if field_id in seen:
             field_id = f"{field_id}-{len(seen) + 1}"
         seen.add(field_id)
-        label = str(item["label"]).strip() or field_id
+        label = str(item.get("groupLabel", "")).strip() if is_group else option
+        label = label or (name if is_group else option) or field_id
         fields.append(
             BrowserField(
                 field_id,
-                index,
+                int(item.get("index", raw_index)),
                 label,
                 bool(item["required"]),
-                str(item["type"]),
-                bool(_SENSITIVE.search(label)),
+                input_type,
+                bool(_SENSITIVE.search(" ".join((label, option)))),
+                (option,) if is_group and option else (),
+                bool(item.get("populated")),
             )
         )
+        if is_group and name:
+            grouped[group_key] = len(fields) - 1
     return fields
 
 
@@ -305,6 +349,51 @@ def _launch_isolated_context(
         )
 
 
+def _fill_application_page(
+    page: Any,
+    project_path: Path,
+    document: ApplicationDocument,
+    job: Any,
+) -> tuple[list[BrowserField], set[str]]:
+    _wait_for_form_controls(page)
+    fields = discover_fields(page)
+    greenhouse = _is_greenhouse_application(document.url)
+    filled = (
+        _fill_greenhouse_known(page, fields, project_path, document, job)
+        if greenhouse
+        else _fill_known(page, fields, project_path, document)
+    )
+    _attach_documents(
+        page, fields, project_path, document, job=job, greenhouse=greenhouse
+    )
+    return fields, filled
+
+
+def _interactive_browser_session(refill: Any) -> None:
+    """Keep one browser window controllable through its owning CLI process."""
+    print("Browser session ready. Commands: refill, inspect, close.")
+    while True:
+        command = input("browser> ").strip().casefold()
+        if command in {"close", "done", "exit", "finish"}:
+            return
+        if command in {"refill", "fill"}:
+            refill()
+            print("Known fields and attachments were filled again.")
+            continue
+        if command in {"", "inspect", "review"}:
+            fields, filled = refill()
+            unresolved = sum(
+                field.required
+                and field.field_id not in filled
+                and not field.populated
+                and field.input_type not in {"hidden", "submit", "file"}
+                for field in fields
+            )
+            print(f"Form inspected. Unresolved required controls: {unresolved}.")
+            continue
+        print("Unknown command. Use refill, inspect, or close.")
+
+
 def prepare_application(
     project_path: Path,
     application_id: str,
@@ -329,32 +418,23 @@ def prepare_application(
         try:
             page = context.pages[0] if context.pages else context.new_page()
             page.goto(document.url, wait_until="domcontentloaded")
-            _wait_for_form_controls(page)
             job = load_job(project_path / "jobs" / f"{document.job_id}.yml")
-            fields = discover_fields(page)
-            greenhouse = _is_greenhouse_application(document.url)
-            filled = (
-                _fill_greenhouse_known(page, fields, project_path, document, job)
-                if greenhouse
-                else _fill_known(page, fields, project_path, document)
-            )
-            _attach_documents(
-                page, fields, project_path, document, job=job, greenhouse=greenhouse
-            )
+            fields, filled = _fill_application_page(page, project_path, document, job)
             if interactive:
-                input(
-                    "Review the pre-filled safe fields and complete any login, then press Enter to inspect unresolved fields: "
+                _interactive_browser_session(
+                    lambda: _fill_application_page(
+                        page,
+                        project_path,
+                        load_application(project_path, application_id),
+                        job,
+                    )
                 )
-            _wait_for_form_controls(page)
-            fields = discover_fields(page)
-            filled.update(
-                _fill_greenhouse_known(page, fields, project_path, document, job)
-                if greenhouse
-                else _fill_known(page, fields, project_path, document)
-            )
-            _attach_documents(
-                page, fields, project_path, document, job=job, greenhouse=greenhouse
-            )
+            document = load_application(project_path, application_id)
+            if not page.is_closed():
+                fields, final_filled = _fill_application_page(
+                    page, project_path, document, job
+                )
+                filled.update(final_filled)
             career = load_career(project_path / "career.yml")
             saved_answers = _saved_answers_for_job(
                 career.answers, job.seniority, job.language
@@ -364,15 +444,132 @@ def prepare_application(
                 document,
                 filled,
                 include_optional=ai_assisted,
-                include_optional_sensitive=not greenhouse,
+                include_optional_sensitive=not _is_greenhouse_application(document.url),
                 saved_answers=saved_answers,
             )
             replace_questions(project_path, application_id, questions)
             return load_application(project_path, application_id)
         finally:
-            context.close()
+            try:
+                context.close()
+            except Exception as error:
+                if error.__class__.__name__ != "TargetClosedError":
+                    raise
             if temporary_profile is not None:
                 shutil.rmtree(temporary_profile, ignore_errors=True)
+
+
+def prepare_job_application(
+    project_path: Path,
+    job_id: str,
+    *,
+    application_id: str | None = None,
+    url: str = "",
+    variant_id: str | None = None,
+    interactive: bool = False,
+    ai_assisted: bool = False,
+) -> ApplicationDocument:
+    """Resolve assets and prepare the unique application associated with a job."""
+    job = load_job(project_path / "jobs" / f"{job_id}.yml")
+    matches = [
+        item for item in list_applications(project_path) if item.job_id == job_id
+    ]
+    if application_id:
+        selected = next((item for item in matches if item.id == application_id), None)
+        if selected is None and matches:
+            raise ValueError("application id does not match the selected job")
+    elif len(matches) > 1:
+        raise ValueError(
+            "multiple applications exist for this job; provide --application-id"
+        )
+    else:
+        selected = matches[0] if matches else None
+
+    if selected is not None and selected.status in {
+        "applied",
+        "recruiter",
+        "interview",
+        "offer",
+        "rejected",
+        "withdrawn",
+    }:
+        raise ValueError(
+            f"application is already in terminal workflow state: {selected.status}"
+        )
+
+    chosen_variant = variant_id or (selected.variant_id if selected else None)
+    if chosen_variant is None:
+        candidates = [
+            item.id for item in list_variants(project_path) if item.job_id == job_id
+        ]
+        if len(candidates) > 1:
+            raise ValueError(
+                "multiple variants exist for this job; provide --variant-id"
+            )
+        chosen_variant = candidates[0] if candidates else None
+    if chosen_variant is not None:
+        variant = load_variant(project_path, chosen_variant)
+        if variant.job_id not in {None, job_id}:
+            raise ValueError("variant does not belong to the selected job")
+
+    if selected is None:
+        if not url:
+            raise ValueError("--url is required when creating a job application")
+        identifier = application_id or f"{job_id}-application"
+        create_application(
+            project_path,
+            ApplicationDocument(
+                id=identifier,
+                job_id=job_id,
+                variant_id=chosen_variant,
+                url=url,
+            ),
+        )
+        selected = load_application(project_path, identifier)
+    else:
+        if url and selected.url and url != selected.url:
+            raise ValueError("application already has a different URL")
+        if variant_id and selected.variant_id and variant_id != selected.variant_id:
+            raise ValueError("application already uses a different variant")
+        selected = configure_application(
+            project_path,
+            selected.id,
+            url=url or None,
+            variant_id=chosen_variant if selected.variant_id is None else None,
+        )
+
+    if not selected.attachments:
+        configuration = load_project_configuration(project_path)
+        locale = _resume_locale_for_job(job, configuration.resume_language)
+        if selected.variant_id:
+            variant, career = load_variant_career(
+                project_path, selected.variant_id, locale
+            )
+            style_id = variant.style or configuration.resume_style
+        else:
+            career = load_localized_career(project_path, locale)
+            style_id = configuration.resume_style
+        resume = write_resume(
+            project_path,
+            career,
+            locale,
+            "pdf",
+            style_id=style_id,
+            resume_color=configuration.resume_color,
+            variant_id=selected.variant_id,
+        )
+        selected = configure_application(
+            project_path,
+            selected.id,
+            attachments=[resume.relative_to(project_path).as_posix()],
+        )
+
+    return prepare_application(
+        project_path,
+        selected.id,
+        interactive=interactive,
+        ai_assisted=ai_assisted,
+    )
 
 
 def _fill_known(
@@ -513,6 +710,7 @@ def _questions_for(
             )
             or field.input_type in {"hidden", "submit", "file"}
             or field.field_id in resolved
+            or field.populated
         ):
             continue
         question_id = f"question-{field.field_id}"
@@ -526,6 +724,7 @@ def _questions_for(
                 context="Required field detected in the local browser session.",
                 required=field.required,
                 sensitive=field.sensitive,
+                options=list(field.options),
                 proposed_answer=proposal[0] if proposal else None,
                 proposed_evidence_ids=proposal[1] if proposal else [],
             )
