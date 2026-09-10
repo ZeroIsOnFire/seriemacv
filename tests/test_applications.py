@@ -823,7 +823,9 @@ class ApplicationTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "sensitive"):
             validate_ai_response(self.project, request, sensitive)
 
-    def test_cli_ai_preview_matches_request_without_writing(self) -> None:
+    def test_cli_ai_preview_matches_request_without_writing_domain_artifacts(
+        self,
+    ) -> None:
         create_application(
             self.project, ApplicationDocument(id="role-application", job_id="role")
         )
@@ -855,6 +857,11 @@ class ApplicationTests(unittest.TestCase):
             output.getvalue(),
             dump_ai(create_ai_request(self.project, "role-ai", "role-application")),
         )
+        after = {path.relative_to(self.project) for path in self.project.rglob("*")}
         self.assertEqual(
-            before, {path.relative_to(self.project) for path in self.project.rglob("*")}
+            after - before,
+            {
+                Path(".seriemacv/metrics"),
+                Path(".seriemacv/metrics/operations.jsonl"),
+            },
         )

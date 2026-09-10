@@ -55,6 +55,28 @@ does not collect or send telemetry.
 
 Dates must use `YYYY-MM`, for example `2024-01`. Current records omit `end_date`.
 
+## An operation produced excessive output
+
+The CLI and MCP server record only numeric local metrics under
+`.seriemacv/metrics/operations.jsonl`. Arguments, paths, URLs, selectors, and content
+are not stored. Inspect totals and the largest results with:
+
+```powershell
+seriemacv diagnostics operations .\my-career --limit 10
+```
+
+By default, the warning appears above 65,536 bytes and the latest 1,000 records are
+retained. These values can be changed without changing the project schema version:
+
+```yaml
+operation_metrics:
+  output_warning_bytes: 65536
+  max_records: 1000
+```
+
+These metrics are never transmitted and do not include Codex tokens or its internal
+cache. Reading the summary does not record another operation.
+
 ## PDF says Chromium is missing
 
 ```powershell

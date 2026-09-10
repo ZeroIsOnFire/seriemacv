@@ -118,6 +118,8 @@ mesmo núcleo e preservam a carreira canônica.
 - [x] Impedir telemetria de currículo por padrão.
 - [x] Isolar perfis e dados do navegador.
 - [x] Garantir que diagnósticos não exportem artefatos pessoais por padrão.
+- [x] Registrar métricas locais sem conteúdo para CLI, MCP, cache e navegador, com
+  retenção limitada e alerta de saída excessiva.
 - [x] Adicionar formatter, linter e análise de tipos compatíveis com a stack.
 - [x] Configurar CI para testes e verificações estáticas.
 - [x] Unificar compilação, lint, formatação, tipagem incremental e testes num gate

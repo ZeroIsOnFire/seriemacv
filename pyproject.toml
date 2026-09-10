@@ -54,6 +54,7 @@ files = [
     "src/seriemacv/i18n.py",
     "src/seriemacv/matching.py",
     "src/seriemacv/mcp.py",
+    "src/seriemacv/operations.py",
     "src/seriemacv/privacy.py",
     "src/seriemacv/project.py",
     "src/seriemacv/studio.py",

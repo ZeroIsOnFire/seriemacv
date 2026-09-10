@@ -61,6 +61,13 @@ from seriemacv.jobs import (
     validate_jobs,
 )
 from seriemacv.matching import dump_match_report, extract_requirements, match_job
+from seriemacv.operations import (
+    OperationRecorder,
+    capture_cli_output,
+    dump_operation_summary,
+    load_operation_settings,
+    utf8_size,
+)
 from seriemacv.privacy import redact_sensitive_text
 from seriemacv.project import (
     ProjectAlreadyExistsError,
@@ -126,6 +133,11 @@ def build_parser() -> argparse.ArgumentParser:
     )
     diagnostics_bundle.add_argument("path", type=Path)
     diagnostics_bundle.add_argument("--output", type=Path, required=True)
+    diagnostics_operations = diagnostics_subparsers.add_parser(
+        "operations", help="Show a content-free summary of local operation metrics"
+    )
+    diagnostics_operations.add_argument("path", type=Path)
+    diagnostics_operations.add_argument("--limit", type=int, default=10)
 
     career_parser = subparsers.add_parser("career", help="Manage canonical career data")
     career_subparsers = career_parser.add_subparsers(
@@ -562,7 +574,49 @@ def _add_job_fields(
 
 def main(arguments: list[str] | None = None) -> int:
     parser = build_parser()
-    args = parser.parse_args(arguments)
+    cli_arguments = list(sys.argv[1:] if arguments is None else arguments)
+    args = parser.parse_args(cli_arguments)
+    if args.command == "diagnostics" and args.diagnostics_command == "operations":
+        return _dispatch(parser, args)
+    project_path = getattr(args, "path", None)
+    if project_path is None:
+        return _dispatch(parser, args)
+    resolved_path = project_path.expanduser().resolve()
+    output_warning_bytes, max_records = load_operation_settings(resolved_path)
+    recorder = OperationRecorder(
+        resolved_path,
+        "cli",
+        _operation_name(args),
+        input_bytes=utf8_size("\0".join(cli_arguments)),
+        output_warning_bytes=output_warning_bytes,
+        max_records=max_records,
+    )
+    with recorder, capture_cli_output(recorder):
+        result = _dispatch(parser, args)
+        recorder.status = "success" if result == 0 else "error"
+        return result
+
+
+def _operation_name(args: argparse.Namespace) -> str:
+    parts = [args.command]
+    for attribute in (
+        "diagnostics_command",
+        "career_command",
+        "locale_command",
+        "resume_command",
+        "variants_command",
+        "applications_command",
+        "jobs_command",
+        "proposal_command",
+        "template_command",
+    ):
+        value = getattr(args, attribute, None)
+        if value:
+            parts.append(value)
+    return ".".join(parts)
+
+
+def _dispatch(parser: argparse.ArgumentParser, args: argparse.Namespace) -> int:
 
     if args.command == "init":
         try:
@@ -599,6 +653,14 @@ def main(arguments: list[str] | None = None) -> int:
         return _run_studio_command(args)
 
     if args.command == "diagnostics":
+        if args.diagnostics_command == "operations":
+            if args.limit < 0 or args.limit > 100:
+                parser.error("--limit must be between 0 and 100")
+            print(
+                dump_operation_summary(args.path.expanduser().resolve(), args.limit),
+                end="",
+            )
+            return 0
         try:
             output_path = write_diagnostic_bundle(args.path, args.output)
         except OSError as error:

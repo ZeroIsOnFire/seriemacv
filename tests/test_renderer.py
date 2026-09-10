@@ -12,6 +12,7 @@ from docx.shared import Pt, RGBColor
 
 from seriemacv.career import CareerDocument
 from seriemacv.cli import main
+from seriemacv.operations import OperationRecorder
 from seriemacv.project import create_project
 from seriemacv.renderer import (
     is_resume_current,
@@ -491,11 +492,14 @@ class MarkdownRendererTests(unittest.TestCase):
             fake = FakePdf()
             career = self._career()
 
-            first = write_resume(project_path, career, "en", "pdf", fake)
-            second = write_resume(project_path, career, "en", "pdf", fake)
+            with OperationRecorder(project_path, "cli", "resume.render") as recorder:
+                first = write_resume(project_path, career, "en", "pdf", fake)
+                second = write_resume(project_path, career, "en", "pdf", fake)
 
             self.assertEqual(first, second)
             self.assertEqual(fake.calls, 1)
+            self.assertEqual(recorder.cache_misses, 1)
+            self.assertEqual(recorder.cache_hits, 1)
             self.assertEqual(second.read_bytes(), b"%PDF-fake-1")
             self.assertTrue(is_resume_current(project_path, career, "en", "pdf"))
 

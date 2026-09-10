@@ -35,6 +35,8 @@ source code, unless the user explicitly asks for both.
   reading generated, minified, one-line, or externally sourced artifacts. Parse them
   locally and return only the fields or excerpts needed; never print a whole HTML
   page, API payload, browser dump, session log, or large YAML document.
+- When a command warns about excessive output, inspect `diagnostics operations`
+  before retrying and narrow the next read to the operation that produced it.
 - Reuse validated local artifacts and concise findings instead of reopening unchanged
   sources. Batch independent reads, cap command output, and avoid a new model round
   trip when the next deterministic step can run in the same tool call.

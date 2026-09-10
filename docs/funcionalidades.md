@@ -319,6 +319,9 @@ confirmação de uma revisão aprovada pelo usuário.
 - A sessão interativa aceita inspeção e novo preenchimento na mesma janela.
 - `prepare-job` coordena seleção da candidatura, variante, PDF e navegador; `context`
   expõe apenas os dados necessários para a próxima etapa.
+- CLI e MCP registram métricas operacionais sem conteúdo em `.seriemacv/metrics`;
+  cache e ações do navegador são contados separadamente e saídas excessivas geram
+  um alerta local configurável.
 - O primeiro fluxo persiste `applications/<id>.yml`, usa login manual e não
   oferece comando de submissão; o checkpoint/token fica para a etapa que introduzir
   ação externa.

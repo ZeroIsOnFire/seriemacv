@@ -4,9 +4,9 @@ Este documento registra melhorias para reduzir o uso de contexto, chamadas ao mo
 e repetições durante importação, análise e candidatura a vagas no seriemaCV.
 
 Os itens de agrupamento de perguntas, sessão persistente, preparação integrada,
-contexto compacto, conversa por vaga e exclusão do estado local do Git foram
-implementados. Limites automáticos de saída, adaptadores por plataforma e métricas
-locais permanecem como próximas melhorias.
+contexto compacto, conversa por vaga, exclusão do estado local do Git e métricas
+locais foram implementados. Limites automáticos de saída e adaptadores por
+plataforma permanecem como próximas melhorias.
 
 ## Diagnóstico observado
 
@@ -96,7 +96,7 @@ Criar um comando `applications context ID` que retorne somente:
 
 O agente deve usar esse resumo em vez de reler o documento completo da candidatura.
 
-### Instrumentar operações caras
+### Instrumentar operações caras — implementado
 
 - Registrar localmente quantidade de chamadas e bytes retornados por operação.
 - Alertar quando uma saída ultrapassar o limite configurado.

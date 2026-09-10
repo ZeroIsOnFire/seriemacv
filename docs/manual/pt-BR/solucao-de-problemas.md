@@ -53,6 +53,28 @@ IA. O seriemaCV não coleta nem envia telemetria.
 
 Datas devem usar `YYYY-MM`, como `2024-01`. Registros atuais omitem `end_date`.
 
+## Uma operação gerou saída excessiva
+
+CLI e MCP registram apenas métricas numéricas locais em
+`.seriemacv/metrics/operations.jsonl`. Argumentos, caminhos, URLs, seletores e
+conteúdo não são gravados. Consulte os totais e as maiores saídas com:
+
+```powershell
+seriemacv diagnostics operations .\minha-carreira --limit 10
+```
+
+Por padrão, o aviso ocorre acima de 65.536 bytes e são mantidos os 1.000 registros
+mais recentes. Os valores podem ser alterados sem mudar a versão do projeto:
+
+```yaml
+operation_metrics:
+  output_warning_bytes: 65536
+  max_records: 1000
+```
+
+Essas métricas nunca são transmitidas e não incluem tokens ou cache interno do
+Codex. A consulta não registra a si própria.
+
 ## O PDF informa que o Chromium está ausente
 
 ```powershell

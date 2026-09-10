@@ -111,6 +111,8 @@ When the user asks to apply:
 
 - Keep browser profiles isolated per project. Never log credentials, form values, or
   sensitive answers.
+- If an operation exceeds its output limit, inspect the content-free local metrics
+  summary and reduce the next extraction instead of repeating the same output.
 - Cite public sources near factual research conclusions. Do not treat reviews or
   salary estimates as employer-confirmed facts.
 - At handoff state the imported/updated local records, match result, pending user

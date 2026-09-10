@@ -20,6 +20,11 @@ from seriemacv.applications import (
 from seriemacv.evidence_search import search_verified_evidence
 from seriemacv.jobs import dump_job, load_job, load_jobs
 from seriemacv.matching import dump_match_report, match_job
+from seriemacv.operations import (
+    OperationRecorder,
+    load_operation_settings,
+    utf8_size,
+)
 from seriemacv.privacy import redact_sensitive_text
 from seriemacv.project import load_project_configuration
 from seriemacv.proposals import create_proposal_request
@@ -129,11 +134,53 @@ def main() -> int:
     for line in sys.stdin:
         try:
             request = json.loads(line)
-            response = _handle(request)
         except (ValueError, OSError, KeyError) as error:
             response = _error_response(None, error)
-        print(json.dumps(response), flush=True)
+            print(json.dumps(response), flush=True)
+            continue
+        if not isinstance(request, dict):
+            response = _error_response(None, ValueError("request must be an object"))
+            print(json.dumps(response), flush=True)
+            continue
+        details = _operation_details(request)
+        if details is None:
+            print(json.dumps(_handle(request)), flush=True)
+            continue
+        project_path, operation = details
+        output_warning_bytes, max_records = load_operation_settings(project_path)
+        recorder = OperationRecorder(
+            project_path,
+            "mcp",
+            operation,
+            input_bytes=utf8_size(line),
+            output_warning_bytes=output_warning_bytes,
+            max_records=max_records,
+        )
+        with recorder:
+            response = _handle(request)
+            serialized = json.dumps(response)
+            recorder.add_output(utf8_size(serialized + "\n"))
+            recorder.status = "error" if "error" in response else "success"
+        print(serialized, flush=True)
     return 0
+
+
+def _operation_details(request: dict[str, Any]) -> tuple[Path, str] | None:
+    if request.get("method") != "tools/call":
+        return None
+    params = request.get("params", {})
+    if not isinstance(params, dict):
+        return None
+    arguments = params.get("arguments", {})
+    if not isinstance(arguments, dict):
+        return None
+    project_path = arguments.get("project_path")
+    name = params.get("name")
+    if not isinstance(project_path, str) or not isinstance(name, str):
+        return None
+    allowed_names = {item["name"] for item in TOOLS}
+    operation = name if name in allowed_names else "unknown"
+    return Path(project_path).expanduser().resolve(), operation
 
 
 def _handle(request: dict[str, Any]) -> dict[str, Any]:

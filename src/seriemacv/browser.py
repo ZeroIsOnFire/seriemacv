@@ -23,6 +23,7 @@ from seriemacv.applications import (
 )
 from seriemacv.career import SavedAnswer, load_career, load_localized_career
 from seriemacv.jobs import load_job
+from seriemacv.operations import record_browser_call
 from seriemacv.project import load_project_configuration
 from seriemacv.renderer import ResumeRenderError, write_resume
 from seriemacv.variants import list_variants, load_variant, load_variant_career
@@ -261,6 +262,7 @@ def _fill_greenhouse_combobox(page: Any, selector: str, value: str) -> bool:
     if not control.count():
         return False
     control.fill(value)
+    record_browser_call("fill")
     control.press("ArrowDown")
     control.press("Enter")
     return True
@@ -300,6 +302,7 @@ def _fill_greenhouse_known(
         control = page.locator(selector)
         if control.count():
             control.fill(value)
+            record_browser_call("fill")
             filled.add(field_id)
     for field_id, (answer, is_combobox) in _greenhouse_confirmed_answers(
         document
@@ -311,6 +314,7 @@ def _fill_greenhouse_known(
         if not control.count():
             continue
         control.fill(answer)
+        record_browser_call("fill")
         if is_combobox:
             control.press("ArrowDown")
             control.press("Enter")
@@ -356,6 +360,7 @@ def _fill_application_page(
     job: Any,
 ) -> tuple[list[BrowserField], set[str]]:
     _wait_for_form_controls(page)
+    record_browser_call("inspection")
     fields = discover_fields(page)
     greenhouse = _is_greenhouse_application(document.url)
     filled = (
@@ -417,6 +422,7 @@ def prepare_application(
         )
         try:
             page = context.pages[0] if context.pages else context.new_page()
+            record_browser_call("navigation")
             page.goto(document.url, wait_until="domcontentloaded")
             job = load_job(project_path / "jobs" / f"{document.job_id}.yml")
             fields, filled = _fill_application_page(page, project_path, document, job)
@@ -600,6 +606,7 @@ def _fill_known(
             value = saved.answer
         if value:
             page.locator(_FORM_CONTROLS).nth(field.index).fill(value)
+            record_browser_call("fill")
             filled.add(field.field_id)
     return filled
 
@@ -646,6 +653,7 @@ def _attach_documents(
         field = page.locator("input#resume, input[name='resume']").first
         if field.count():
             field.set_input_files([str(resume)])
+            record_browser_call("upload")
         return
     upload_fields = [field for field in fields if field.input_type == "file"]
     if not upload_fields:
@@ -688,6 +696,7 @@ def _attach_documents(
         page.locator(_FORM_CONTROLS).nth(upload_fields[0].index).set_input_files(
             [str(path) for path in attachments]
         )
+        record_browser_call("upload")
 
 
 def _questions_for(

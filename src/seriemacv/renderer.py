@@ -23,6 +23,7 @@ from docx.shared import Mm, Pt, RGBColor
 
 from seriemacv.career import CareerDocument, Education, Experience, Skill
 from seriemacv.i18n import translate
+from seriemacv.operations import record_cache
 from seriemacv.styles import (
     ResumeStyleId,
     StyleManifest,
@@ -243,7 +244,7 @@ def write_resume(
     path.parent.mkdir(parents=True, exist_ok=True)
     style = load_style(style_id).manifest
     _ensure_supported(style, output_format)
-    if is_resume_current(
+    current = is_resume_current(
         project_path,
         career,
         locale,
@@ -251,7 +252,10 @@ def write_resume(
         style_id=style_id,
         resume_color=resume_color,
         variant_id=variant_id,
-    ):
+    )
+    if output_format == "pdf" and variant_id is None:
+        record_cache(current)
+    if current:
         return path
     content: bytes
     if output_format == "markdown":
