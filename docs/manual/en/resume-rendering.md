@@ -10,8 +10,8 @@ in `i18n/<locale>.yml`. Each output is written atomically to a fixed path under
 ## Structured variants
 
 Reusable career wording remains in `career.locales/`; fixed application labels,
-months, levels, and date formatting remain in `i18n/`. A job-specific variant uses
-this separate layout:
+months, and date formatting remain in `i18n/`. A job-specific variant uses this
+separate layout:
 
 ```text
 resume/variants/<id>/
@@ -114,7 +114,8 @@ do not use the canonical cache.
 - A missing `end_date` means the record is current.
 - Empty optional sections are omitted.
 - Summary, highlights, locations, employment types, and other user text are preserved.
-- Only fixed labels, dates, and skill levels are localized.
+- Only fixed labels and dates are localized in rendered resumes.
+- Skill levels remain canonical matching metadata and are not printed.
 - Evidence, saved answers, and stories are not printed.
 - HTML content is escaped before insertion.
 

@@ -132,8 +132,9 @@ skills:
     core: true
 ```
 
-Competências são agrupadas por categoria e as `core` recebem destaque. Códigos de
-nível estáveis são localizados durante a renderização. O perfil também aceita URLs
+Competências são agrupadas por categoria e as `core` recebem destaque. Os níveis
+continuam disponíveis como metadados canônicos para matching, mas os currículos
+renderizados omitem essas classificações subjetivas. O perfil também aceita URLs
 HTTP(S) explícitas em `linkedin` e `portfolio`.
 
 ## Verificação local

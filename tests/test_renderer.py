@@ -303,6 +303,28 @@ class MarkdownRendererTests(unittest.TestCase):
                     ".experience .timeline-record { break-inside: auto; }", html
                 )
 
+    def test_all_styles_hide_canonical_skill_levels_from_resume_outputs(self) -> None:
+        career_data = self._career().model_dump()
+        career_data["skills"][1]["level"] = "advanced"
+        career = CareerDocument.model_validate(career_data)
+
+        self.assertEqual(career.skills[1].level, "advanced")
+        for style_id in STYLE_IDS:
+            with self.subTest(style=style_id):
+                markdown = render_markdown(career, "en", style_id)
+                html = render_html(career, "en", style_id)
+                document = Document(BytesIO(render_docx(career, "en", style_id)))
+                docx_text = "\n".join(
+                    paragraph.text for paragraph in _docx_all_paragraphs(document)
+                )
+
+                self.assertIn("YAML", markdown)
+                self.assertIn("YAML", html)
+                self.assertIn("YAML", docx_text)
+                self.assertNotIn("YAML (Advanced)", markdown)
+                self.assertNotIn("YAML (Advanced)", html)
+                self.assertNotIn("YAML (Advanced)", docx_text)
+
     def test_colored_side_rails_bleed_through_vertical_page_margins(self) -> None:
         for style_id in ("sidebar", "sidebar-alt"):
             with self.subTest(style=style_id):
@@ -415,7 +437,7 @@ class MarkdownRendererTests(unittest.TestCase):
         self.assertIn("Jan 2024", "\n".join(texts))
         self.assertIn("Present", "\n".join(texts))
         self.assertIn("Portfolio: https://example.invalid/seriema", texts)
-        self.assertIn("Advanced", "\n".join(texts))
+        self.assertNotIn("Advanced", "\n".join(texts))
         self.assertTrue(
             any(
                 run.bold

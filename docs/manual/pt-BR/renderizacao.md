@@ -10,7 +10,7 @@ fixo dentro de `exports/`.
 ## Variantes estruturadas
 
 O texto profissional reutilizável permanece em `career.locales/`; rótulos fixos,
-meses, níveis e formato de data ficam em `i18n/`. Uma variante de vaga usa a estrutura
+meses e formato de data ficam em `i18n/`. Uma variante de vaga usa a estrutura
 separada:
 
 ```text
@@ -114,7 +114,8 @@ usam o cache canônico.
 - A ausência de `end_date` indica um registro atual.
 - Seções opcionais vazias são omitidas.
 - Resumo, destaques, localidades, vínculos e demais textos do usuário são preservados.
-- Somente rótulos fixos, datas e níveis de competência são localizados.
+- Somente rótulos fixos e datas são localizados nos currículos renderizados.
+- Níveis de competência permanecem como metadados canônicos de matching e não são impressos.
 - Evidências, respostas salvas e histórias não são impressas.
 - O conteúdo é escapado antes de entrar no HTML.
 

@@ -127,9 +127,10 @@ skills:
     core: true
 ```
 
-Skills are grouped by category and `core` skills are emphasized. Stable level codes
-are localized during rendering. The profile also accepts explicit HTTP(S) URLs in
-`linkedin` and `portfolio`.
+Skills are grouped by category and `core` skills are emphasized. Skill levels remain
+available as canonical metadata for matching, but rendered resumes intentionally omit
+these subjective labels. The profile also accepts explicit HTTP(S) URLs in `linkedin`
+and `portfolio`.
 
 ## Local verification
 

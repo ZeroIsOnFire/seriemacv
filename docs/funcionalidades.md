@@ -253,6 +253,10 @@ parciais, herdam `career.locales/<locale>.yml` e não podem sobrescrever fatos c
 como empresa, instituição, datas ou contatos. Resumos e destaques direcionados exigem
 `evidence_ids` existentes e verificados.
 
+Níveis de competência permanecem no modelo canônico para matching, mas não são
+exibidos nos currículos renderizados; a senioridade deve ser sustentada pelas
+experiências e evidências profissionais.
+
 **Decisões tecnológicas**
 
 - Formato de diff que permita aceite granular no Studio, CLI e MCP.

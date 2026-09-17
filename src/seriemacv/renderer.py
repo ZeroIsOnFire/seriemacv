@@ -41,7 +41,7 @@ _FILENAMES = {
     "pdf": "pdf",
     "docx": "docx",
 }
-_PDF_CACHE_VERSION = 2
+_PDF_CACHE_VERSION = 3
 _EXPERIENCE_PAGINATION_CSS = (
     ".experience article, .experience ul, .experience li { break-inside: auto; }\n"
     ".experience .timeline-record { break-inside: auto; }"
@@ -531,14 +531,13 @@ def _markdown_skills(skills: list[Skill], labels: dict[str, str], variant: str) 
     separator = "\n" if variant == "compact" else "\n\n"
     return separator.join(
         (f"**{category}:** " if category else "")
-        + ", ".join(_markdown_skill(skill, labels) for skill in items)
+        + ", ".join(_markdown_skill(skill) for skill in items)
         for category, items in _skill_groups(skills, labels).items()
     )
 
 
-def _markdown_skill(skill: Skill, labels: dict[str, str]) -> str:
-    name = f"**{skill.name}**" if skill.core else skill.name
-    return name + (f" ({_level_label(labels, skill.level)})" if skill.level else "")
+def _markdown_skill(skill: Skill) -> str:
+    return f"**{skill.name}**" if skill.core else skill.name
 
 
 def _html_parts(
@@ -782,8 +781,7 @@ def _html_skills(skills: list[Skill], labels: dict[str, str]) -> str:
                 if skill.core
                 else escape(skill.name)
             )
-            level = _level_label(labels, skill.level) if skill.level else ""
-            values.append(name + (f" ({escape(level)})" if level else ""))
+            values.append(name)
         category_text = f"<strong>{escape(category)}:</strong> " if category else ""
         groups.append(f"<p>{category_text}{', '.join(values)}</p>")
     return "".join(groups)
@@ -1064,8 +1062,6 @@ def _docx_skills(container: Any, skills: list[Skill], labels: dict[str, str]) ->
                 paragraph.add_run(", ")
             skill_run = paragraph.add_run(skill.name)
             skill_run.bold = skill.core
-            if skill.level:
-                paragraph.add_run(f" ({_level_label(labels, skill.level)})")
 
 
 def _docx_timeline_records(
@@ -1207,10 +1203,6 @@ def _labels(locale: str) -> dict[str, str]:
             "highlight",
             "current",
             "other",
-            "level.beginner",
-            "level.intermediate",
-            "level.advanced",
-            "level.expert",
         )
     }
 
@@ -1262,10 +1254,6 @@ def _skill_groups(
         category = skill.category or (labels["other"] if has_category else "")
         groups.setdefault(category, []).append(skill)
     return groups
-
-
-def _level_label(labels: dict[str, str], level: str) -> str:
-    return labels[f"level.{level}"]
 
 
 def _format_date(value: str, labels: dict[str, str]) -> str:
