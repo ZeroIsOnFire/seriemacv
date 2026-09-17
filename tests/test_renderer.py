@@ -289,6 +289,20 @@ class MarkdownRendererTests(unittest.TestCase):
         self.assertNotIn("section, article { break-inside: avoid; }", timeline)
         self.assertIn("margin: 0 0 7pt -44mm; break-inside: avoid;", timeline)
 
+    def test_all_html_styles_allow_long_experience_records_to_span_pages(self) -> None:
+        for style_id in STYLE_IDS:
+            with self.subTest(style=style_id):
+                html = render_html(self._career(), "en", style_id)
+
+                self.assertIn('<section class="experience">', html)
+                self.assertIn(
+                    ".experience article, .experience ul, .experience li { break-inside: auto; }",
+                    html,
+                )
+                self.assertIn(
+                    ".experience .timeline-record { break-inside: auto; }", html
+                )
+
     def test_colored_side_rails_bleed_through_vertical_page_margins(self) -> None:
         for style_id in ("sidebar", "sidebar-alt"):
             with self.subTest(style=style_id):

@@ -41,7 +41,11 @@ _FILENAMES = {
     "pdf": "pdf",
     "docx": "docx",
 }
-_PDF_CACHE_VERSION = 1
+_PDF_CACHE_VERSION = 2
+_EXPERIENCE_PAGINATION_CSS = (
+    ".experience article, .experience ul, .experience li { break-inside: auto; }\n"
+    ".experience .timeline-record { break-inside: auto; }"
+)
 
 
 class ResumeRenderError(ValueError):
@@ -414,7 +418,7 @@ def _style_css(style: StylePackage) -> str:
         raise ResumeRenderError(
             f"Style '{style.manifest.id}' contains an unresolved CSS token"
         )
-    return css
+    return f"{css.rstrip()}\n{_EXPERIENCE_PAGINATION_CSS}\n"
 
 
 def _presentation(
@@ -720,7 +724,11 @@ def _html_timeline_records(
             f"{_html_highlights(record.highlights, labels) if record.highlights else ''}</article>"
             "</div>"
         )
-    return _html_section(title, "".join(rows))
+    return _html_section(
+        title,
+        "".join(rows),
+        section_class="experience" if experience else None,
+    )
 
 
 def _html_list(values: list[str]) -> str:
@@ -738,8 +746,9 @@ def _html_highlights(values: list[str], labels: dict[str, str]) -> str:
     )
 
 
-def _html_section(title: str, content: str) -> str:
-    return f"<section><h2>{escape(title)}</h2>{content}</section>"
+def _html_section(title: str, content: str, *, section_class: str | None = None) -> str:
+    class_attribute = f' class="{section_class}"' if section_class else ""
+    return f"<section{class_attribute}><h2>{escape(title)}</h2>{content}</section>"
 
 
 def _html_records(
@@ -756,7 +765,11 @@ def _html_records(
             f"{_html_list(record.bullets) if getattr(record, 'bullets', []) else ''}"
             f"{_html_highlights(record.highlights, labels) if record.highlights else ''}</article>"
         )
-    return _html_section(title, "".join(articles))
+    return _html_section(
+        title,
+        "".join(articles),
+        section_class="experience" if experience else None,
+    )
 
 
 def _html_skills(skills: list[Skill], labels: dict[str, str]) -> str:
