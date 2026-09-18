@@ -43,36 +43,6 @@ _PROFILE_FIELDS = {
 _FORM_CONTROLS = "input, select, textarea"
 _TEXT_INPUT_TYPES = {"text", "email", "tel", "url", "textarea"}
 _COMBOBOX_TIMEOUT_MS = 2_000
-_GREENHOUSE_ANSWER_FIELDS = {
-    "question-12689994007": (
-        "#question_12689994007, textarea[name='question_12689994007']",
-        False,
-    ),
-    "question-12689995007": (
-        "#question_12689995007, textarea[name='question_12689995007']",
-        False,
-    ),
-    "question-12689996007": (
-        "#question_12689996007, textarea[name='question_12689996007']",
-        False,
-    ),
-    "question-12689997007": (
-        "#question_12689997007, input[name='question_12689997007']",
-        True,
-    ),
-    "question-12689998007": (
-        "#question_12689998007, input[name='question_12689998007']",
-        True,
-    ),
-    "question-12690000007": (
-        "#question_12690000007, input[name='question_12690000007']",
-        True,
-    ),
-    "question-12690001007": (
-        "#question_12690001007, input[name='question_12690001007']",
-        True,
-    ),
-}
 
 
 @dataclass(frozen=True)
@@ -113,9 +83,13 @@ def discover_fields(page: Any) -> list[BrowserField]:
         label: optionLabel,
         groupLabel,
         required: element.required || element.getAttribute('aria-required') === 'true',
-        type: element.type || element.tagName.toLowerCase(),
+        type: element.getAttribute('role') === 'combobox' ? 'combobox' :
+          (element.type || element.tagName.toLowerCase()),
         hidden: element.type === 'hidden' || element.getAttribute('aria-hidden') === 'true',
-        populated: ['radio', 'checkbox'].includes(element.type) ? element.checked : Boolean(element.value)
+        populated: ['radio', 'checkbox'].includes(element.type) ? element.checked :
+          element.getAttribute('role') === 'combobox' ?
+            Boolean(element.closest('.select__control')?.querySelector('.select__single-value')?.innerText) :
+            Boolean(element.value)
       };
     })""")
     fields: list[BrowserField] = []
@@ -228,6 +202,7 @@ def _greenhouse_profile_values(profile: Any, location: str) -> dict[str, str]:
 
 def _greenhouse_confirmed_answers(
     document: ApplicationDocument,
+    fields: list[BrowserField],
 ) -> dict[str, tuple[str, bool]]:
     """Return reviewed answers only for exact, known Greenhouse controls."""
     confirmed = {
@@ -235,11 +210,48 @@ def _greenhouse_confirmed_answers(
         for item in document.answers
         if item.confirmed_for_application
     }
+    available = {field.field_id: field for field in fields}
     return {
-        field_id: (confirmed[field_id].answer, is_combobox)
-        for field_id, (_, is_combobox) in _GREENHOUSE_ANSWER_FIELDS.items()
+        field_id: (
+            confirmed[field_id].answer,
+            available[field_id].input_type in {"combobox", "select"},
+        )
+        for field_id in available
         if field_id in confirmed
     }
+
+
+def _greenhouse_selector_for_field(field_id: str) -> str:
+    if re.fullmatch(r"question-[0-9]+", field_id):
+        control_id = field_id.replace("question-", "question_", 1)
+        return f"#{control_id}, [name='{control_id}']"
+    if field_id in {"country", "candidate-location"}:
+        return f"#{field_id}"
+    return ""
+
+
+def _normalized_control_text(value: str) -> str:
+    return " ".join(value.split()).casefold()
+
+
+def _greenhouse_option_matches(label: str, value: str, failure_key: str) -> bool:
+    actual = _normalized_control_text(label)
+    expected = _normalized_control_text(value)
+    if actual == expected:
+        return True
+    if failure_key == "country":
+        return expected in actual
+    if failure_key == "candidate-location":
+        parts = [part.strip() for part in expected.split(",") if part.strip()]
+        return len(parts) >= 2 and parts[0] in actual and parts[-1] in actual
+    return False
+
+
+def _greenhouse_selected_text(control: Any, root: Any) -> str:
+    selected = root.locator(".select__single-value")
+    if selected.count():
+        return str(selected.inner_text())
+    return str(control.input_value())
 
 
 def _resume_locale_for_job(job: Any, default_locale: str) -> str:
@@ -261,6 +273,46 @@ def _fill_greenhouse_combobox(
         failed.add(failure_key)
         return False
     try:
+        root = (
+            control.locator(
+                "xpath=ancestor::div[contains(@class, 'select__control')][1]"
+            )
+            if hasattr(control, "locator")
+            else None
+        )
+        if root is not None and root.count():
+            current = _greenhouse_selected_text(control, root)
+            if _greenhouse_option_matches(current, value, failure_key):
+                return True
+            root.click(timeout=_COMBOBOX_TIMEOUT_MS)
+            record_browser_call("fill")
+            options = page.locator("[role='option']:visible")
+            options.first.wait_for(state="visible", timeout=_COMBOBOX_TIMEOUT_MS)
+            labels = options.all_inner_texts()
+            matches = [
+                index
+                for index, label in enumerate(labels)
+                if _greenhouse_option_matches(label, value, failure_key)
+            ]
+            if not matches:
+                control.press_sequentially(value, delay=20)
+                record_browser_call("fill")
+                options.first.wait_for(state="visible", timeout=_COMBOBOX_TIMEOUT_MS)
+                labels = options.all_inner_texts()
+                matches = [
+                    index
+                    for index, label in enumerate(labels)
+                    if _greenhouse_option_matches(label, value, failure_key)
+                ]
+            if len(matches) != 1:
+                failed.add(failure_key)
+                return False
+            options.nth(matches[0]).click(timeout=_COMBOBOX_TIMEOUT_MS)
+            selected = _greenhouse_selected_text(control, root)
+            if not _greenhouse_option_matches(selected, value, failure_key):
+                failed.add(failure_key)
+                return False
+            return True
         control.fill(value, timeout=_COMBOBOX_TIMEOUT_MS)
         record_browser_call("fill")
         listbox_id = control.get_attribute("aria-controls") or control.get_attribute(
@@ -273,11 +325,11 @@ def _fill_greenhouse_combobox(
             option_selector, state="visible", timeout=_COMBOBOX_TIMEOUT_MS
         )
         options = page.locator(option_selector)
-        expected = " ".join(value.split()).casefold()
+        expected = _normalized_control_text(value)
         matches = [
             index
             for index, label in enumerate(options.all_inner_texts())
-            if " ".join(label.split()).casefold() == expected
+            if _normalized_control_text(label) == expected
         ]
         if len(matches) != 1:
             control.fill("", timeout=_COMBOBOX_TIMEOUT_MS)
@@ -285,7 +337,7 @@ def _fill_greenhouse_combobox(
             failed.add(failure_key)
             return False
         options.nth(matches[0]).click(timeout=_COMBOBOX_TIMEOUT_MS)
-        selected = " ".join(control.input_value().split()).casefold()
+        selected = _normalized_control_text(control.input_value())
         if selected != expected:
             control.fill("", timeout=_COMBOBOX_TIMEOUT_MS)
             record_browser_call("fill")
@@ -342,12 +394,15 @@ def _fill_greenhouse_known(
             control.fill(value)
             record_browser_call("fill")
             filled.add(field_id)
+    field_by_id = {field.field_id: field for field in fields}
     for field_id, (answer, is_combobox) in _greenhouse_confirmed_answers(
-        document
+        document, fields
     ).items():
         if field_id not in available:
             continue
-        selector, _ = _GREENHOUSE_ANSWER_FIELDS[field_id]
+        selector = _greenhouse_selector_for_field(field_id)
+        if not selector:
+            continue
         if is_combobox:
             if _fill_greenhouse_combobox(
                 page,
@@ -364,6 +419,28 @@ def _fill_greenhouse_known(
         control.fill(answer)
         record_browser_call("fill")
         filled.add(field_id)
+    for field_id, field in field_by_id.items():
+        if field_id in filled:
+            continue
+        answer = _profile_value_for_field(field.label, localized_career)
+        selector = _greenhouse_selector_for_field(field_id)
+        if not answer or not selector:
+            continue
+        if field.input_type in {"combobox", "select"}:
+            if _fill_greenhouse_combobox(
+                page,
+                selector,
+                answer,
+                failed=failed_comboboxes,
+                failure_key=field_id,
+            ):
+                filled.add(field_id)
+            continue
+        control = page.locator(selector)
+        if control.count():
+            control.fill(answer)
+            record_browser_call("fill")
+            filled.add(field_id)
     return filled
 
 

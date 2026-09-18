@@ -323,6 +323,9 @@ confirmação de uma revisão aprovada pelo usuário.
 - A sessão interativa aceita inspeção e novo preenchimento na mesma janela.
 - Inspeção e fechamento não repetem preenchimentos; perguntas descobertas são
   persistidas antes do upload e comboboxes exigem confirmação da opção selecionada.
+- O adaptador Greenhouse deriva campos de pergunta dos controles descobertos, sem
+  depender de IDs fixos, e aciona `react-select` pelo contêiner visível antes de
+  validar o texto efetivamente selecionado.
 - PDFs são resolvidos antes de iniciar o Playwright da candidatura, evitando sessões
   síncronas aninhadas e reutilizando anexos locais existentes.
 - `prepare-job` coordena seleção da candidatura, variante, PDF e navegador; `context`

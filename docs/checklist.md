@@ -103,7 +103,8 @@ mesmo núcleo e preservam a carreira canônica.
 - [x] Manter a sessão interativa controlável para inspecionar e preencher novamente.
 - [x] Separar inspeção de novo preenchimento e persistir perguntas antes do upload.
 - [x] Resolver anexos antes do Playwright e validar comboboxes Greenhouse com timeout
-  curto, opção correspondente e confirmação do valor selecionado.
+  curto, opção correspondente e confirmação do valor selecionado, incluindo IDs
+  dinâmicos e controles `react-select` acionados pelo contêiner visível.
 - [x] Integrar vaga, candidatura, variante, PDF e navegador em `prepare-job`.
 - [x] Expor contexto compacto e redigido por candidatura.
 - [x] Reutilizar respostas salvas quando aplicável.

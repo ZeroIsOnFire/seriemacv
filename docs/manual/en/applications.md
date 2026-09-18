@@ -30,7 +30,10 @@ or self-identification fields.
 linked variant when available, resolves or reuses its PDF before opening the browser,
 and starts preparation. Greenhouse comboboxes count as filled only after selecting a
 visible option with matching text and confirming the resulting value; a failed
-control remains pending without another automatic attempt in that session. Use
+control remains pending without another automatic attempt in that session. Question
+fields are derived from the controls discovered on the current form rather than a
+hardcoded ID list. Current Greenhouse `react-select` controls are opened through
+their visible container and verified using the displayed selected value. Use
 `--application-id` or `--variant-id` when more than one choice exists. The `context`
 command returns only status, attachments, confirmed answers, pending questions, and
 the next action. Sensitive answers are represented only as redacted confirmations.

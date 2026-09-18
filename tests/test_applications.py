@@ -438,49 +438,58 @@ class ApplicationTests(unittest.TestCase):
             job_id="role",
             answers=[
                 ApplicationAnswer(
-                    field_id="question-12689994007",
-                    answer="Interest",
+                    field_id="question-20014962004",
+                    answer="https://example.invalid/profile",
                     confirmed_for_application=True,
                 ),
                 ApplicationAnswer(
-                    field_id="question-12689995007",
-                    answer="AI tools",
-                    confirmed_for_application=True,
-                ),
-                ApplicationAnswer(
-                    field_id="question-12689996007",
-                    answer="Ruby work",
-                    confirmed_for_application=True,
-                ),
-                ApplicationAnswer(
-                    field_id="question-12689997007",
+                    field_id="question-20014964004",
                     answer="Yes",
-                    sensitive=True,
                     confirmed_for_application=True,
                 ),
                 ApplicationAnswer(
-                    field_id="question-12689998007",
-                    answer="LinkedIn",
-                    sensitive=True,
-                    confirmed_for_application=True,
-                ),
-                ApplicationAnswer(
-                    field_id="question-12690001007",
+                    field_id="question-20014971004",
                     answer="No",
                     sensitive=True,
                     confirmed_for_application=True,
                 ),
             ],
         )
+        fields = [
+            BrowserField(
+                "question-20014962004",
+                0,
+                "LinkedIn Profile",
+                True,
+                "text",
+                False,
+            ),
+            BrowserField(
+                "question-20014964004",
+                1,
+                "Do you use AI tools?",
+                True,
+                "combobox",
+                False,
+            ),
+            BrowserField(
+                "question-20014971004",
+                2,
+                "Are you legally authorized to work?",
+                True,
+                "combobox",
+                True,
+            ),
+        ]
 
-        answers = _greenhouse_confirmed_answers(document)
+        answers = _greenhouse_confirmed_answers(document, fields)
 
-        self.assertEqual(answers["question-12689994007"], ("Interest", False))
-        self.assertEqual(answers["question-12689995007"], ("AI tools", False))
-        self.assertEqual(answers["question-12689996007"], ("Ruby work", False))
-        self.assertEqual(answers["question-12689997007"], ("Yes", True))
-        self.assertEqual(answers["question-12689998007"], ("LinkedIn", True))
-        self.assertEqual(answers["question-12690001007"], ("No", True))
+        self.assertEqual(
+            answers["question-20014962004"],
+            ("https://example.invalid/profile", False),
+        )
+        self.assertEqual(answers["question-20014964004"], ("Yes", True))
+        self.assertEqual(answers["question-20014971004"], ("No", True))
 
     def test_greenhouse_adapter_attaches_english_resume_to_resume_field_only(
         self,
@@ -678,6 +687,99 @@ class ApplicationTests(unittest.TestCase):
             )
         )
         self.assertEqual(invalid.control.timeouts, [])
+
+    def test_greenhouse_combobox_uses_visible_react_select_container(self) -> None:
+        class Selected:
+            def __init__(self, root: "Root") -> None:
+                self.root = root
+
+            def count(self) -> int:
+                return int(bool(self.root.selected))
+
+            def inner_text(self) -> str:
+                return self.root.selected
+
+        class Root:
+            def __init__(self) -> None:
+                self.selected = ""
+                self.clicked = False
+
+            def count(self) -> int:
+                return 1
+
+            def click(self, *, timeout: int) -> None:
+                self.clicked = True
+
+            def locator(self, selector: str) -> Selected:
+                self.selector = selector
+                return Selected(self)
+
+        class Control:
+            def __init__(self, root: Root) -> None:
+                self.root = root
+                self.typed: list[str] = []
+
+            def count(self) -> int:
+                return 1
+
+            def locator(self, selector: str) -> Root:
+                return self.root
+
+            def input_value(self) -> str:
+                return ""
+
+            def press_sequentially(self, value: str, *, delay: int) -> None:
+                self.typed.append(value)
+
+        class Options:
+            def __init__(self, root: Root) -> None:
+                self.root = root
+                self.index = 0
+
+            @property
+            def first(self) -> "Options":
+                return self
+
+            def wait_for(self, *, state: str, timeout: int) -> None:
+                self.state = state
+
+            def all_inner_texts(self) -> list[str]:
+                return ["Yes", "No"]
+
+            def nth(self, index: int) -> "Options":
+                self.index = index
+                return self
+
+            def click(self, *, timeout: int) -> None:
+                self.root.selected = self.all_inner_texts()[self.index]
+
+        class Page:
+            def __init__(self) -> None:
+                self.root = Root()
+                self.control = Control(self.root)
+                self.options = Options(self.root)
+
+            def locator(self, selector: str) -> object:
+                if selector == "#question_20014964004":
+                    return self.control
+                return self.options
+
+        page = Page()
+        failed: set[str] = set()
+
+        self.assertTrue(
+            _fill_greenhouse_combobox(
+                page,
+                "#question_20014964004",
+                "No",
+                failed=failed,
+                failure_key="question-20014964004",
+            )
+        )
+        self.assertTrue(page.root.clicked)
+        self.assertEqual(page.root.selected, "No")
+        self.assertEqual(page.control.typed, [])
+        self.assertEqual(failed, set())
 
     def test_questions_are_persisted_before_attachment_failure(self) -> None:
         create_application(

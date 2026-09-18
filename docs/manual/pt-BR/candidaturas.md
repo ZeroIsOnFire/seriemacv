@@ -32,6 +32,9 @@ navegador e inicia a preparação. Comboboxes Greenhouse só são considerados
 preenchidos depois que uma opção visível com texto correspondente é selecionada e o
 valor final é confirmado; controles que falham ficam pendentes sem novas tentativas
 automáticas naquela sessão.
+Os campos de pergunta são derivados dos controles descobertos no formulário atual,
+sem uma lista fixa de IDs. Controles Greenhouse `react-select` são abertos pelo
+contêiner visível e validados pelo valor selecionado exibido.
 Use `--application-id` ou `--variant-id` quando houver mais de uma opção. O comando
 `context` retorna somente o estado, anexos, respostas confirmadas, pendências e a
 próxima ação. Respostas sensíveis aparecem apenas como confirmação redigida.
