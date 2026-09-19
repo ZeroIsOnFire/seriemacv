@@ -289,6 +289,46 @@ class McpTests(unittest.TestCase):
         )
         self.assertEqual(result.content[0].text, "[]\n")  # type: ignore[attr-defined,union-attr]
 
+    def test_match_tool_and_resource_serialize_classification_enums(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            project_path = Path(temporary_directory) / "career"
+            create_project(project_path, project_name="Career")
+            shutil.copyfile(
+                project_path / "career.yml.example", project_path / "career.yml"
+            )
+            (project_path / "jobs" / "role.yml").write_text(
+                "schema_version: 1\n"
+                "id: role\n"
+                "title: Role\n"
+                "requirements:\n"
+                "  - id: service\n"
+                "    statement: Delivered a documented internal service.\n"
+                "    priority: required\n"
+                "source: {format: manual, content: Role}\n",
+                encoding="utf-8",
+            )
+
+            async def exercise() -> tuple[object, object]:
+                async with Client(create_mcp_server(project_path)) as client:
+                    return (
+                        await client.call_tool("get_match_report", {"job_id": "role"}),
+                        await client.read_resource("seriemacv://matches/role"),
+                    )
+
+            tool_result, resource_result = anyio.run(exercise)
+
+        self.assertFalse(tool_result.is_error)  # type: ignore[attr-defined]
+        requirement = tool_result.structured_content["data"]["requirements"][0]  # type: ignore[attr-defined,index]
+        self.assertEqual(requirement["classification"], "STRONG_MATCH")
+        self.assertIn(
+            "classification: STRONG_MATCH",
+            tool_result.content[0].text,  # type: ignore[attr-defined,union-attr]
+        )
+        self.assertIn(
+            "classification: STRONG_MATCH",
+            resource_result.contents[0].text,  # type: ignore[attr-defined,union-attr]
+        )
+
     def test_resources_prompts_and_additional_read_tools_use_bound_project(
         self,
     ) -> None:

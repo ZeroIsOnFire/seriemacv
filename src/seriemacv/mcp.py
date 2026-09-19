@@ -1260,7 +1260,7 @@ def _call_data(name: str, arguments: dict[str, Any]) -> Any:
             project_path,
             job,
             weights=load_project_configuration(project_path).match_weights,
-        ).model_dump(mode="python")
+        ).model_dump(mode="json")
     if name == "propose_resume_tailoring":
         return create_proposal_request(
             project_path,
