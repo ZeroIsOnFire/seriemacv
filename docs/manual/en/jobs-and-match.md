@@ -59,10 +59,21 @@ returns a separate proposal that must still be reviewed and explicitly accepted.
 
 ## MCP
 
-`seriemacv-mcp` is a dependency-free stdio MCP server for compatible hosts such as
-Codex and Claude Code. It provides read-only search, job listing, and match-report
-tools, plus `propose_resume_tailoring`, which only returns a request and never writes
-to the project.
+`seriemacv-mcp` is a local stdio MCP server for compatible hosts such as Codex and
+Claude Code. Start one process per project:
+
+```powershell
+seriemacv-mcp --project .\my-career
+```
+
+It exposes structured tools for search, jobs, matching, variants, and applications,
+plus navigable `seriemacv://` resources. The `seriemacv://career/source` resource
+deliberately gives the local host the complete `career.yml`; treat that connection as
+private. The `analyze_job`, `tailor_resume`, and `answer_application` prompts guide
+reviewable workflows and do not write the project.
+
+Previous-version clients may still send `project_path` for one transition release.
+The first path binds the process, and any attempt to switch roots is rejected.
 
 ## Local Studio
 

@@ -51,8 +51,21 @@ proposta continua separada e exige revisão e aceite explícito.
 ## MCP
 
 `seriemacv-mcp` é um servidor MCP local por stdio, compatível com hosts como Codex e
-Claude Code. Ele expõe busca, leitura de vagas e relatório de match, além de pedido de
-tailoring que não grava nada no projeto.
+Claude Code. Inicie um processo para cada projeto:
+
+```powershell
+seriemacv-mcp --project .\minha-carreira
+```
+
+Ele expõe ferramentas estruturadas de busca, vagas, match, variantes e candidaturas,
+além de recursos `seriemacv://` navegáveis. O recurso
+`seriemacv://career/source` entrega deliberadamente o `career.yml` completo ao host
+local; trate essa conexão como privada. Os prompts `analyze_job`, `tailor_resume` e
+`answer_application` orientam fluxos revisáveis e não gravam o projeto.
+
+Clientes da versão anterior ainda podem enviar `project_path` por uma versão de
+transição. O primeiro caminho fixa o processo e qualquer tentativa de trocar a raiz é
+rejeitada.
 
 ## Studio local
 
