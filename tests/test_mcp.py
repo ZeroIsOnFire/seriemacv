@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import shutil
+import sys
 import tempfile
 import unittest
 from contextlib import redirect_stderr
@@ -9,7 +10,7 @@ from pathlib import Path
 from unittest.mock import patch
 
 import anyio
-from mcp import Client
+from mcp import Client, StdioServerParameters
 
 from seriemacv.applications import (
     ApplicationDocument,
@@ -24,6 +25,31 @@ from seriemacv.proposals import create_proposal_request
 
 
 class McpTests(unittest.TestCase):
+    def test_real_stdio_process_smoke(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            project_path = Path(temporary_directory) / "career"
+            create_project(project_path, project_name="Career")
+            parameters = StdioServerParameters(
+                command=sys.executable,
+                args=[
+                    "-m",
+                    "seriemacv.mcp",
+                    "--project",
+                    str(project_path),
+                ],
+            )
+
+            async def exercise() -> None:
+                async with Client(parameters) as client:
+                    result = await client.call_tool("list_jobs")
+                    self.assertFalse(result.is_error)
+                    self.assertEqual(
+                        result.structured_content,
+                        {"schema_version": 1, "data": []},
+                    )
+
+            anyio.run(exercise)
+
     def test_browser_preparation_runs_only_after_confirmation_and_never_submits(
         self,
     ) -> None:

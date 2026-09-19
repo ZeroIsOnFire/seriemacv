@@ -9,6 +9,30 @@ from seriemacv.mcp_changes import ChangeDiff, ChangeManager
 
 
 class McpChangeTests(unittest.TestCase):
+    def test_token_cannot_be_used_by_another_project_manager(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            root = Path(temporary_directory)
+            first = root / "first"
+            second = root / "second"
+            first.mkdir()
+            second.mkdir()
+            target = first / "record.yml"
+            manager = ChangeManager(first)
+            other_project = ChangeManager(second)
+            prepared = manager.prepare(
+                operation="test",
+                summary="Project-bound",
+                diff=[],
+                affected_paths=[target],
+                action=lambda: target.write_text("confirmed\n", encoding="utf-8"),
+            )
+
+            with self.assertRaisesRegex(ValueError, "unknown"):
+                other_project.confirm(prepared.token)
+            self.assertFalse(target.exists())
+            manager.confirm(prepared.token)
+            self.assertEqual(target.read_text(encoding="utf-8"), "confirmed\n")
+
     def test_change_is_previewed_then_confirmed_once(self) -> None:
         with tempfile.TemporaryDirectory() as temporary_directory:
             root = Path(temporary_directory)

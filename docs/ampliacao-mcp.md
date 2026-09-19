@@ -1,5 +1,8 @@
 # Ampliação gradual do MCP do seriemaCV
 
+**Status:** concluído. As cinco fases foram implementadas e validadas; este documento
+permanece como registro do plano e dos critérios de aceitação.
+
 ## Resumo
 
 Evoluir o MCP atual de oito ferramentas artesanais para uma interface local completa,

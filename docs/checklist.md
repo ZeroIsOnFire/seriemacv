@@ -89,6 +89,19 @@ mesmo núcleo e preservam a carreira canônica.
 - [x] Expandir a CLI para match; listagem, validação e renderização de variantes já
   estão disponíveis.
 - [x] Expor MCP somente de leitura e proposta inicialmente.
+- [x] Migrar o servidor MCP para o SDK Python oficial v2, fixado por projeto e somente
+  via `stdio`, mantendo uma transição legada controlada para `project_path`.
+- [x] Expor tools de leitura, resources `seriemacv://` e prompts com conteúdo
+  estruturado e fallback textual.
+- [x] Implementar previews de escrita com tokens em memória, uso único, expiração,
+  hashes, rejeição de concorrência e rollback multifile.
+- [x] Cobrir vagas, propostas, renderização e candidaturas com escritas MCP estreitas
+  e confirmadas.
+- [x] Adicionar editor canônico MCP tipado para perfil, registros e locales, com IDs
+  imutáveis, validação completa, round-trip YAML e cascatas explícitas.
+- [x] Integrar preparação Playwright ao preview MCP sem expor submissão ou bypass de
+  CAPTCHA e preencher somente fatos determinísticos e respostas confirmadas.
+- [x] Testar o MCP com cliente oficial em memória e subprocesso real por `stdio`.
 - [x] Implementar Studio após os casos de uso do núcleo estarem estáveis.
 - [x] Cobrir fluxos de sucesso, dados ausentes, conflito e `NO_EVIDENCE`.
 
