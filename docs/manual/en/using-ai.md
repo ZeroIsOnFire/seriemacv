@@ -68,7 +68,7 @@ application in Playwright for review.
 
 The agent must not guess work authorization, visa, demographic, tax, current-pay, or
 salary information. It opens the browser so you can log in and inspect the form. It
-submits only when you explicitly authorize submission.
+does not submit the form; review and submit it yourself in the browser.
 
 ## Record the outcome
 

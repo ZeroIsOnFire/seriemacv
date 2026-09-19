@@ -51,6 +51,13 @@ Through MCP, application creation, configuration, answers, and status transition
 persists the reviewed change. The `applied` status records a local fact and never
 means that MCP submitted the form.
 
+`prepare_browser_application` follows the same boundary. Preparing it only returns a
+preview and token. Confirming the token launches local Playwright, resolves or reuses
+the PDF attachment, fills deterministic profile facts and answers already confirmed
+for that application, persists newly detected questions, and returns the updated,
+redacted application context. It does not fill unreviewed answers, submit the form,
+or bypass CAPTCHA. The isolated browser profile may be updated by the confirmed run.
+
 For forms with inconsistent labels or a cover letter, use the optional external-agent
 workflow. `prepare --ai-assisted` includes unresolved optional fields in the question
 queue. The request deliberately carries only the job identity, detected field labels,

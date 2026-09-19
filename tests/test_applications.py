@@ -6,7 +6,7 @@ from contextlib import redirect_stdout
 from io import StringIO
 from pathlib import Path
 from types import SimpleNamespace
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 from seriemacv.application_ai import (
     ApplicationAiAnswer,
@@ -34,6 +34,7 @@ from seriemacv.browser import (
     _attach_documents,
     _fill_and_persist_application_page,
     _fill_greenhouse_combobox,
+    _fill_known,
     _greenhouse_confirmed_answers,
     _greenhouse_profile_values,
     _interactive_browser_session,
@@ -71,6 +72,40 @@ class ApplicationTests(unittest.TestCase):
 
     def tearDown(self) -> None:
         self.temporary.cleanup()
+
+    def test_browser_fills_only_answers_confirmed_for_this_application(self) -> None:
+        field = BrowserField("motivation", 0, "Motivation", True, "text", False)
+        page = MagicMock()
+        unconfirmed = ApplicationDocument(
+            id="role-application",
+            job_id="role",
+            answers=[
+                ApplicationAnswer(
+                    field_id="motivation",
+                    answer="Unreviewed answer",
+                    confirmed_for_application=False,
+                )
+            ],
+        )
+
+        self.assertEqual(_fill_known(page, [field], self.project, unconfirmed), set())
+        page.locator.assert_not_called()
+
+        confirmed = unconfirmed.model_copy(
+            update={
+                "answers": [
+                    unconfirmed.answers[0].model_copy(
+                        update={"confirmed_for_application": True}
+                    )
+                ]
+            }
+        )
+        self.assertEqual(
+            _fill_known(page, [field], self.project, confirmed), {"motivation"}
+        )
+        page.locator.return_value.nth.return_value.fill.assert_called_once_with(
+            "Unreviewed answer"
+        )
 
     def test_application_state_question_and_explicit_saved_answer_flow(self) -> None:
         create_application(

@@ -52,6 +52,13 @@ Pelo MCP, criação, configuração, resposta e transição de status usam ferra
 persiste a mudança revisada. O status `applied` registra um fato local e nunca indica
 que o MCP enviou o formulário.
 
+`prepare_browser_application` segue o mesmo limite. A preparação apenas devolve um
+preview e token. A confirmação lança o Playwright local, resolve ou reutiliza o PDF,
+preenche fatos determinísticos do perfil e respostas já confirmadas para aquela
+candidatura, persiste as perguntas detectadas e devolve o contexto atualizado e
+redigido. Ela não preenche respostas sem revisão, não envia o formulário nem contorna
+CAPTCHA. O perfil isolado do navegador pode ser atualizado pela execução confirmada.
+
 Para formulários com rótulos inconsistentes ou carta de apresentação, use o fluxo
 opcional com agente externo. `prepare --ai-assisted` inclui campos opcionais sem
 resolução na fila de perguntas. A solicitação leva apenas a identificação da vaga,

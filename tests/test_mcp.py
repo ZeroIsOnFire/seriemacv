@@ -6,6 +6,7 @@ import unittest
 from contextlib import redirect_stderr
 from io import StringIO
 from pathlib import Path
+from unittest.mock import patch
 
 import anyio
 from mcp import Client
@@ -23,6 +24,69 @@ from seriemacv.proposals import create_proposal_request
 
 
 class McpTests(unittest.TestCase):
+    def test_browser_preparation_runs_only_after_confirmation_and_never_submits(
+        self,
+    ) -> None:
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            project_path = Path(temporary_directory) / "career"
+            create_project(project_path, project_name="Career")
+            (project_path / "career.yml").write_text(
+                "schema_version: 2\n"
+                "profile: {name: Example, email: example@example.invalid}\n"
+                "experience: []\neducation: []\nskills: []\nevidence: []\n"
+                "answers: []\nstories: []\n",
+                encoding="utf-8",
+            )
+            (project_path / "jobs" / "role.yml").write_text(
+                "schema_version: 1\nid: role\ntitle: Role\n"
+                "source: {format: manual, content: Role}\n",
+                encoding="utf-8",
+            )
+            resume = project_path / "exports" / "resume.en.pdf"
+            resume.write_bytes(b"pdf")
+            create_application(
+                project_path,
+                ApplicationDocument(
+                    id="role-application",
+                    job_id="role",
+                    url="https://example.invalid/apply",
+                    attachments=["exports/resume.en.pdf"],
+                ),
+            )
+
+            async def exercise() -> None:
+                async with Client(create_mcp_server(project_path)) as client:
+                    names = {item.name for item in (await client.list_tools()).tools}
+                    self.assertIn("prepare_browser_application", names)
+                    self.assertFalse(any("submit" in name for name in names))
+                    prepared = await client.call_tool(
+                        "prepare_browser_application",
+                        {"application_id": "role-application"},
+                    )
+                    self.assertFalse(prepared.is_error)
+                    browser.assert_not_called()
+                    warnings = prepared.structured_content["data"]["warnings"]  # type: ignore[index]
+                    self.assertTrue(any("never submits" in item for item in warnings))
+                    confirmed = await client.call_tool(
+                        "confirm_change",
+                        {
+                            "token": prepared.structured_content["data"]["token"]  # type: ignore[index]
+                        },
+                    )
+                    self.assertFalse(confirmed.is_error)
+
+            with patch("seriemacv.mcp.prepare_application") as browser:
+                browser.side_effect = lambda *_args, **_kwargs: load_application(
+                    project_path, "role-application"
+                )
+                anyio.run(exercise)
+                browser.assert_called_once_with(
+                    project_path,
+                    "role-application",
+                    interactive=False,
+                    ai_assisted=False,
+                )
+
     def test_reviewable_write_tools_require_preview_and_confirmation(self) -> None:
         with tempfile.TemporaryDirectory() as temporary_directory:
             project_path = Path(temporary_directory) / "career"
@@ -191,7 +255,7 @@ class McpTests(unittest.TestCase):
             listed, result = anyio.run(exercise)
 
         tools = listed.tools  # type: ignore[attr-defined]
-        self.assertEqual(len(tools), 22)
+        self.assertEqual(len(tools), 23)
         self.assertNotIn("project_path", tools[1].input_schema.get("required", []))
         self.assertEqual(
             result.structured_content,  # type: ignore[attr-defined]

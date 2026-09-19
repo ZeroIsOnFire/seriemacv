@@ -73,7 +73,7 @@ abra a candidatura no Playwright para eu revisar.
 
 O agente não pode supor autorização de trabalho, visto, demografia, tributação,
 salário atual ou pretensão salarial. Ele abre o navegador para você fazer login e
-inspecionar o formulário. Só envia com sua autorização explícita.
+inspecionar o formulário. Ele não envia; revise e envie manualmente no navegador.
 
 ## Registrar o resultado
 

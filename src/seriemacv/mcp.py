@@ -31,6 +31,7 @@ from seriemacv.applications import (
     validate_application_links,
     validate_status_transition,
 )
+from seriemacv.browser import prepare_application
 from seriemacv.career import load_localized_career, locale_path, validate_career
 from seriemacv.career_changes import (
     CareerChange,
@@ -502,6 +503,20 @@ def create_mcp_server(project_path: Path | None = None) -> MCPServer[Any]:
             lambda: _prepare_career_change(changes(), change),
         )
 
+    @server.tool(name="prepare_browser_application")
+    def prepare_browser_application(
+        application_id: str, ai_assisted: bool = False
+    ) -> CallToolResult:
+        """Prepare a token that opens and fills a local browser when confirmed."""
+        return _mutation_call(
+            binding,
+            "prepare_browser_application",
+            {"application_id": application_id, "ai_assisted": ai_assisted},
+            lambda: _prepare_browser_application(
+                changes(), application_id, ai_assisted
+            ),
+        )
+
     @server.tool(name="confirm_change")
     def confirm_change(token: str) -> CallToolResult:
         """Confirm exactly one prepared, unexpired change token."""
@@ -699,6 +714,90 @@ def _prepare_career_change(
             else []
         ),
     )
+
+
+def _prepare_browser_application(
+    manager: ChangeManager,
+    application_id: str,
+    ai_assisted: bool,
+) -> PreparedChange:
+    project_path = manager.project_path
+    document = load_application(project_path, application_id)
+    if not document.url:
+        raise ValueError("application URL is required for browser preparation")
+    terminal_states = {
+        "applied",
+        "recruiter",
+        "interview",
+        "offer",
+        "rejected",
+        "withdrawn",
+    }
+    if document.status in terminal_states:
+        raise ValueError(
+            f"application is already in terminal workflow state: {document.status}"
+        )
+    job = load_job(project_path / "jobs" / f"{document.job_id}.yml")
+    paths = [application_path(project_path, application_id)]
+    has_pdf = any(
+        Path(relative_path).suffix.casefold() == ".pdf"
+        and (project_path / relative_path).is_file()
+        for relative_path in document.attachments
+    )
+    if not has_pdf:
+        configuration = load_project_configuration(project_path)
+        locale = (
+            "en"
+            if job.language.casefold() == "english"
+            else configuration.resume_language
+        )
+        variant_segment = f".{document.variant_id}" if document.variant_id else ""
+        output = project_path / "exports" / f"resume{variant_segment}.{locale}.pdf"
+        paths.append(output)
+        if document.variant_id is None:
+            paths.append(
+                project_path / ".seriemacv" / "cache" / "resume" / f"{output.name}.json"
+            )
+    return manager.prepare(
+        operation="application.browser_prepare",
+        summary=f"Open and fill application {application_id} in a local browser",
+        diff=[
+            ChangeDiff(
+                path=f"applications/{application_id}.yml::browser_preparation",
+                before={
+                    "status": document.status,
+                    "attachments": document.attachments,
+                    "pending_questions": len(document.questions),
+                },
+                after={
+                    "action": "inspect and fill without submission",
+                    "ai_assisted": ai_assisted,
+                    "questions": "refreshed from discovered form controls",
+                },
+            )
+        ],
+        affected_paths=paths,
+        action=lambda: _run_browser_application(
+            project_path, application_id, ai_assisted
+        ),
+        warnings=[
+            "Confirmation launches local Playwright and may update its isolated profile.",
+            "The browser workflow fills deterministic facts and confirmed answers only.",
+            "This operation never submits the application or bypasses CAPTCHA.",
+        ],
+    )
+
+
+def _run_browser_application(
+    project_path: Path, application_id: str, ai_assisted: bool
+) -> dict[str, object]:
+    prepare_application(
+        project_path,
+        application_id,
+        interactive=False,
+        ai_assisted=ai_assisted,
+    )
+    return application_context(project_path, application_id)
 
 
 def _prepare_resume_proposal(
