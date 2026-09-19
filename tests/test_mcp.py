@@ -191,7 +191,7 @@ class McpTests(unittest.TestCase):
             listed, result = anyio.run(exercise)
 
         tools = listed.tools  # type: ignore[attr-defined]
-        self.assertEqual(len(tools), 21)
+        self.assertEqual(len(tools), 22)
         self.assertNotIn("project_path", tools[1].input_schema.get("required", []))
         self.assertEqual(
             result.structured_content,  # type: ignore[attr-defined]
