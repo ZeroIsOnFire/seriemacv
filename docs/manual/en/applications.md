@@ -46,6 +46,11 @@ reviewable answer proposal. The user must explicitly apply an answer through the
 CLI; `--save-answer-id` additionally saves that confirmed answer in `career.yml`.
 Sensitive answers may be saved, but are never reused automatically.
 
+Through MCP, application creation, configuration, answers, and status transitions use
+`prepare_application_*` tools. They only produce a diff and token; `confirm_change`
+persists the reviewed change. The `applied` status records a local fact and never
+means that MCP submitted the form.
+
 For forms with inconsistent labels or a cover letter, use the optional external-agent
 workflow. `prepare --ai-assisted` includes unresolved optional fields in the question
 queue. The request deliberately carries only the job identity, detected field labels,

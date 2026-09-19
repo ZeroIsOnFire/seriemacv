@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import shutil
 import tempfile
 import unittest
 from contextlib import redirect_stderr
@@ -14,12 +15,168 @@ from seriemacv.applications import (
     ApplicationQuestion,
     add_questions,
     create_application,
+    load_application,
 )
 from seriemacv.mcp import TOOLS, _handle, create_mcp_server
 from seriemacv.project import create_project
+from seriemacv.proposals import create_proposal_request
 
 
 class McpTests(unittest.TestCase):
+    def test_reviewable_write_tools_require_preview_and_confirmation(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            project_path = Path(temporary_directory) / "career"
+            create_project(project_path, project_name="Career")
+            shutil.copyfile(
+                project_path / "career.yml.example", project_path / "career.yml"
+            )
+            for locale in ("pt-BR", "en"):
+                shutil.copyfile(
+                    project_path / "career.locales" / f"{locale}.yml.example",
+                    project_path / "career.locales" / f"{locale}.yml",
+                )
+            job_document = {
+                "schema_version": 1,
+                "id": "role",
+                "title": "Role",
+                "description": "Build a Python service.",
+                "requirements": [
+                    {
+                        "id": "python",
+                        "statement": "Professional Python experience.",
+                        "priority": "required",
+                    }
+                ],
+                "source": {"format": "manual", "content": "Role"},
+            }
+
+            async def prepare_and_confirm(
+                client: Client, name: str, arguments: dict[str, object]
+            ) -> object:
+                prepared = await client.call_tool(name, arguments)
+                self.assertFalse(prepared.is_error)
+                token = prepared.structured_content["data"]["token"]  # type: ignore[index]
+                confirmed = await client.call_tool("confirm_change", {"token": token})
+                self.assertFalse(confirmed.is_error)
+                return confirmed
+
+            async def exercise() -> None:
+                async with Client(create_mcp_server(project_path)) as client:
+                    await prepare_and_confirm(
+                        client, "prepare_job_change", {"document": job_document}
+                    )
+                    updated_job = {**job_document, "title": "Senior Role"}
+                    await prepare_and_confirm(
+                        client, "prepare_job_change", {"document": updated_job}
+                    )
+                    request = create_proposal_request(
+                        project_path,
+                        "role-proposal",
+                        "role-variant",
+                        "en",
+                        job_id="role",
+                    )
+                    response = {
+                        "schema_version": 1,
+                        "request_id": "role-proposal",
+                        "items": [
+                            {
+                                "id": "selection",
+                                "kind": "variant_selection",
+                                "evidence_ids": [],
+                                "confidence": "high",
+                                "pending_information": [],
+                                "selection": {},
+                            }
+                        ],
+                    }
+                    await prepare_and_confirm(
+                        client,
+                        "prepare_resume_proposal",
+                        {
+                            "request": request.model_dump(mode="json"),
+                            "response": response,
+                            "accepted_ids": ["selection"],
+                        },
+                    )
+                    await prepare_and_confirm(
+                        client,
+                        "prepare_application_create",
+                        {
+                            "document": {
+                                "schema_version": 1,
+                                "id": "role-application",
+                                "job_id": "role",
+                            }
+                        },
+                    )
+                    await prepare_and_confirm(
+                        client,
+                        "prepare_application_configure",
+                        {
+                            "application_id": "role-application",
+                            "url": "https://example.invalid/apply",
+                            "variant_id": "role-variant",
+                        },
+                    )
+                    add_questions(
+                        project_path,
+                        "role-application",
+                        [
+                            ApplicationQuestion(
+                                id="why-role", field_id="why", label="Why?"
+                            )
+                        ],
+                    )
+                    await prepare_and_confirm(
+                        client,
+                        "prepare_application_answer",
+                        {
+                            "application_id": "role-application",
+                            "question_id": "why-role",
+                            "answer": "Because the verified experience matches.",
+                        },
+                    )
+                    status_change = await client.call_tool(
+                        "prepare_application_status",
+                        {
+                            "application_id": "role-application",
+                            "status": "applied",
+                        },
+                    )
+                    self.assertIn(
+                        "does not submit",
+                        status_change.structured_content["data"]["warnings"][0],  # type: ignore[index]
+                    )
+                    await client.call_tool(
+                        "confirm_change",
+                        {
+                            "token": status_change.structured_content["data"]["token"]  # type: ignore[index]
+                        },
+                    )
+                    await prepare_and_confirm(
+                        client,
+                        "prepare_resume_render",
+                        {"output_format": "markdown", "language": "en"},
+                    )
+
+            anyio.run(exercise)
+
+            self.assertTrue((project_path / "jobs" / "role.yml").is_file())
+            self.assertTrue(
+                (
+                    project_path
+                    / "resume"
+                    / "variants"
+                    / "role-variant"
+                    / "variant.yml"
+                ).is_file()
+            )
+            application = load_application(project_path, "role-application")
+            self.assertEqual(application.status, "applied")
+            self.assertEqual(application.answers[0].field_id, "why")
+            self.assertTrue((project_path / "exports" / "resume.en.md").is_file())
+
     def test_official_sdk_lists_and_calls_tools_for_bound_project(self) -> None:
         with tempfile.TemporaryDirectory() as temporary_directory:
             project_path = Path(temporary_directory) / "career"
@@ -34,7 +191,7 @@ class McpTests(unittest.TestCase):
             listed, result = anyio.run(exercise)
 
         tools = listed.tools  # type: ignore[attr-defined]
-        self.assertEqual(len(tools), 13)
+        self.assertEqual(len(tools), 21)
         self.assertNotIn("project_path", tools[1].input_schema.get("required", []))
         self.assertEqual(
             result.structured_content,  # type: ignore[attr-defined]

@@ -47,6 +47,11 @@ revisável. O usuário deve aplicar a resposta explicitamente na CLI; com
 `--save-answer-id`, a resposta confirmada também é salva em `career.yml`. Respostas
 sensíveis podem ser salvas, mas nunca são reutilizadas automaticamente.
 
+Pelo MCP, criação, configuração, resposta e transição de status usam ferramentas
+`prepare_application_*`. Elas apenas produzem o diff e um token; `confirm_change`
+persiste a mudança revisada. O status `applied` registra um fato local e nunca indica
+que o MCP enviou o formulário.
+
 Para formulários com rótulos inconsistentes ou carta de apresentação, use o fluxo
 opcional com agente externo. `prepare --ai-assisted` inclui campos opcionais sem
 resolução na fila de perguntas. A solicitação leva apenas a identificação da vaga,

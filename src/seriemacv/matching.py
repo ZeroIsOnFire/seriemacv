@@ -13,7 +13,7 @@ from io import StringIO
 from pathlib import Path
 from typing import Literal
 
-from pydantic import BaseModel, ConfigDict, Field, model_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 from ruamel.yaml import YAML
 
 from seriemacv.career import CareerEvidence, load_career, validate_career
@@ -119,6 +119,12 @@ class MatchedRequirement(StrictModel):
     classification: MatchClassification
     evidence_ids: list[str] = Field(default_factory=list)
     explanation: str
+
+    @field_validator("classification", mode="before")
+    @classmethod
+    def serialized_classification(cls, value: object) -> object:
+        """Accept the enum's serialized string at JSON/MCP boundaries."""
+        return MatchClassification(value) if isinstance(value, str) else value
 
 
 class MatchScore(StrictModel):

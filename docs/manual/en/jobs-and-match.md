@@ -75,6 +75,11 @@ reviewable workflows and do not write the project.
 Previous-version clients may still send `project_path` for one transition release.
 The first path binds the process, and any attempt to switch roots is rejected.
 
+Mutating tools never write on their first call. `prepare_job_change`,
+`prepare_resume_proposal`, and `prepare_resume_render` return a diff and a single-use
+token valid for ten minutes. Only `confirm_change` applies the exact reviewed change;
+the token fails if any affected file changes in the meantime.
+
 ## Local Studio
 
 Start the initial read-only job workspace with

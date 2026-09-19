@@ -179,13 +179,20 @@ def update_status(
     document = load_application(project_path, application_id)
     if status == document.status:
         return document
-    if status not in _TRANSITIONS[document.status]:
-        raise ValueError(f"invalid status transition: {document.status} -> {status}")
+    validate_status_transition(document, status)
     updated = document.model_copy(
         update={"status": status, "audit": [*document.audit, _audit("status", status)]}
     )
     _write(application_path(project_path, application_id), updated)
     return updated
+
+
+def validate_status_transition(
+    document: ApplicationDocument, status: ApplicationStatus
+) -> None:
+    """Validate a status change without persisting it."""
+    if status != document.status and status not in _TRANSITIONS[document.status]:
+        raise ValueError(f"invalid status transition: {document.status} -> {status}")
 
 
 def configure_application(
@@ -494,6 +501,13 @@ def _validate_links(project_path: Path, document: ApplicationDocument) -> None:
     for answer in document.answers:
         if answer.saved_answer_id and answer.saved_answer_id not in answers:
             raise ValueError(f"unknown saved answer: {answer.saved_answer_id}")
+
+
+def validate_application_links(
+    project_path: Path, document: ApplicationDocument
+) -> None:
+    """Validate application references without persisting the document."""
+    _validate_links(project_path, document)
 
 
 def _audit(action: str, detail: str = "") -> ApplicationAudit:

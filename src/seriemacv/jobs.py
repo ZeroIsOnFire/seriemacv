@@ -167,6 +167,14 @@ def create_job(
     return path
 
 
+def save_job(project_path: Path, document: JobDocument) -> Path:
+    """Create or replace one validated job document atomically."""
+    validated = JobDocument.model_validate(document)
+    path = job_path(project_path, validated.id)
+    _write_yaml(path, validated)
+    return path
+
+
 def import_jobs(project_path: Path, source_path: Path) -> list[Path]:
     """Import one structured job file or every YAML job in a local ZIP archive.
 

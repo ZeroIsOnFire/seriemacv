@@ -67,6 +67,11 @@ Clientes da versão anterior ainda podem enviar `project_path` por uma versão d
 transição. O primeiro caminho fixa o processo e qualquer tentativa de trocar a raiz é
 rejeitada.
 
+As ferramentas mutáveis nunca gravam no primeiro chamado. `prepare_job_change`,
+`prepare_resume_proposal` e `prepare_resume_render` devolvem um diff e um token de uso
+único, válido por dez minutos. Somente `confirm_change` aplica exatamente a mudança
+revisada; o token falha se algum arquivo afetado mudar nesse intervalo.
+
 ## Studio local
 
 Inicie o primeiro workspace de vagas somente leitura com
