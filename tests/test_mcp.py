@@ -2,7 +2,12 @@ from __future__ import annotations
 
 import tempfile
 import unittest
+from contextlib import redirect_stderr
+from io import StringIO
 from pathlib import Path
+
+import anyio
+from mcp import Client
 
 from seriemacv.applications import (
     ApplicationDocument,
@@ -10,11 +15,57 @@ from seriemacv.applications import (
     add_questions,
     create_application,
 )
-from seriemacv.mcp import TOOLS, _handle
+from seriemacv.mcp import TOOLS, _handle, create_mcp_server
 from seriemacv.project import create_project
 
 
 class McpTests(unittest.TestCase):
+    def test_official_sdk_lists_and_calls_tools_for_bound_project(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            project_path = Path(temporary_directory) / "career"
+            create_project(project_path, project_name="Career")
+
+            async def exercise() -> tuple[object, object]:
+                async with Client(create_mcp_server(project_path)) as client:
+                    return await client.list_tools(), await client.call_tool(
+                        "list_jobs"
+                    )
+
+            listed, result = anyio.run(exercise)
+
+        tools = listed.tools  # type: ignore[attr-defined]
+        self.assertEqual(len(tools), 8)
+        self.assertNotIn("project_path", tools[1].input_schema.get("required", []))
+        self.assertEqual(
+            result.structured_content,  # type: ignore[attr-defined]
+            {"schema_version": 1, "data": []},
+        )
+        self.assertEqual(result.content[0].text, "[]\n")  # type: ignore[attr-defined,union-attr]
+
+    def test_legacy_path_pins_unbound_server_and_rejects_another_root(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            first = Path(temporary_directory) / "first"
+            second = Path(temporary_directory) / "second"
+            create_project(first, project_name="First")
+            create_project(second, project_name="Second")
+
+            async def exercise() -> tuple[object, object]:
+                async with Client(create_mcp_server()) as client:
+                    accepted = await client.call_tool(
+                        "list_jobs", {"project_path": str(first)}
+                    )
+                    rejected = await client.call_tool(
+                        "list_jobs", {"project_path": str(second)}
+                    )
+                    return accepted, rejected
+
+            with redirect_stderr(StringIO()) as errors:
+                accepted, rejected = anyio.run(exercise)
+
+        self.assertFalse(accepted.is_error)  # type: ignore[attr-defined]
+        self.assertTrue(rejected.is_error)  # type: ignore[attr-defined]
+        self.assertEqual(errors.getvalue().count("deprecated"), 1)
+
     def test_initialization_and_tool_listing_are_read_only(self) -> None:
         initialized = _handle({"jsonrpc": "2.0", "id": 1, "method": "initialize"})
         listed = _handle({"jsonrpc": "2.0", "id": 2, "method": "tools/list"})
