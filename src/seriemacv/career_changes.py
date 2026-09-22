@@ -166,8 +166,9 @@ def plan_career_change(project_path: Path, change: CareerChange) -> CareerChange
             if "links" in values:
                 values["links"] = {**profile.get("links", {}), **values["links"]}
             profile.update(values)
-            changed.add(career_path)
-            diffs.append(CareerDiff("career.yml::profile", before, dict(profile)))
+            if dict(profile) != before:
+                changed.add(career_path)
+                diffs.append(CareerDiff("career.yml::profile", before, dict(profile)))
         elif isinstance(operation, RecordCreate):
             _create_record(
                 project_path,
@@ -214,13 +215,15 @@ def plan_career_change(project_path: Path, change: CareerChange) -> CareerChange
     _validate_variants(project_path, facts, documents, originals)
     _validate_applications(project_path, facts, documents, originals)
 
+    changes = {
+        path: content
+        for path, document in documents.items()
+        if path in changed and (content := _dump(document)) != originals[path]
+    }
+    changed_files = {path.relative_to(project_path).as_posix() for path in changes}
     return CareerChangePlan(
-        changes={
-            path: _dump(document)
-            for path, document in documents.items()
-            if path in changed
-        },
-        diff=diffs,
+        changes=changes,
+        diff=[item for item in diffs if item.path.split("::", 1)[0] in changed_files],
     )
 
 
@@ -291,9 +294,9 @@ def _update_record(
     record = _find_record(career, operation.section, operation.id)
     before = copy.deepcopy(dict(record))
     proposed = {**record, **operation.values}
-    validated = _RECORD_MODELS[operation.section].model_validate(proposed)
-    record.update(validated.model_dump(mode="python"))
-    if operation.values:
+    _RECORD_MODELS[operation.section].model_validate(proposed)
+    record.update(operation.values)
+    if dict(record) != before:
         changed.add(career_path)
         diffs.append(
             CareerDiff(
@@ -314,14 +317,15 @@ def _update_record(
         localized_before = copy.deepcopy(dict(localized_record))
         localized_record.update(values)
         path = project_path / "career.locales" / f"{locale}.yml"
-        changed.add(path)
-        diffs.append(
-            CareerDiff(
-                f"{path.relative_to(project_path).as_posix()}::{operation.section}.{operation.id}",
-                localized_before,
-                dict(localized_record),
+        if dict(localized_record) != localized_before:
+            changed.add(path)
+            diffs.append(
+                CareerDiff(
+                    f"{path.relative_to(project_path).as_posix()}::{operation.section}.{operation.id}",
+                    localized_before,
+                    dict(localized_record),
+                )
             )
-        )
 
 
 def _delete_record(
@@ -443,12 +447,15 @@ def _update_locale(
         record.update(operation.values)
         after = dict(record)
         target = f"{operation.section}.{operation.record_id}"
-    changed.add(path)
-    diffs.append(
-        CareerDiff(
-            f"{path.relative_to(project_path).as_posix()}::{target}", before, after
+    if before != after:
+        changed.add(path)
+        diffs.append(
+            CareerDiff(
+                f"{path.relative_to(project_path).as_posix()}::{target}",
+                before,
+                after,
+            )
         )
-    )
 
 
 def _cascade_evidence(

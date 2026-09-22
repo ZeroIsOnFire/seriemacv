@@ -21,6 +21,33 @@ from seriemacv.project import create_project
 
 
 class CareerChangeTests(unittest.TestCase):
+    def test_noop_update_does_not_create_a_write_plan(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            project_path = _example_project(temporary_directory)
+            change = CareerChange.model_validate(
+                {
+                    "operations": [
+                        {
+                            "kind": "profile_update",
+                            "values": {"phone": "+55 11 5555-0100"},
+                        },
+                        {
+                            "kind": "locale_update",
+                            "locale": "en",
+                            "section": "summary",
+                            "values": {
+                                "value": "Build reliable software with collaborative teams."
+                            },
+                        },
+                    ]
+                }
+            )
+
+            plan = plan_career_change(project_path, change)
+
+            self.assertEqual(plan.changes, {})
+            self.assertEqual(plan.diff, [])
+
     def test_typed_crud_preserves_comments_and_waits_for_apply(self) -> None:
         with tempfile.TemporaryDirectory() as temporary_directory:
             project_path = _example_project(temporary_directory)

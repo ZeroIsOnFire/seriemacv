@@ -558,9 +558,7 @@ def create_mcp_server(project_path: Path | None = None) -> MCPServer[Any]:
     def job_resource(job_id: str) -> str:
         return _resource_text(
             lambda: _yaml(
-                load_job(binding.resolve() / "jobs" / f"{job_id}.yml").model_dump(
-                    mode="python"
-                )
+                load_job(job_path(binding.resolve(), job_id)).model_dump(mode="python")
             )
         )
 
@@ -737,7 +735,7 @@ def _prepare_browser_application(
         raise ValueError(
             f"application is already in terminal workflow state: {document.status}"
         )
-    job = load_job(project_path / "jobs" / f"{document.job_id}.yml")
+    job = load_job(job_path(project_path, document.job_id))
     paths = [application_path(project_path, application_id)]
     has_pdf = any(
         Path(relative_path).suffix.casefold() == ".pdf"
@@ -1233,9 +1231,9 @@ def _call_data(name: str, arguments: dict[str, Any]) -> Any:
         diagnostics = validate_project(project_path)
         return {"valid": not diagnostics, "diagnostics": diagnostics}
     if name == "get_job":
-        return load_job(
-            project_path / "jobs" / f"{arguments['job_id']}.yml"
-        ).model_dump(mode="python")
+        return load_job(job_path(project_path, arguments["job_id"])).model_dump(
+            mode="python"
+        )
     if name == "list_resume_variants":
         return [item.model_dump(mode="python") for item in list_variants(project_path)]
     if name == "get_resume_variant":
@@ -1255,7 +1253,7 @@ def _call_data(name: str, arguments: dict[str, Any]) -> Any:
     if name == "list_jobs":
         return [item.model_dump(mode="python") for item in load_jobs(project_path)]
     if name == "get_match_report":
-        job = load_job(project_path / "jobs" / f"{arguments['job_id']}.yml")
+        job = load_job(job_path(project_path, arguments["job_id"]))
         return match_job(
             project_path,
             job,

@@ -60,13 +60,18 @@ class ChangeManager:
         project_path: Path,
         *,
         ttl_seconds: int = 600,
+        max_pending: int = 128,
         now: Callable[[], datetime] | None = None,
     ) -> None:
+        if max_pending < 1:
+            raise ValueError("max_pending must be positive")
         self.project_path = project_path.resolve()
         self.ttl_seconds = ttl_seconds
+        self.max_pending = max_pending
         self._now = now or (lambda: datetime.now(UTC))
         self._pending: dict[str, _PendingChange] = {}
         self._lock = threading.Lock()
+        self._execution_lock = threading.Lock()
 
     def prepare(
         self,
@@ -78,6 +83,8 @@ class ChangeManager:
         action: Callable[[], Any],
         warnings: list[str] | None = None,
     ) -> PreparedChange:
+        if not affected_paths:
+            raise ValueError("at least one affected file is required")
         paths = tuple(self._safe_path(path) for path in affected_paths)
         if len(paths) != len(set(paths)):
             raise ValueError("affected_files contains duplicate paths")
@@ -109,6 +116,8 @@ class ChangeManager:
         )
         with self._lock:
             self._discard_expired()
+            if len(self._pending) >= self.max_pending:
+                raise ValueError("too many pending changes")
             self._pending[token] = pending
         return prepared
 
@@ -117,9 +126,15 @@ class ChangeManager:
             pending = self._pending.pop(token, None)
         if pending is None:
             raise ValueError("unknown or already used change token")
+        with self._execution_lock:
+            return self._execute(pending)
+
+    def _execute(self, pending: _PendingChange) -> ConfirmedChange:
         expires_at = datetime.fromisoformat(pending.prepared.expires_at)
         if self._now() >= expires_at:
             raise ValueError("change token has expired")
+        if any(path.resolve() != path for path in pending.paths):
+            raise ValueError("affected file changed to a symlink after preparation")
         current = {path: _file_hash(path) for path in pending.paths}
         if current != pending.base_hashes:
             raise ValueError("project files changed after the change was prepared")
@@ -145,6 +160,8 @@ class ChangeManager:
 
     def _safe_path(self, path: Path) -> Path:
         resolved = path.resolve()
+        if resolved != path.absolute():
+            raise ValueError("affected file must not use a symlink")
         if (
             not resolved.is_relative_to(self.project_path)
             or resolved == self.project_path
@@ -173,6 +190,14 @@ def _restore_files(
     existing_directories: set[Path],
 ) -> None:
     for path, content in snapshots.items():
+        for parent in reversed(path.parents):
+            if parent == project_path:
+                continue
+            if parent.is_relative_to(project_path) and parent.is_symlink():
+                parent.unlink()
+                parent.mkdir()
+        if path.is_symlink():
+            path.unlink()
         if content is None:
             path.unlink(missing_ok=True)
         else:

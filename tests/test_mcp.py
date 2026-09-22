@@ -25,6 +25,62 @@ from seriemacv.proposals import create_proposal_request
 
 
 class McpTests(unittest.TestCase):
+    def test_job_reads_reject_path_traversal_to_another_project(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            root = Path(temporary_directory)
+            first = root / "first"
+            second = root / "second"
+            create_project(first, project_name="First")
+            create_project(second, project_name="Second")
+            (second / "jobs" / "private.yml").write_text(
+                "schema_version: 1\nid: private\ntitle: Secret job\n"
+                "source: {format: manual, content: Secret job}\n",
+                encoding="utf-8",
+            )
+
+            async def exercise() -> tuple[object, object]:
+                async with Client(create_mcp_server(first)) as client:
+                    identifier = "../../second/jobs/private"
+                    return (
+                        await client.call_tool("get_job", {"job_id": identifier}),
+                        await client.call_tool(
+                            "get_match_report", {"job_id": identifier}
+                        ),
+                    )
+
+            job, match = anyio.run(exercise)
+
+        self.assertTrue(job.is_error)  # type: ignore[attr-defined]
+        self.assertTrue(match.is_error)  # type: ignore[attr-defined]
+        self.assertNotIn("Secret job", str(job.content))  # type: ignore[attr-defined]
+
+    def test_job_reads_reject_symlinks_outside_project(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            root = Path(temporary_directory)
+            first = root / "first"
+            second = root / "second"
+            create_project(first, project_name="First")
+            create_project(second, project_name="Second")
+            outside = second / "jobs" / "private.yml"
+            outside.write_text(
+                "schema_version: 1\nid: private\ntitle: Secret job\n"
+                "source: {format: manual, content: Secret job}\n",
+                encoding="utf-8",
+            )
+            try:
+                (first / "jobs" / "private.yml").symlink_to(outside)
+            except OSError as error:
+                self.skipTest(f"symlinks unavailable: {error}")
+
+            async def exercise() -> object:
+                async with Client(create_mcp_server(first)) as client:
+                    return await client.call_tool("get_job", {"job_id": "private"})
+
+            result = anyio.run(exercise)
+
+        self.assertTrue(result.is_error)  # type: ignore[attr-defined]
+        self.assertNotIn("Secret job", str(result.content))  # type: ignore[attr-defined]
+
     def test_real_stdio_process_smoke(self) -> None:
         with tempfile.TemporaryDirectory() as temporary_directory:
             project_path = Path(temporary_directory) / "career"

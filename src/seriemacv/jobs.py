@@ -208,7 +208,11 @@ def load_jobs(project_path: Path) -> list[JobDocument]:
 def job_path(project_path: Path, job_id: str) -> Path:
     if not _ID_PATTERN.fullmatch(job_id):
         raise ValueError("job id must use lowercase kebab-case")
-    return project_path / JOB_DIRECTORY / f"{job_id}.yml"
+    root = project_path.resolve() / JOB_DIRECTORY
+    path = root / f"{job_id}.yml"
+    if not path.resolve().is_relative_to(root):
+        raise ValueError("job path must stay inside the project jobs directory")
+    return path
 
 
 def dump_job(value: JobDocument | list[JobDocument]) -> str:
