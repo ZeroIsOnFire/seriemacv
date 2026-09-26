@@ -5,6 +5,10 @@ matching, resume tailoring, and application preparation. Follow the detailed
 [job-analysis guideline](../docs/agent-job-analysis-guideline.md) for research and
 the reviewable analysis format.
 
+For guided analysis, creation, or updates of the canonical career, use the
+repository skill `seriemacv-career`. It owns the interview, backup, topic checkpoint,
+validation, and final YAML-review workflow. Job-specific tailoring remains here.
+
 Keep one vacancy per conversation when the client supports starting a new thread.
 Resume existing work from `seriemacv applications context PATH ID` rather than
 carrying the history of unrelated vacancies into the next workflow.
@@ -90,7 +94,11 @@ When the user asks to apply:
    rendered separately and do not reuse the canonical cache.
 3. Open the form with Playwright so the user can log in, inspect prefilled values,
    and complete the process. Use a site-specific adapter when a generic form mapping
-   is unreliable. Pass `--interactive` when the user needs to see or review the form.
+   is unreliable. Creating application files, a variant, or a PDF is not completion.
+   If no required answer is pending, run `seriemacv applications prepare-job`
+   interactively in the same workflow; headed mode is its default. Resolve required
+   questions first when any remain. Use `--headless` only when the user explicitly
+   requests a non-visible preparation.
    Inspect the form once, then batch safe fills and verification in one browser run.
    Reuse the existing isolated profile and open session rather than refetching the
    page or relaunching the browser for each field.

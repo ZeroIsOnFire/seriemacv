@@ -1,0 +1,6 @@
+interface:
+  display_name: "seriemaCV Career"
+  short_description: "Analyze, create, and update seriemaCV careers"
+  default_prompt: "Use $seriemacv-career to analyze, create, or update my career data."
+policy:
+  allow_implicit_invocation: true

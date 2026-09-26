@@ -341,6 +341,11 @@ oferece comando de envio; a revisão e a submissão permanecem manuais no navega
   síncronas aninhadas e reutilizando anexos locais existentes.
 - `prepare-job` coordena seleção da candidatura, variante, PDF e navegador; `context`
   expõe apenas os dados necessários para a próxima etapa.
+- `prepare-job` abre a sessão visível por padrão e exige `--headless` para execução
+  não visível; criar somente os artefatos locais não conclui um pedido de candidatura.
+- Entrevistas de IA para analisar, criar ou atualizar a carreira usam a skill
+  versionada `seriemacv-career`, snapshot local único por sessão e checkpoints
+  confirmados por tópico antes de alterar os YAMLs canônicos.
 - CLI e MCP registram métricas operacionais sem conteúdo em `.seriemacv/metrics`;
   cache e ações do navegador são contados separadamente e saídas excessivas geram
   um alerta local configurável.

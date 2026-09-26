@@ -9,7 +9,7 @@ values in diagnostics.
 seriemacv applications create .\my-career --id platform-application --job-id platform-role --variant-id platform-role --url https://example.invalid/apply
 seriemacv applications validate .\my-career
 seriemacv applications prepare .\my-career platform-application --interactive
-seriemacv applications prepare-job .\my-career platform-role --url https://example.invalid/apply --interactive
+seriemacv applications prepare-job .\my-career platform-role --url https://example.invalid/apply
 seriemacv applications context .\my-career platform-role-application
 seriemacv applications questions .\my-career platform-application
 seriemacv applications apply-answer .\my-career platform-application question-why --answer "..." --save-answer-id why-platform
@@ -28,7 +28,9 @@ or self-identification fields.
 
 `prepare-job` validates the job, creates or reuses its application, selects the only
 linked variant when available, resolves or reuses its PDF before opening the browser,
-and starts preparation. Greenhouse comboboxes count as filled only after selecting a
+and starts preparation. This command opens a visible browser by default; use
+`--headless` only for a non-visible preparation. `--interactive` remains accepted for
+compatibility. Greenhouse comboboxes count as filled only after selecting a
 visible option with matching text and confirming the resulting value; a failed
 control remains pending without another automatic attempt in that session. Question
 fields are derived from the controls discovered on the current form rather than a

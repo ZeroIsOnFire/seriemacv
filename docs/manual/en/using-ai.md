@@ -7,6 +7,11 @@ career facts up. Give it the project location when needed and make the outcome
 explicit. Review every proposed canonical change and any sensitive application
 answer.
 
+In Codex clients, the repository-scoped `seriemacv-career` skill is discovered for
+career analysis, creation, and updates. It interviews by topic, creates a local
+backup before the first write, shows every diff for confirmation, and asks for a
+final review of `career.yml` and `career.locales/*.yml`.
+
 ## Start a project from an existing resume
 
 Ask the agent to create the local workspace, then attach or provide the resume:
@@ -68,7 +73,9 @@ application in Playwright for review.
 
 The agent must not guess work authorization, visa, demographic, tax, current-pay, or
 salary information. It opens the browser so you can log in and inspect the form. It
-does not submit the form; review and submit it yourself in the browser.
+uses interactive `applications prepare-job` by default, so creating only the local
+application files does not complete the workflow. It does not submit the form;
+review and submit it yourself in the browser.
 
 ## Record the outcome
 

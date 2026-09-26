@@ -48,6 +48,7 @@ Seriema com IA](docs/manual/pt-BR/uso-com-ia.md) para exemplos completos.
 
 ```powershell
 seriemacv init .\minha-carreira --name "Minha carreira" --language pt-BR --style modern
+seriemacv career backup .\minha-carreira --reason update
 seriemacv career set-profile .\minha-carreira --name "Seu Nome" --email voce@example.com
 seriemacv career add-experience .\minha-carreira --id empresa-atual --company "Empresa" --start-date 2024-01
 seriemacv career validate .\minha-carreira

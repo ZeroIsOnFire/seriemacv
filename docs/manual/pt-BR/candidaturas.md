@@ -9,7 +9,7 @@ diagnósticos.
 seriemacv applications create .\minha-carreira --id candidatura-plataforma --job-id vaga-plataforma --variant-id vaga-plataforma --url https://example.invalid/apply
 seriemacv applications validate .\minha-carreira
 seriemacv applications prepare .\minha-carreira candidatura-plataforma --interactive
-seriemacv applications prepare-job .\minha-carreira vaga-plataforma --url https://example.invalid/apply --interactive
+seriemacv applications prepare-job .\minha-carreira vaga-plataforma --url https://example.invalid/apply
 seriemacv applications context .\minha-carreira vaga-plataforma-application
 seriemacv applications questions .\minha-carreira candidatura-plataforma
 seriemacv applications apply-answer .\minha-carreira candidatura-plataforma question-why --answer "..." --save-answer-id por-que-plataforma
@@ -28,7 +28,9 @@ salário, demografia e autoidentificação nunca são preenchidos automaticament
 
 `prepare-job` valida a vaga, cria ou reutiliza sua candidatura, seleciona a única
 variante vinculada quando houver, resolve ou reutiliza o PDF antes de abrir o
-navegador e inicia a preparação. Comboboxes Greenhouse só são considerados
+navegador e inicia a preparação. Esse comando abre o navegador visível por padrão;
+use `--headless` somente para uma preparação não visível. `--interactive` continua
+aceito por compatibilidade. Comboboxes Greenhouse só são considerados
 preenchidos depois que uma opção visível com texto correspondente é selecionada e o
 valor final é confirmado; controles que falham ficam pendentes sem novas tentativas
 automáticas naquela sessão.

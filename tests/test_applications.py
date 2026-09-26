@@ -983,6 +983,40 @@ class ApplicationTests(unittest.TestCase):
         self.assertEqual(result, 0)
         self.assertIn("preparing", output.getvalue())
 
+    def test_cli_prepare_job_passes_interactive_default_and_headless_opt_out(
+        self,
+    ) -> None:
+        create_application(
+            self.project,
+            ApplicationDocument(
+                id="role-application",
+                job_id="role",
+                url="https://jobs.example.invalid/role/apply",
+            ),
+        )
+
+        with patch("seriemacv.cli.prepare_job_application") as prepare:
+            prepare.return_value = load_application(self.project, "role-application")
+            with redirect_stdout(StringIO()):
+                default_result = main(
+                    ["applications", "prepare-job", str(self.project), "role"]
+                )
+            self.assertEqual(default_result, 0)
+            self.assertTrue(prepare.call_args.kwargs["interactive"])
+
+            with redirect_stdout(StringIO()):
+                headless_result = main(
+                    [
+                        "applications",
+                        "prepare-job",
+                        str(self.project),
+                        "role",
+                        "--headless",
+                    ]
+                )
+            self.assertEqual(headless_result, 0)
+            self.assertFalse(prepare.call_args.kwargs["interactive"])
+
     def test_cli_prints_bounded_application_context(self) -> None:
         create_application(
             self.project, ApplicationDocument(id="role-application", job_id="role")

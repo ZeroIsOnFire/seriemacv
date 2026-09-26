@@ -193,4 +193,19 @@ their `.example` files, then run `career validate` and `career locale validate`.
 Unknown fields are rejected, and a failed CLI write does not modify the canonical
 file.
 
+## Back up before editing
+
+AI-assisted workflows should create one snapshot before their first write:
+
+```powershell
+seriemacv career backup .\my-career --reason update
+```
+
+Accepted reasons are `analyze`, `create`, and `update`. The command copies
+`career.yml` and every `career.locales/*.yml` file without parsing them, so it can
+also preserve an invalid document before a repair. The snapshot and its
+`manifest.yml`, containing paths and hashes, are stored under
+`.seriemacv/backups/career/<timestamp>-<reason>/`. This is local runtime state and
+should not be committed.
+
 Continue with [Resumes and styles](resume-rendering.md).

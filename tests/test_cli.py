@@ -6,10 +6,25 @@ from contextlib import redirect_stderr, redirect_stdout
 from io import StringIO
 from pathlib import Path
 
-from seriemacv.cli import main
+from seriemacv.cli import build_parser, main
 
 
 class CliTests(unittest.TestCase):
+    def test_prepare_job_is_interactive_by_default_with_headless_opt_out(self) -> None:
+        parser = build_parser()
+
+        default = parser.parse_args(["applications", "prepare-job", "career", "role"])
+        headless = parser.parse_args(
+            ["applications", "prepare-job", "career", "role", "--headless"]
+        )
+        explicit = parser.parse_args(
+            ["applications", "prepare-job", "career", "role", "--interactive"]
+        )
+
+        self.assertTrue(default.interactive)
+        self.assertFalse(headless.interactive)
+        self.assertTrue(explicit.interactive)
+
     def test_init_then_validate(self) -> None:
         with tempfile.TemporaryDirectory() as temporary_directory:
             project_path = Path(temporary_directory) / "my-career"
@@ -44,6 +59,37 @@ class CliTests(unittest.TestCase):
                 result = main(["validate", str(project_path)])
 
             self.assertEqual(result, 0)
+
+    def test_career_backup_snapshots_sources_without_requiring_valid_yaml(
+        self,
+    ) -> None:
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            project_path = Path(temporary_directory) / "my-career"
+            with redirect_stdout(StringIO()):
+                main(["init", str(project_path), "--name", "My Career"])
+            (project_path / "career.yml").write_text("profile: [\n", encoding="utf-8")
+
+            with redirect_stdout(StringIO()) as output:
+                result = main(
+                    [
+                        "career",
+                        "backup",
+                        str(project_path),
+                        "--reason",
+                        "update",
+                    ]
+                )
+
+            self.assertEqual(result, 0)
+            self.assertIn("Created career backup:", output.getvalue())
+            backups = list(
+                (project_path / ".seriemacv" / "backups" / "career").iterdir()
+            )
+            self.assertEqual(len(backups), 1)
+            self.assertEqual(
+                (backups[0] / "career.yml").read_text(encoding="utf-8"),
+                "profile: [\n",
+            )
 
     def test_validate_returns_nonzero_for_invalid_project(self) -> None:
         with tempfile.TemporaryDirectory() as temporary_directory:

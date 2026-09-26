@@ -119,6 +119,9 @@ mesmo núcleo e preservam a carreira canônica.
   curto, opção correspondente e confirmação do valor selecionado, incluindo IDs
   dinâmicos e controles `react-select` acionados pelo contêiner visível.
 - [x] Integrar vaga, candidatura, variante, PDF e navegador em `prepare-job`.
+- [x] Abrir `prepare-job` de forma interativa por padrão, com `--headless` explícito.
+- [x] Versionar a skill `seriemacv-career` para análise, criação e atualização
+  guiadas com backup e checkpoints por tópico.
 - [x] Expor contexto compacto e redigido por candidatura.
 - [x] Reutilizar respostas salvas quando aplicável.
 - [x] Criar rascunhos de IA apenas para campos incertos.

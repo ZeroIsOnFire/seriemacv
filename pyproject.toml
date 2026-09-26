@@ -49,6 +49,7 @@ select = ["E4", "E7", "E9", "F", "I"]
 [tool.mypy]
 files = [
     "src/seriemacv/application_ai.py",
+    "src/seriemacv/career_backup.py",
     "src/seriemacv/career_changes.py",
     "src/seriemacv/browser.py",
     "src/seriemacv/diagnostics.py",

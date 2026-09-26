@@ -193,4 +193,20 @@ arquivos `.example`, depois execute `career validate` e `career locale validate`
 Campos desconhecidos são rejeitados, e uma escrita inválida pela CLI não modifica o
 arquivo canônico.
 
+## Criar um backup antes de editar
+
+Fluxos assistidos por IA devem criar um snapshot antes da primeira alteração da
+sessão:
+
+```powershell
+seriemacv career backup .\minha-carreira --reason update
+```
+
+Os motivos aceitos são `analyze`, `create` e `update`. O comando copia `career.yml`
+e todos os arquivos `career.locales/*.yml` sem precisar interpretá-los, portanto
+também preserva um documento inválido antes de uma correção. O snapshot e seu
+`manifest.yml`, com caminhos e hashes, ficam em
+`.seriemacv/backups/career/<timestamp>-<reason>/`. Essa pasta é estado local e não
+deve ser versionada.
+
 Continue em [Currículos e estilos](renderizacao.md).
