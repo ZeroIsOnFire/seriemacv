@@ -724,11 +724,7 @@ def _fill_known(
             continue
         value = _profile_value_for_field(field.label, career)
         saved = used.get(field.field_id)
-        if (
-            not value
-            and saved
-            and (not saved.sensitive or saved.confirmed_for_application)
-        ):
+        if not value and saved and saved.confirmed_for_application:
             value = saved.answer
         if value:
             page.locator(_FORM_CONTROLS).nth(field.index).fill(value)

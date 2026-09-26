@@ -167,6 +167,14 @@ def create_job(
     return path
 
 
+def save_job(project_path: Path, document: JobDocument) -> Path:
+    """Create or replace one validated job document atomically."""
+    validated = JobDocument.model_validate(document)
+    path = job_path(project_path, validated.id)
+    _write_yaml(path, validated)
+    return path
+
+
 def import_jobs(project_path: Path, source_path: Path) -> list[Path]:
     """Import one structured job file or every YAML job in a local ZIP archive.
 
@@ -200,7 +208,11 @@ def load_jobs(project_path: Path) -> list[JobDocument]:
 def job_path(project_path: Path, job_id: str) -> Path:
     if not _ID_PATTERN.fullmatch(job_id):
         raise ValueError("job id must use lowercase kebab-case")
-    return project_path / JOB_DIRECTORY / f"{job_id}.yml"
+    root = project_path.resolve() / JOB_DIRECTORY
+    path = root / f"{job_id}.yml"
+    if not path.resolve().is_relative_to(root):
+        raise ValueError("job path must stay inside the project jobs directory")
+    return path
 
 
 def dump_job(value: JobDocument | list[JobDocument]) -> str:

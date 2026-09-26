@@ -45,6 +45,7 @@ from seriemacv.career import (
     validate_career,
     validate_locale,
 )
+from seriemacv.career_backup import create_career_backup
 from seriemacv.diagnostics import write_diagnostic_bundle
 from seriemacv.evidence_search import search_verified_evidence
 from seriemacv.jobs import (
@@ -148,6 +149,14 @@ def build_parser() -> argparse.ArgumentParser:
         "validate", help="Validate career.yml and report actionable diagnostics"
     )
     career_validate.add_argument("path", nargs="?", type=Path, default=Path.cwd())
+
+    career_backup = career_subparsers.add_parser(
+        "backup", help="Snapshot canonical career sources before AI-assisted edits"
+    )
+    career_backup.add_argument("path", type=Path)
+    career_backup.add_argument(
+        "--reason", choices=("analyze", "create", "update"), required=True
+    )
 
     locale_parser = career_subparsers.add_parser(
         "locale", help="Manage localized resume content"
@@ -295,7 +304,20 @@ def build_parser() -> argparse.ArgumentParser:
     application_prepare_job.add_argument("--application-id")
     application_prepare_job.add_argument("--url", default="")
     application_prepare_job.add_argument("--variant-id")
-    application_prepare_job.add_argument("--interactive", action="store_true")
+    prepare_job_mode = application_prepare_job.add_mutually_exclusive_group()
+    prepare_job_mode.add_argument(
+        "--interactive",
+        dest="interactive",
+        action="store_true",
+        help="Open a visible browser (the default)",
+    )
+    prepare_job_mode.add_argument(
+        "--headless",
+        dest="interactive",
+        action="store_false",
+        help="Prepare the application without a visible browser",
+    )
+    application_prepare_job.set_defaults(interactive=True)
     application_prepare_job.add_argument("--ai-assisted", action="store_true")
     application_context_parser = applications_subparsers.add_parser(
         "context", help="Print bounded context for continuing one application"
@@ -705,6 +727,14 @@ def _run_career_command(args: argparse.Namespace) -> int:
         print(f"Valid locale document: {args.language}")
         return 0
     career_path = args.path.expanduser().resolve() / CAREER_FILE
+    if args.career_command == "backup":
+        try:
+            destination = create_career_backup(args.path, args.reason)
+        except (OSError, ValueError) as error:
+            _print_error(f"{career_path}: {error}")
+            return 1
+        print(f"Created career backup: {destination}")
+        return 0
     if args.career_command == "validate":
         diagnostics = validate_career(career_path)
         if diagnostics:

@@ -47,6 +47,7 @@ an AI agent](docs/manual/en/using-ai.md) for complete examples.
 
 ```powershell
 seriemacv init .\my-career --name "My career" --language en --style modern
+seriemacv career backup .\my-career --reason update
 seriemacv career set-profile .\my-career --name "Your Name" --email you@example.com
 seriemacv career add-experience .\my-career --id current-company --company "Company" --start-date 2024-01
 seriemacv career validate .\my-career

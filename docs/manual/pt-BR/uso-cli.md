@@ -10,6 +10,7 @@ abaixo são os exemplos iniciais existentes, reunidos em um único lugar.
 ```powershell
 python -m pip install -e .
 seriemacv init .\minha-carreira --name "Minha carreira" --language pt-BR --style clean
+seriemacv career backup .\minha-carreira --reason update
 seriemacv career set-profile .\minha-carreira --name "Seu Nome" --email voce@example.com
 seriemacv career add-experience .\minha-carreira --id cargo-atual --company "Empresa" --start-date 2024-01
 # Adicione o cargo do perfil e o texto de cargo-atual em career.locales/pt-BR.yml.
@@ -31,7 +32,7 @@ seriemacv resume render .\minha-carreira --language en --format pdf --format doc
 ```powershell
 seriemacv jobs import .\minha-carreira .\vaga.yml
 seriemacv match .\minha-carreira engenheiro-plataforma
-seriemacv applications prepare-job .\minha-carreira engenheiro-plataforma --url https://example.invalid/apply --interactive
+seriemacv applications prepare-job .\minha-carreira engenheiro-plataforma --url https://example.invalid/apply
 seriemacv applications context .\minha-carreira engenheiro-plataforma-application
 ```
 

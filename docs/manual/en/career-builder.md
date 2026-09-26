@@ -174,12 +174,38 @@ Valid canonical sections are `profile`, `experience`, `education`, `skills`,
 `evidence`, `answers`, and `stories`. Output is validated YAML suitable for inspection
 or use by another local tool. Locale documents remain directly inspectable YAML.
 
-## Fields without editing commands
+## Complete editing through MCP
 
-The CLI does not yet edit localized wording or existing records. Edit canonical facts
-in `career.yml` and professional wording in
-`career.locales/<locale>.yml`, following their `.example` files. Then run both
-`career validate` and `career locale validate`. Unknown fields are rejected, and a
-failed CLI write does not modify the canonical file.
+The CLI does not yet edit localized wording or existing records. An MCP client bound
+to the project can use `prepare_career_change` to update the profile; create, update,
+or delete records; and edit existing locales. The tool accepts typed operations, not
+raw YAML or JSON Patch. It returns a preview with its diff, affected files, and a
+token; only `confirm_change` writes the files.
+
+IDs cannot change. A new experience, education, or skill record must include the
+localized fields for every existing locale. Deletions show every cascade across
+locales, evidence, answers, stories, variants, and applications in the same diff.
+Career data and references are validated before a token is issued, while YAML
+comments and ordering are preserved through round-trip editing.
+
+For manual editing, change `career.yml` and `career.locales/<locale>.yml` following
+their `.example` files, then run `career validate` and `career locale validate`.
+Unknown fields are rejected, and a failed CLI write does not modify the canonical
+file.
+
+## Back up before editing
+
+AI-assisted workflows should create one snapshot before their first write:
+
+```powershell
+seriemacv career backup .\my-career --reason update
+```
+
+Accepted reasons are `analyze`, `create`, and `update`. The command copies
+`career.yml` and every `career.locales/*.yml` file without parsing them, so it can
+also preserve an invalid document before a repair. The snapshot and its
+`manifest.yml`, containing paths and hashes, are stored under
+`.seriemacv/backups/career/<timestamp>-<reason>/`. This is local runtime state and
+should not be committed.
 
 Continue with [Resumes and styles](resume-rendering.md).

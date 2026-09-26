@@ -174,12 +174,39 @@ As seções canônicas válidas são `profile`, `experience`, `education`, `skil
 consumo por outra ferramenta local. Os documentos de locale continuam sendo YAML
 diretamente inspecionável.
 
-## Campos sem comandos de edição
+## Edição completa via MCP
 
-A CLI ainda não edita textos localizados ou registros existentes. Edite fatos
-canônicos em `career.yml` e textos profissionais em
-`career.locales/<locale>.yml`, seguindo seus arquivos `.example`. Depois execute
-`career validate` e `career locale validate`. Campos desconhecidos são rejeitados, e
-uma escrita inválida pela CLI não modifica o arquivo canônico.
+A CLI ainda não edita textos localizados ou registros existentes. Um cliente MCP
+conectado ao projeto pode usar `prepare_career_change` para atualizar o perfil,
+criar, atualizar ou excluir registros e alterar os locales existentes. A ferramenta
+aceita operações tipadas, não YAML bruto nem JSON Patch. Ela devolve um preview com
+diff, arquivos afetados e um token; somente `confirm_change` grava os arquivos.
+
+IDs não podem ser alterados. Uma nova experiência, formação ou skill deve incluir os
+campos localizados para todos os locales existentes. Exclusões mostram no mesmo diff
+todas as cascatas sobre locales, evidências, respostas, histórias, variantes e
+candidaturas. A carreira e suas referências são validadas antes da emissão do token,
+e comentários e ordenação YAML são preservados em round-trip.
+
+Para edição manual, altere `career.yml` e `career.locales/<locale>.yml` seguindo os
+arquivos `.example`, depois execute `career validate` e `career locale validate`.
+Campos desconhecidos são rejeitados, e uma escrita inválida pela CLI não modifica o
+arquivo canônico.
+
+## Criar um backup antes de editar
+
+Fluxos assistidos por IA devem criar um snapshot antes da primeira alteração da
+sessão:
+
+```powershell
+seriemacv career backup .\minha-carreira --reason update
+```
+
+Os motivos aceitos são `analyze`, `create` e `update`. O comando copia `career.yml`
+e todos os arquivos `career.locales/*.yml` sem precisar interpretá-los, portanto
+também preserva um documento inválido antes de uma correção. O snapshot e seu
+`manifest.yml`, com caminhos e hashes, ficam em
+`.seriemacv/backups/career/<timestamp>-<reason>/`. Essa pasta é estado local e não
+deve ser versionada.
 
 Continue em [Currículos e estilos](renderizacao.md).

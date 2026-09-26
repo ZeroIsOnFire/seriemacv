@@ -275,12 +275,14 @@ experiências e evidências profissionais.
 - CLI como primeira interface de referência: inicializar, validar, importar,
   editar campos estruturados, renderizar, importar vaga, comparar e salvar variante.
 - API interna de casos de uso e erros estruturados.
-- MCP de leitura e proposta; ferramentas de escrita estreitas.
+- MCP local por projeto com tools, resources, prompts e ferramentas de escrita
+  revisáveis.
 - Um futuro Studio pode oferecer builder de campos estruturados, preview, diff e
   workspace de vagas; ele não depende de um editor Markdown.
 
-**Contrato:** interfaces adaptam entradas/saídas e não contêm regra de negócio. MCP
-de proposta não altera o projeto; ferramentas de escrita são distintas.
+**Contrato:** interfaces adaptam entradas/saídas e não contêm regra de negócio. Tools
+de leitura e proposta não alteram o projeto. Toda escrita MCP é preparada como diff
+validado e só ocorre por `confirm_change` com token temporário de uso único.
 
 **Decisões tecnológicas**
 
@@ -289,7 +291,16 @@ de proposta não altera o projeto; ferramentas de escrita são distintas.
   funcionais; uma aplicação web local é alternativa válida para acelerar feedback.
 - O Studio inicial é uma aplicação web local somente leitura, servida em loopback
   pela biblioteca padrão do Python; ele reutiliza os casos de uso de vagas e match.
-- Protocolo MCP conforme SDK oficial da linguagem escolhida.
+- O servidor MCP usa o SDK Python oficial v2, somente por `stdio`, com um processo
+  fixado a uma raiz de projeto. Expõe conteúdo estruturado com fallback textual,
+  recursos `seriemacv://` e prompts para análise de vaga, tailoring e respostas.
+- Tokens de mudança ficam somente em memória por dez minutos, registram hashes dos
+  arquivos afetados e rejeitam replay, expiração ou alteração concorrente. O editor
+  canônico aceita operações tipadas, preserva YAML em round-trip e torna cascatas de
+  exclusão explícitas no diff.
+- A preparação do navegador também exige preview e confirmação. Ela preenche fatos
+  determinísticos e respostas confirmadas, persiste perguntas e nunca envia o
+  formulário nem contorna CAPTCHA.
 - A UI precisa de preview, builder estruturado e diff confiáveis antes de investir em comandos
   de IA ou telas secundárias.
 
@@ -309,10 +320,10 @@ preenchimento no navegador com checkpoint de revisão.
   incertos.
 - Agrupamento de controles de escolha por pergunta e opções visíveis.
 - Contexto compacto por candidatura para continuidade em uma conversa dedicada.
-- Token/checkpoint explícito antes de submissão.
+- Preview e token explícitos antes de iniciar Playwright via MCP.
 
-**Contrato:** preparação e preenchimento não equivalem a submissão. Submeter requer
-confirmação de uma revisão aprovada pelo usuário.
+**Contrato:** preparação e preenchimento não equivalem a submissão. O produto não
+oferece comando de envio; a revisão e a submissão permanecem manuais no navegador.
 
 **Decisões tecnológicas**
 
@@ -330,6 +341,12 @@ confirmação de uma revisão aprovada pelo usuário.
   síncronas aninhadas e reutilizando anexos locais existentes.
 - `prepare-job` coordena seleção da candidatura, variante, PDF e navegador; `context`
   expõe apenas os dados necessários para a próxima etapa.
+- `prepare-job` abre a sessão visível por padrão e exige `--headless` para execução
+  não visível; criar somente os artefatos locais não conclui um pedido de candidatura.
+- Entrevistas de IA para analisar, criar ou atualizar a carreira seguem a definição
+  canônica e independente de provedor em `agents/career.md`. Adaptadores mínimos
+  expõem o mesmo fluxo a agentes genéricos, Codex e Claude, com snapshot local único
+  por sessão e checkpoints confirmados por tópico antes de alterar os YAMLs.
 - CLI e MCP registram métricas operacionais sem conteúdo em `.seriemacv/metrics`;
   cache e ações do navegador são contados separadamente e saídas excessivas geram
   um alerta local configurável.

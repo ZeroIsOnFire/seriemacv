@@ -7,6 +7,12 @@ nem inventa fatos de carreira. Informe o local do projeto quando necessário e d
 resultado desejado explícito. Revise toda mudança canônica proposta e toda resposta
 sensível de candidatura.
 
+O fluxo independente de provedor em `agents/career.md` define a análise, criação e
+atualização da carreira. Agentes genéricos chegam a ele por `AGENTS.md`; skills do
+repositório adaptam o mesmo fluxo para Codex e Claude. O agente entrevista por
+tópicos, cria um backup local antes da primeira gravação, mostra cada diff para
+confirmação e pede uma revisão final de `career.yml` e `career.locales/*.yml`.
+
 ## Iniciar um projeto a partir de um currículo existente
 
 Peça ao agente para criar o workspace local e depois anexe ou forneça o currículo:
@@ -73,7 +79,9 @@ abra a candidatura no Playwright para eu revisar.
 
 O agente não pode supor autorização de trabalho, visto, demografia, tributação,
 salário atual ou pretensão salarial. Ele abre o navegador para você fazer login e
-inspecionar o formulário. Só envia com sua autorização explícita.
+inspecionar o formulário. `applications prepare-job` é interativo por padrão; criar
+somente os arquivos da candidatura não encerra esse fluxo. O agente não envia;
+revise e envie manualmente no navegador.
 
 ## Registrar o resultado
 

@@ -9,7 +9,7 @@ values in diagnostics.
 seriemacv applications create .\my-career --id platform-application --job-id platform-role --variant-id platform-role --url https://example.invalid/apply
 seriemacv applications validate .\my-career
 seriemacv applications prepare .\my-career platform-application --interactive
-seriemacv applications prepare-job .\my-career platform-role --url https://example.invalid/apply --interactive
+seriemacv applications prepare-job .\my-career platform-role --url https://example.invalid/apply
 seriemacv applications context .\my-career platform-role-application
 seriemacv applications questions .\my-career platform-application
 seriemacv applications apply-answer .\my-career platform-application question-why --answer "..." --save-answer-id why-platform
@@ -28,7 +28,9 @@ or self-identification fields.
 
 `prepare-job` validates the job, creates or reuses its application, selects the only
 linked variant when available, resolves or reuses its PDF before opening the browser,
-and starts preparation. Greenhouse comboboxes count as filled only after selecting a
+and starts preparation. This command opens a visible browser by default; use
+`--headless` only for a non-visible preparation. `--interactive` remains accepted for
+compatibility. Greenhouse comboboxes count as filled only after selecting a
 visible option with matching text and confirming the resulting value; a failed
 control remains pending without another automatic attempt in that session. Question
 fields are derived from the controls discovered on the current form rather than a
@@ -45,6 +47,18 @@ An external MCP agent can read applications and their questions and request a
 reviewable answer proposal. The user must explicitly apply an answer through the
 CLI; `--save-answer-id` additionally saves that confirmed answer in `career.yml`.
 Sensitive answers may be saved, but are never reused automatically.
+
+Through MCP, application creation, configuration, answers, and status transitions use
+`prepare_application_*` tools. They only produce a diff and token; `confirm_change`
+persists the reviewed change. The `applied` status records a local fact and never
+means that MCP submitted the form.
+
+`prepare_browser_application` follows the same boundary. Preparing it only returns a
+preview and token. Confirming the token launches local Playwright, resolves or reuses
+the PDF attachment, fills deterministic profile facts and answers already confirmed
+for that application, persists newly detected questions, and returns the updated,
+redacted application context. It does not fill unreviewed answers, submit the form,
+or bypass CAPTCHA. The isolated browser profile may be updated by the confirmed run.
 
 For forms with inconsistent labels or a cover letter, use the optional external-agent
 workflow. `prepare --ai-assisted` includes unresolved optional fields in the question

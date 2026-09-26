@@ -9,7 +9,7 @@ diagnósticos.
 seriemacv applications create .\minha-carreira --id candidatura-plataforma --job-id vaga-plataforma --variant-id vaga-plataforma --url https://example.invalid/apply
 seriemacv applications validate .\minha-carreira
 seriemacv applications prepare .\minha-carreira candidatura-plataforma --interactive
-seriemacv applications prepare-job .\minha-carreira vaga-plataforma --url https://example.invalid/apply --interactive
+seriemacv applications prepare-job .\minha-carreira vaga-plataforma --url https://example.invalid/apply
 seriemacv applications context .\minha-carreira vaga-plataforma-application
 seriemacv applications questions .\minha-carreira candidatura-plataforma
 seriemacv applications apply-answer .\minha-carreira candidatura-plataforma question-why --answer "..." --save-answer-id por-que-plataforma
@@ -28,7 +28,9 @@ salário, demografia e autoidentificação nunca são preenchidos automaticament
 
 `prepare-job` valida a vaga, cria ou reutiliza sua candidatura, seleciona a única
 variante vinculada quando houver, resolve ou reutiliza o PDF antes de abrir o
-navegador e inicia a preparação. Comboboxes Greenhouse só são considerados
+navegador e inicia a preparação. Esse comando abre o navegador visível por padrão;
+use `--headless` somente para uma preparação não visível. `--interactive` continua
+aceito por compatibilidade. Comboboxes Greenhouse só são considerados
 preenchidos depois que uma opção visível com texto correspondente é selecionada e o
 valor final é confirmado; controles que falham ficam pendentes sem novas tentativas
 automáticas naquela sessão.
@@ -46,6 +48,18 @@ Um agente externo via MCP pode ler candidaturas e perguntas e devolver uma propo
 revisável. O usuário deve aplicar a resposta explicitamente na CLI; com
 `--save-answer-id`, a resposta confirmada também é salva em `career.yml`. Respostas
 sensíveis podem ser salvas, mas nunca são reutilizadas automaticamente.
+
+Pelo MCP, criação, configuração, resposta e transição de status usam ferramentas
+`prepare_application_*`. Elas apenas produzem o diff e um token; `confirm_change`
+persiste a mudança revisada. O status `applied` registra um fato local e nunca indica
+que o MCP enviou o formulário.
+
+`prepare_browser_application` segue o mesmo limite. A preparação apenas devolve um
+preview e token. A confirmação lança o Playwright local, resolve ou reutiliza o PDF,
+preenche fatos determinísticos do perfil e respostas já confirmadas para aquela
+candidatura, persiste as perguntas detectadas e devolve o contexto atualizado e
+redigido. Ela não preenche respostas sem revisão, não envia o formulário nem contorna
+CAPTCHA. O perfil isolado do navegador pode ser atualizado pela execução confirmada.
 
 Para formulários com rótulos inconsistentes ou carta de apresentação, use o fluxo
 opcional com agente externo. `prepare --ai-assisted` inclui campos opcionais sem

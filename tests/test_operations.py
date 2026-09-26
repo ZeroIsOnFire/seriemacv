@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-import json
-import sys
 import tempfile
 import unittest
 from contextlib import redirect_stderr, redirect_stdout
@@ -9,8 +7,11 @@ from io import StringIO
 from pathlib import Path
 from unittest.mock import patch
 
+import anyio
+from mcp import Client
+
 from seriemacv.cli import main
-from seriemacv.mcp import main as mcp_main
+from seriemacv.mcp import create_mcp_server
 from seriemacv.operations import (
     METRICS_PATH,
     OperationRecorder,
@@ -108,27 +109,17 @@ class OperationMetricsTests(unittest.TestCase):
                 ),
                 encoding="utf-8",
             )
-            request = {
-                "jsonrpc": "2.0",
-                "id": 1,
-                "method": "tools/call",
-                "params": {
-                    "name": "list_jobs",
-                    "arguments": {"project_path": str(project_path)},
-                },
-            }
-            output, errors = StringIO(), StringIO()
-            with (
-                patch.object(sys, "stdin", StringIO(json.dumps(request) + "\n")),
-                redirect_stdout(output),
-                redirect_stderr(errors),
-            ):
-                result = mcp_main()
-            response = json.loads(output.getvalue())
+
+            async def exercise() -> object:
+                async with Client(create_mcp_server(project_path)) as client:
+                    return await client.call_tool("list_jobs")
+
+            errors = StringIO()
+            with redirect_stderr(errors):
+                result = anyio.run(exercise)
             records = read_operation_records(project_path)
 
-        self.assertEqual(result, 0)
-        self.assertEqual(response["result"]["content"][0]["text"], "[]\n")
+        self.assertEqual(result.content[0].text, "[]\n")  # type: ignore[attr-defined,union-attr]
         self.assertIn("exceeded 1 bytes", errors.getvalue())
         self.assertEqual(records[0]["interface"], "mcp")
         self.assertEqual(records[0]["operation"], "list_jobs")
