@@ -7,10 +7,11 @@ career facts up. Give it the project location when needed and make the outcome
 explicit. Review every proposed canonical change and any sensitive application
 answer.
 
-In Codex clients, the repository-scoped `seriemacv-career` skill is discovered for
-career analysis, creation, and updates. It interviews by topic, creates a local
-backup before the first write, shows every diff for confirmation, and asks for a
-final review of `career.yml` and `career.locales/*.yml`.
+The provider-neutral workflow in `agents/career.md` defines career analysis,
+creation, and updates. Generic agents reach it through `AGENTS.md`; repository skills
+adapt the same workflow for Codex and Claude. The agent interviews by topic, creates
+a local backup before the first write, shows every diff for confirmation, and asks
+for a final review of `career.yml` and `career.locales/*.yml`.
 
 ## Start a project from an existing resume
 

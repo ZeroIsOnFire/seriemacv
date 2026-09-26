@@ -7,8 +7,9 @@ nem inventa fatos de carreira. Informe o local do projeto quando necessário e d
 resultado desejado explícito. Revise toda mudança canônica proposta e toda resposta
 sensível de candidatura.
 
-Em clientes Codex, a skill versionada `seriemacv-career` é descoberta no próprio
-repositório para analisar, criar ou atualizar uma carreira. Ela entrevista por
+O fluxo independente de provedor em `agents/career.md` define a análise, criação e
+atualização da carreira. Agentes genéricos chegam a ele por `AGENTS.md`; skills do
+repositório adaptam o mesmo fluxo para Codex e Claude. O agente entrevista por
 tópicos, cria um backup local antes da primeira gravação, mostra cada diff para
 confirmação e pede uma revisão final de `career.yml` e `career.locales/*.yml`.
 

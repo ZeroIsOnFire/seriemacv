@@ -5,7 +5,7 @@ description: Analyze, create, or update canonical seriemaCV career data through 
 
 # seriemaCV Career
 
-Read [the canonical guided career workflow](../../../agents/career.md) completely,
-then follow it. That provider-neutral document is the single source of truth for the
-interview modes, backup, review checkpoints, persistence, validation, and final YAML
-review. Do not substitute a provider-specific workflow when it is unavailable.
+Read `${CLAUDE_PROJECT_DIR}/agents/career.md` completely, then follow it. That
+provider-neutral document is the single source of truth for the interview modes,
+backup, review checkpoints, persistence, validation, and final YAML review. Do not
+substitute a provider-specific workflow when it is unavailable.

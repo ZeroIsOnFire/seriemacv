@@ -5,9 +5,10 @@ matching, resume tailoring, and application preparation. Follow the detailed
 [job-analysis guideline](../docs/agent-job-analysis-guideline.md) for research and
 the reviewable analysis format.
 
-For guided analysis, creation, or updates of the canonical career, use the
-repository skill `seriemacv-career`. It owns the interview, backup, topic checkpoint,
-validation, and final YAML-review workflow. Job-specific tailoring remains here.
+For guided analysis, creation, or updates of the canonical career, read and follow
+the provider-neutral [guided career workflow](career.md). It owns the interview,
+backup, topic checkpoint, validation, and final YAML-review process. Job-specific
+tailoring remains here.
 
 Keep one vacancy per conversation when the client supports starting a new thread.
 Resume existing work from `seriemacv applications context PATH ID` rather than

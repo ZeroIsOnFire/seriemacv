@@ -70,6 +70,31 @@ class QualityPolicyTests(unittest.TestCase):
         self.assertIn("Do not bypass CAPTCHA", jobs)
         self.assertIn("do not create or submit a duplicate application", jobs)
 
+    def test_career_agent_adapters_share_one_provider_neutral_workflow(self) -> None:
+        canonical = self.root / "agents/career.md"
+        jobs = (self.root / "agents/jobs.md").read_text(encoding="utf-8")
+        codex = (self.root / ".agents/skills/seriemacv-career/SKILL.md").read_text(
+            encoding="utf-8"
+        )
+        claude = (self.root / ".claude/skills/seriemacv-career/SKILL.md").read_text(
+            encoding="utf-8"
+        )
+        claude_memory = (self.root / "CLAUDE.md").read_text(encoding="utf-8")
+
+        self.assertTrue(canonical.is_file())
+        workflow = canonical.read_text(encoding="utf-8")
+        self.assertIn("seriemacv career backup PATH --reason MODE", workflow)
+        self.assertIn("prepare_career_change", workflow)
+        self.assertIn("seriemacv career validate PATH", workflow)
+        self.assertIn("career.yml", workflow)
+        self.assertIn("[guided career workflow](career.md)", jobs)
+        self.assertIn("../../../agents/career.md", codex)
+        self.assertIn("${CLAUDE_PROJECT_DIR}/agents/career.md", claude)
+        self.assertIn("@AGENTS.md", claude_memory)
+
+        retired_references = self.root / ".agents/skills/seriemacv-career/references"
+        self.assertFalse(any(retired_references.glob("*.md")))
+
 
 if __name__ == "__main__":
     unittest.main()

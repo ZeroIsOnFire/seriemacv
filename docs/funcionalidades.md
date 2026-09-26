@@ -343,9 +343,10 @@ oferece comando de envio; a revisão e a submissão permanecem manuais no navega
   expõe apenas os dados necessários para a próxima etapa.
 - `prepare-job` abre a sessão visível por padrão e exige `--headless` para execução
   não visível; criar somente os artefatos locais não conclui um pedido de candidatura.
-- Entrevistas de IA para analisar, criar ou atualizar a carreira usam a skill
-  versionada `seriemacv-career`, snapshot local único por sessão e checkpoints
-  confirmados por tópico antes de alterar os YAMLs canônicos.
+- Entrevistas de IA para analisar, criar ou atualizar a carreira seguem a definição
+  canônica e independente de provedor em `agents/career.md`. Adaptadores mínimos
+  expõem o mesmo fluxo a agentes genéricos, Codex e Claude, com snapshot local único
+  por sessão e checkpoints confirmados por tópico antes de alterar os YAMLs.
 - CLI e MCP registram métricas operacionais sem conteúdo em `.seriemacv/metrics`;
   cache e ações do navegador são contados separadamente e saídas excessivas geram
   um alerta local configurável.
